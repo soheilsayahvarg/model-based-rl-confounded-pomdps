@@ -1,0 +1,220 @@
+"""
+ellipsoid_opt.py — Phase 4: confidence-region ellipsoid geometry and the
+closed-form blockwise pessimistic minimization.
+
+GEOMETRY. Per stage/family block, the stage-2 empirical risk (INCLUDING the ridge
+term, anchor Eq. 121) is exactly quadratic in the coefficient vector, so
+
+    L_hat(b) - L_hat(b_hat) = (b - b_hat)^T H (b - b_hat),   H = T_hat_2 + lam2 I.
+
+(NB: H is HALF the Hessian of L_hat -- the true Hessian is 2H -- but the quadratic
+form above is exact because L_hat is exactly quadratic, so the factor-1/2 Taylor
+term cancels the factor-2 Hessian. It is the quadratic form, not "H = Hessian",
+that the geometry relies on.) conf(xi) = { b : (b - b_hat)^T H (b - b_hat) <= xi }
+is an EXACT ellipsoid
+centered at the estimator b_hat. H and b_hat come from
+TabularBridgeEstimator.stage_store (computed once, policy-independent — the
+anchor's Remark 3.7 advantage over P3O's per-policy regions).
+
+BLOCK MINIMIZATION. The plug-in value is MULTILINEAR in the 2T-1 bridge blocks:
+linear in each block with the others frozen. For a linear objective <g, b> over an
+ellipsoid the minimizer is closed-form:
+
+    b_min = b_hat - sqrt(xi) * H^{-1} g / ||g||_{H^{-1}},
+    min    = <g, b_hat> - sqrt(xi) * ||g||_{H^{-1}},  ||g||_{H^{-1}} = sqrt(g^T H^{-1} g).
+
+Structure exploited: V = sum_t <gR_t, bR_t> where every gR_t depends only on the
+DYNAMIC blocks — so all reward blocks minimize simultaneously and EXACTLY from one
+gradient evaluation; dynamic-block gradients depend on the other blocks, so they
+refresh after each move. Every step is an exact descent step, so V never increases.
+
+GUARANTEE SCOPE (audited): the returned V_low is the min over coordinate-descent
+endpoints; each endpoint is FEASIBLE, so V_low >= the exact joint min of the
+multilinear objective. It is therefore an UPPER bound on the exact inner min, NOT
+a certified lower bound on V(pi): coordinate descent on the (T-1) coupled dynamic
+blocks can stall above the global min (canonical case: min of x*y over [-1,1]^2
+started at the origin returns 0, not -1). Under region coverage the EXACT inner min
+is <= V(pi) (the truth is feasible), but our approximate V_low may exceed it. We do
+NOT claim a certified bound: V_low <= V_true is checked EMPIRICALLY (V4 holds for
+all policies/seeds/widths here) and restart_gap flags non-global stalls. The reward
+blocks — the majority of the coordinates — are solved globally; only the dynamic
+coupling is heuristic.
+
+WIDTH CALIBRATION (restricted-spectrum rule, Phase-2 finding): the global eig_min
+of H is pinned at ~lam2 by the STRUCTURAL |O|>|S| null space and is blind to
+identification collapse; the informative statistic is the smallest SIGNAL
+eigenvalue sigma2 (per-action design blocks, min over actions). Widths scale as
+
+    xi = c / (N2 * sigma2)
+
+— the H-weighted distance of the truth from the center concentrates in weak-signal
+directions with magnitude ~ (stage-1 noise)^2 / sigma2, so 1/(N2*sigma2) is the
+right shape; the multiplier c is swept with coverage curves (never a claimed
+"theoretical xi").
+"""
+
+import numpy as np
+
+
+class BlockEllipsoid:
+    """One bridge block's confidence-region geometry (flat coefficient coords).
+
+    Optionally carries the empirical SIGNAL-SUBSPACE basis (per-action eigengap
+    eigenvectors of the design, tensored with the identity on the index space):
+    the |O|>|S| structural null directions are unidentified, and under the JOINT
+    multilinear minimization they couple across blocks and blow the vanilla Eq.-17
+    minimum out of the feasible value range. Restricting the region to the
+    identified subspace (Nair-Jiang style rank restriction) contains the blow-up.
+
+    SOUNDNESS CAVEAT (audit finding A-high): the projected region is a SUBSET that
+    structurally excludes any out-of-subspace component of the true bridge (leak =
+    ||(I-UU^T)(b_true - b_hat)|| > 0). Empirically the true bridges DO leak (up to
+    ~0.38 on the toy), so the projected V_low is NOT a certified lower bound even
+    at its exact inner min: if an excluded direction is value-relevant with the
+    wrong sign, projected V_low can exceed V_true. The premise that excluded
+    directions are value-irrelevant is NOT verified by the geometry -- it is only
+    supported empirically (V4 held on the tested grid, by sign-alignment, not by
+    construction). coverage_report now gates "covered" on small leakage so this is
+    surfaced rather than masked. Both variants are exposed; treat projected V_low
+    as a heuristic estimate, not a guarantee.
+    """
+
+    def __init__(self, H, b_hat_vec, sigma2_signal, N2, label,
+                 signal_basis=None, n_obs=None, n_act=None, n_y=None):
+        self.H = H
+        self.b_hat = np.asarray(b_hat_vec, dtype=np.float64)
+        self.sigma2 = float(sigma2_signal)
+        self.N2 = int(N2)
+        self.label = label
+        self.L = np.linalg.cholesky(H)          # H = L L^T (PD since lam2 > 0)
+        self.U = None
+        if signal_basis is not None:
+            self.U = self._build_U(signal_basis, n_act, n_obs, n_y)
+            H_sub = self.U.T @ H @ self.U
+            self.L_sub = np.linalg.cholesky(H_sub)
+            self.H_sub = H_sub
+
+    @staticmethod
+    def _build_U(signal_basis, n_act, n_obs, n_y):
+        """Orthonormal basis (D, k) of the identified subspace: per action a, the
+        kept design eigenvectors on the o~-profile, tensored with I on the index y
+        (vec convention: flat = w * n_y + y, w = a * n_obs + o~).
+
+        Correctness of the projected coverage geometry (xi_needed's ds = U^T d and
+        the leak residual) requires U^T U = I, which in turn requires each per-action
+        Va to have ORTHONORMAL columns. The estimator supplies eigenvectors from
+        np.linalg.eigh (orthonormal), but we assert it rather than assume it: a
+        non-orthonormal Va would silently corrupt reported subspace coverage."""
+        n_w = n_act * n_obs
+        cols = []
+        for a, Va in enumerate(signal_basis):
+            k_a = Va.shape[1]
+            if k_a:
+                assert np.allclose(Va.T @ Va, np.eye(k_a), atol=1e-8), (
+                    f"signal_basis[{a}] columns are not orthonormal; projected "
+                    f"coverage geometry would be wrong. Re-orthonormalize (QR).")
+            for i in range(k_a):
+                w_vec = np.zeros(n_w)
+                w_vec[a * n_obs:(a + 1) * n_obs] = Va[:, i]
+                for y in range(n_y):
+                    col = np.zeros(n_w * n_y)
+                    col[np.arange(n_w) * n_y + y] = w_vec
+                    cols.append(col)
+        return np.stack(cols, axis=1)
+
+    def h_inv_norm(self, g):
+        """||g||_{H^{-1}} = sqrt(g^T H^{-1} g)."""
+        y = np.linalg.solve(self.L, g)
+        return float(np.sqrt(y @ y))
+
+    def linear_min(self, g, xi, projected=False):
+        """argmin/min of <g, b> over conf(xi) (optionally restricted to the
+        identified signal subspace). Returns (b_min, penalty)."""
+        if projected:
+            gs = self.U.T @ g
+            y = np.linalg.solve(self.L_sub, gs)
+            ng = float(np.sqrt(y @ y))
+            if ng < 1e-14:
+                return self.b_hat.copy(), 0.0
+            ds = np.linalg.solve(self.L_sub.T, y)
+            return self.b_hat - (np.sqrt(xi) / ng) * (self.U @ ds), \
+                float(np.sqrt(xi) * ng)
+        y = np.linalg.solve(self.L, g)
+        ng = float(np.sqrt(y @ y))
+        if ng < 1e-14:
+            return self.b_hat.copy(), 0.0
+        Hinv_g = np.linalg.solve(self.L.T, y)
+        return self.b_hat - (np.sqrt(xi) / ng) * Hinv_g, float(np.sqrt(xi) * ng)
+
+    def random_boundary_point(self, xi, rng, projected=False):
+        if projected:
+            u = rng.standard_normal(self.U.shape[1])
+            d = np.linalg.solve(self.L_sub.T, u)
+            return self.b_hat + (self.U @ d) * (np.sqrt(xi) / np.sqrt(u @ u))
+        u = rng.standard_normal(self.b_hat.size)
+        d = np.linalg.solve(self.L.T, u)
+        return self.b_hat + d * (np.sqrt(xi) / np.sqrt(u @ u))
+
+    def xi_needed(self, b_vec, projected=False):
+        """Minimal width for b_vec (or its subspace projection) to lie inside the
+        region. For the projected variant, also returns the out-of-subspace
+        leakage norm of (b_vec - b_hat)."""
+        d = b_vec - self.b_hat
+        if projected:
+            ds = self.U.T @ d
+            leak = float(np.linalg.norm(d - self.U @ ds))
+            return float(ds @ self.H_sub @ ds), leak
+        return float(d @ self.H @ d)
+
+    def width_rule(self, c):
+        """Restricted-spectrum width: xi = c / (N2 * sigma2_signal)."""
+        return c / (self.N2 * max(self.sigma2, 1e-12))
+
+
+def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
+                      max_sweeps=30, tol=1e-11, n_restarts=3, rng=None,
+                      projected=False):
+    """min over conf_R x conf_D of the multilinear plug-in value, by blockwise
+    closed-form coordinate descent with multi-restart.
+
+    value_and_grads(bR_flat_list, bD_flat_list) -> (V, gR_flat_list, gD_flat_list)
+    projected=True restricts every region to its identified signal subspace.
+    Returns dict(V_low, V_from_center, restart_gap, n_sweeps_center).
+    """
+    rng = rng or np.random.default_rng(0)
+    T = len(blocks_R)
+
+    def run(start):
+        bR = [blocks_R[t].b_hat.copy() for t in range(T)]
+        bD = [blocks_D[j].b_hat.copy() for j in range(T - 1)]
+        if start == "random":
+            bR = [blocks_R[t].random_boundary_point(xis_R[t], rng, projected)
+                  for t in range(T)]
+            bD = [blocks_D[j].random_boundary_point(xis_D[j], rng, projected)
+                  for j in range(T - 1)]
+        V_prev = np.inf
+        sweeps = 0
+        for sweep in range(max_sweeps):
+            sweeps = sweep + 1
+            # reward blocks: V is jointly linear in them, gradients depend only on bD
+            _, gR, _ = value_and_grads(bR, bD)
+            for t in range(T):
+                bR[t], _ = blocks_R[t].linear_min(gR[t], xis_R[t], projected)
+            # dynamic blocks: gradients depend on the other blocks -> refresh each
+            for j in range(T - 1):
+                _, _, gD = value_and_grads(bR, bD)
+                bD[j], _ = blocks_D[j].linear_min(gD[j], xis_D[j], projected)
+            V_now = value_and_grads(bR, bD)[0]
+            if V_prev - V_now < tol:
+                V_prev = V_now
+                break
+            V_prev = V_now
+        return float(V_prev), sweeps
+
+    V0, s0 = run("center")
+    vals = [V0]
+    for _ in range(n_restarts):
+        vals.append(run("random")[0])
+    return dict(V_low=float(min(vals)), V_from_center=V0,
+                restart_gap=float(max(vals) - min(vals)),
+                n_sweeps_center=int(s0))

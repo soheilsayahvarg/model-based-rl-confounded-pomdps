@@ -1,0 +1,171 @@
+{
+  "toy": {
+    "A1_bridge_residuals": {
+      "residual_bR": 1.2836953722228372e-16,
+      "residual_bD": 1.1102230246251565e-16
+    },
+    "A2_theorem35_identity": {
+      "always_a0": {
+        "V_dp": 1.8647999999999996,
+        "V_chain": 1.8647999999999993,
+        "abs_gap": 2.220446049250313e-16
+      },
+      "always_a1": {
+        "V_dp": 1.6944,
+        "V_chain": 1.6943999999999997,
+        "abs_gap": 2.220446049250313e-16
+      },
+      "obs_dependent": {
+        "V_dp": 2.1890399999999994,
+        "V_chain": 2.18904,
+        "abs_gap": 4.440892098500626e-16
+      },
+      "uniform": {
+        "V_dp": 1.505,
+        "V_chain": 1.5049999999999997,
+        "abs_gap": 2.220446049250313e-16
+      }
+    },
+    "A3_mc_vs_dp": {
+      "policy": "obs_dependent",
+      "V_dp": 2.1890399999999994,
+      "V_mc": 2.18823,
+      "stderr": 0.0017970986292681365,
+      "z": 0.4507265137303029
+    },
+    "A4_naive_bias": {
+      "always_a0": {
+        "V_true": 1.8648,
+        "V_naive": 2.105609,
+        "bias": 0.240809
+      },
+      "always_a1": {
+        "V_true": 1.6944,
+        "V_naive": 1.827233,
+        "bias": 0.132833
+      },
+      "obs_dependent": {
+        "V_true": 2.18904,
+        "V_naive": 2.421158,
+        "bias": 0.232118
+      },
+      "uniform": {
+        "V_true": 1.505,
+        "V_naive": 1.828952,
+        "bias": 0.323952
+      }
+    }
+  },
+  "big": {
+    "B2_bridge_selftest_worst_residual": 1.1102230246251565e-16,
+    "B3_mc_vs_dp": {
+      "policy": "guideline",
+      "V_dp": -0.001212294973126568,
+      "V_mc": -0.00032,
+      "stderr": 0.0016657811153531676,
+      "z": 0.5356615973746285
+    },
+    "B4_naive_bias_exit_criterion": {
+      "kappa=1.0": {
+        "N": 20000,
+        "behavior_mean_return": -0.055,
+        "visited_sa_pairs": 3620,
+        "table": {
+          "never_treat": {
+            "V_true": -0.380634,
+            "V_naive": -0.413811,
+            "bias": -0.033177
+          },
+          "all_interventions": {
+            "V_true": -0.128424,
+            "V_naive": -0.102122,
+            "bias": 0.026303
+          },
+          "guideline": {
+            "V_true": -0.001212,
+            "V_naive": -0.000885,
+            "bias": 0.000328
+          },
+          "uniform": {
+            "V_true": -0.275572,
+            "V_naive": -0.243979,
+            "bias": 0.031593
+          }
+        }
+      },
+      "kappa=0.0": {
+        "N": 20000,
+        "behavior_mean_return": -0.0601,
+        "visited_sa_pairs": 3617,
+        "table": {
+          "never_treat": {
+            "V_true": -0.380634,
+            "V_naive": -0.371096,
+            "bias": 0.009538
+          },
+          "all_interventions": {
+            "V_true": -0.128424,
+            "V_naive": -0.10475,
+            "bias": 0.023674
+          },
+          "guideline": {
+            "V_true": -0.001212,
+            "V_naive": -0.004174,
+            "bias": -0.002961
+          },
+          "uniform": {
+            "V_true": -0.275572,
+            "V_naive": -0.236618,
+            "bias": 0.038954
+          }
+        }
+      }
+    },
+    "B5_population_naive_structural_bias": {
+      "kappa=1.0": {
+        "never_treat": {
+          "V_true": -0.380634,
+          "V_naive": -0.369251,
+          "bias": 0.011383
+        },
+        "all_interventions": {
+          "V_true": -0.128424,
+          "V_naive": -0.119385,
+          "bias": 0.009039
+        },
+        "guideline": {
+          "V_true": -0.001212,
+          "V_naive": 0.002391,
+          "bias": 0.003603
+        },
+        "uniform": {
+          "V_true": -0.275572,
+          "V_naive": -0.268802,
+          "bias": 0.00677
+        }
+      },
+      "kappa=0.0": {
+        "never_treat": {
+          "V_true": -0.380634,
+          "V_naive": -0.375872,
+          "bias": 0.004762
+        },
+        "all_interventions": {
+          "V_true": -0.128424,
+          "V_naive": -0.130478,
+          "bias": -0.002054
+        },
+        "guideline": {
+          "V_true": -0.001212,
+          "V_naive": -0.00249,
+          "bias": -0.001278
+        },
+        "uniform": {
+          "V_true": -0.275572,
+          "V_naive": -0.276892,
+          "bias": -0.00132
+        }
+      }
+    }
+  }
+}

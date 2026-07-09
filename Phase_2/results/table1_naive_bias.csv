@@ -1,0 +1,13 @@
+env,setting,policy,V_true,V_naive,bias
+toy,N=200k,always_a0,1.8648,2.105609,0.240809
+toy,N=200k,always_a1,1.6944,1.827233,0.132833
+toy,N=200k,obs_dependent,2.18904,2.421158,0.232118
+toy,N=200k,uniform,1.505,1.828952,0.323952
+big,kappa=1.0,never_treat,-0.380634,-0.369251,0.011383
+big,kappa=1.0,all_interventions,-0.128424,-0.119385,0.009039
+big,kappa=1.0,guideline,-0.001212,0.002391,0.003603
+big,kappa=1.0,uniform,-0.275572,-0.268802,0.00677
+big,kappa=0.0,never_treat,-0.380634,-0.375872,0.004762
+big,kappa=0.0,all_interventions,-0.128424,-0.130478,-0.002054
+big,kappa=0.0,guideline,-0.001212,-0.00249,-0.001278
+big,kappa=0.0,uniform,-0.275572,-0.276892,-0.00132
