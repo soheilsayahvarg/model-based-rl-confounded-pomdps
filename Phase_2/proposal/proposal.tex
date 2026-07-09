@@ -1,0 +1,165 @@
+% Phase 2 Research Proposal  (course limit: at most TWO pages, excluding references)
+% Compile: pdflatex proposal.tex  (twice, for references)
+% All quantitative claims are drawn from experiments/*.json and are audit-verified.
+\documentclass[10pt]{article}
+
+\usepackage[
+    top=0.3in,
+    bottom=0.8in,
+    left=0.75in,
+    right=0.75in
+]{geometry}
+\usepackage{times}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+\setlist{nosep,leftmargin=*}
+
+\title{\textbf{Research Proposal}\\
+Causal Reinforcement Learning with Hidden Confounders and Partial Observability}
+\author{
+Team Members: Soheil Sayah Varg, Mahdi Shirinbayan, Mahdi Ostadmohammadi
+}
+\date{}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\section{Motivation}
+
+Offline reinforcement learning from logged data is unreliable when the behavior policy acted on information the
+learner never sees. In a partially observable MDP (POMDP) whose \emph{latent} state drives both the logged
+actions and the outcomes, the data are \emph{confounded}: a learner that treats the observation as the state
+systematically mis-estimates policy value, and no amount of data fixes the bias. This is the central obstacle
+to trustworthy offline RL in healthcare, operations, and any domain with unrecorded drivers of decisions.
+
+Hong, Qi \& Xu (ICML 2024)~\cite{hong2024} give an elegant theory for exactly this setting: using a
+pre-decision \emph{negative control} $O_0$, they identify the confounded POMDP's reward and transition models
+through two families of \emph{bridge functions} ($b_R$, $b_D$), then plan pessimistically over a
+policy-independent confidence region. The paper is, however, \emph{theory only} --- no algorithm, no code, no
+experiments. Its neighbors are likewise unrealized empirically for this exact pipeline: the closest follow-up
+runs the bridge \emph{estimator} in isolation~\cite{venkatesh2026}, and the pessimism precedent is
+theory-only and for the \emph{un}confounded case~\cite{guo2022}. Whether this appealing identification theory
+actually produces usable value estimates and policies at practical sample sizes is therefore open --- and is
+what we set out to test.
+
+% =====================================================================
+\section{Research Question}
+
+\emph{When the Hong--Qi--Xu confounded-POMDP framework is implemented end-to-end, does model-based bridge
+identification actually de-bias policy evaluation and yield good policies at practical sample sizes, and can
+its abstract pessimistic $\max$--$\min$ step be made computationally tractable?} Because the answer turns out
+to be \textbf{regime-dependent}, our concrete deliverable is to \emph{characterize where} de-biasing helps
+(strong confounding, exact identification) versus where estimation variance dominates and the method is beaten
+by a naive baseline (benchmark scale).
+
+% =====================================================================
+\section{Proposed Direction}
+
+\noindent\textbf{Contribution (capability, not primacy).} We build what is, to our knowledge, the first
+end-to-end empirical implementation that jointly estimates \emph{both} bridge families ($b_R$, $b_D$) via the
+paper's two-stage procedure and carries them through plug-in value identification to a tractable pessimistic
+policy-\emph{selection} step. We do \emph{not} claim primacy over concurrent model-based confounded-POMDP work
+(e.g.\ DPC-MBRL, which we have not reviewed). Per block, the pessimistic inner minimization is the standard
+ellipsoid support-function identity (exact because the stage-2 risk is quadratic and the plug-in value
+multilinear); our genuinely new content is a \emph{diagnosis} of a failure mode in the coupled multi-block
+minimization and an honest account of a signal-subspace remedy.
+
+\begin{itemize}
+  \item \textbf{Estimation (faithful).} Stage~1: conditional mean embedding $\hat\mu_{W_t|x}$ by kernel ridge
+  regression $+$ conditional density/pmf targets $\hat p(y_t|x_t)$. Stage~2: closed-form bridge solve
+  $\alpha = (G + N_2\lambda_2 I)^{-1}\hat p$, $G = (\Gamma^\top K_W \Gamma) \odot K_{Y''}$. \emph{Methods
+  finding:} the paper's RKHS hyperparameter schedules do \emph{not} transfer to the tabular class; we
+  grid-calibrate split $0.7{:}0.3$ ($\approx 2.3{:}1$, consistent with $N_1 \ge N_2$), $\lambda_1 = 1/N_1$,
+  $\lambda_2 = 0.03/\sqrt{N_2}$. Ill-posedness is monitored by the restricted-spectrum signal eigenvalue
+  $\hat\sigma_2$, \emph{not} $\mathrm{cond}(G)$ (which the structural null space pins flat).
+  \item \textbf{Tractable pessimism.} Confidence regions are exact ellipsoids centered at $\hat b$; the
+  per-block $\min$ is $V(\hat b) - \sqrt{\xi}\,\|g_\pi\|_{H^{-1}}$. The hard part --- the \emph{coupled}
+  multilinear $\min$ across blocks --- is solved by coordinate descent (reward blocks global, dynamic blocks
+  heuristic), so $V_{\mathrm{low}} \le V_{\mathrm{true}}$ is verified empirically, not certified.
+  \item \textbf{Environments/tools.} \emph{Primary:} the public \texttt{clinicalml/gumbel-max-scm} tabular
+  benchmark~\cite{oberst2019} (720 observable-core $\times$ 2 latent states, 8 actions, $T{=}3$; the latent
+  index drives dynamics/behavior but is censored from logs; a manufactured pre-decision $O_0$ satisfies the
+  negative-control assumption by construction, and a per-step noisy marker guarantees bridge existence ---
+  deterministic masking gives rank $720<1440$, no one-step bridges). \emph{Companion:} a minimal toy POMDP
+  ($|S|{=}2,|A|{=}2,|O|{=}3,T{=}3$) with exact oracle bridges --- the only substrate where recovery error is
+  measurable. Ground truth by dynamic programming on the latent SCM; NumPy, no GPU.
+\end{itemize}
+
+% =====================================================================
+\section{Proof of Concept}
+
+The pipeline is \textbf{already implemented and oracle-verified end-to-end}; all numbers below are from
+\texttt{experiments/*.json}.
+
+\begin{itemize}
+  \item \textbf{Oracle verification.} On the toy, true bridges reproduce the Theorem-3.5 chain value vs exact
+  DP to $4.4{\times}10^{-16}$; the population-limit solve recovers the oracle bridges to $3.0{\times}10^{-15}$;
+  primal/dual closed forms agree to $2.4{\times}10^{-15}$.
+  \item \textbf{Bridge recovery.} L2 error vs oracle decreases monotonically, $\mathrm{err}_{b_R}: 1.36\!\to\!
+  0.46$ and $\mathrm{err}_{b_D}: 0.73\!\to\!0.22$ over $N{=}1\mathrm{k}\!\to\!20\mathrm{k}$ (log-log OLS slopes
+  $N^{-0.36}$, $N^{-0.39}$; 3 seeds, per-seed spread persisted, CIs not yet reported).
+  \item \textbf{De-biasing (toy, where it works).} The plug-in beats the confounding-blind naive evaluator in
+  \textbf{12/12} $(N,\text{policy})$ cells; worst-policy plug-in bias $0.11\!\to\!0.03$
+  ($N{=}5\mathrm{k}\!\to\!50\mathrm{k}$) while naive stays $\approx 0.23$. (Naive bias itself is
+  $+0.14$ to $+0.33$ per policy, $8.1$--$22.0\%$ relative, flat in $N$ --- the target signal.)
+  \item \textbf{Pessimism --- the honest headline.} \emph{(Diagnosis, verified)} the literal $\max$--$\min$ is
+  uninformative at every width that \emph{contains} the truth: where the full-space region covers the true
+  bridges ($c\ge 0.1$), $V_{\mathrm{low}}$ blows up ($-1.12$ at onset, to $-1755$; true values
+  $\approx 1.5$--$2.2$) and mis-selects (regret $0.68$), because $|O|{>}|S|$ null directions carry ellipsoid
+  weight only $\lambda_2$. \emph{(Remedy is a heuristic, not a fix)} restricting to the identified signal
+  subspace keeps $V_{\mathrm{low}}$ informative ($1.35$ at $c{=}0.03$) and selects correctly (regret $0$, all
+  seeds), \emph{but} the true bridges leak $\approx 21\%$ of their norm out of the subspace, so the projected
+  region never contains the truth (honest joint coverage $=0$): a genuine \emph{coverage/informativeness
+  tension}, which we take as the honest finding rather than an overclaimed ``repair''.
+  \item \textbf{Benchmark boundary (negative, disclosed).} At $720{\times}2$ scale ($N\le 60\mathrm{k}$) the
+  plug-in is \emph{worse} than naive in \textbf{15/16} cells (14/16 vs the observable empirical naive); the harm
+  is largest under \emph{zero} confounding ($23$--$46\times$ the naive bias), where there is nothing to correct
+  --- so per-core estimation \emph{variance}, not the confounding signal, dominates at feasible $N$.
+\end{itemize}
+
+% =====================================================================
+\section{Risks and Fallback Plan}
+
+\begin{itemize}
+  \item \textbf{What might fail / is uncertain.} (i) \emph{Pessimism guarantees:} the coupled inner $\min$ is
+  heuristic and the signal projection excludes part of the truth, so $V_{\mathrm{low}}\le V_{\mathrm{true}}$ is
+  empirical, not certified --- we report leak, restart gaps, and the tension rather than overclaim. (ii)
+  \emph{Estimation variance at scale:} the benchmark negative result shows the estimator dominated by naive at
+  feasible $N$; the identified next step is cross-fitting / partial pooling to reduce the ratio/inversion
+  variance of the per-cell solve. (iii) \emph{Hyperparameters} are not computable from theory --- we
+  cross-validate $\lambda_1,\lambda_2$ and sweep $\xi$ against coverage curves, never claiming a theoretical
+  $\xi$. (iv) \emph{Baselines:} only a confounding-blind naive baseline is in place; adding a confounding-aware
+  proximal-OPE comparator is a rigor goal.
+  \item \textbf{Fallback ladder.} tabular-exact only $\to$ pessimistic \emph{selection} over fixed candidates
+  (avoids the intractable full optimization) $\to$ \emph{floor deliverable}: the oracle-verified bridge
+  estimation and toy de-biasing curves, which stand on their own as the first empirical characterization of
+  this framework, plus the diagnostic pessimism findings above.
+\end{itemize}
+
+% =====================================================================
+\begin{thebibliography}{9}
+\small
+\bibitem{hong2024} M.~Hong, Z.~Qi, Y.~Xu.
+\textit{Model-based Reinforcement Learning for Confounded POMDPs}. ICML, 2024.
+\bibitem{venkatesh2026} V.~Venkatesh, A.~Malikopoulos.
+\textit{Cross-fitted Proximal Learning for Model-Based Reinforcement Learning}. arXiv:2604.05185, 2026.
+\bibitem{guo2022} X.~Guo, M.~Cai, Z.~Yang, Z.~Wang.
+\textit{Provably Efficient Offline Reinforcement Learning for Partially Observable Markov Decision Processes}.
+ICML, 2022.
+\bibitem{oberst2019} M.~Oberst, D.~Sontag.
+\textit{Counterfactual Off-Policy Evaluation with Gumbel-Max Structural Causal Models}. ICML, 2019.
+\bibitem{shi2022} C.~Shi, M.~Uehara, J.~Huang, N.~Jiang.
+\textit{A Minimax Learning Approach to Off-Policy Evaluation in Confounded POMDPs}. ICML, 2022.
+\bibitem{bennett2024} A.~Bennett, N.~Kallus.
+\textit{Proximal Reinforcement Learning: Efficient Off-Policy Evaluation in POMDPs}.
+Operations Research, 2024.
+\bibitem{mastouri2021} A.~Mastouri et al.
+\textit{Proximal Causal Learning with Kernels}. ICML, 2021.
+\end{thebibliography}
+
+\end{document}
