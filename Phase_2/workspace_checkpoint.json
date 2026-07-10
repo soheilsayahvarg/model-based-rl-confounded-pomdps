@@ -1,0 +1,185 @@
+{
+  "project": "Phase 2 - Empirical Implementation of Dual-Bridge Function Identification and Ellipsoidal Pessimism in Confounded POMDPs (Hong-Qi-Xu ICML 2024, first end-to-end implementation)",
+  "last_updated": "2026-07-09 (3-AGENT UPGRADE ROUND: variance reduction + model-free baseline + reasoning-model doc; all backward-compatible, regression GREEN)",
+  "current_phase": "UPGRADED. Model-based vs model-free landscape now benchmarked. Deliverables added this round below (upgrade_round_agents).",
+  "documentation_consolidation": {
+    "date": "2026-07-10",
+    "action": "Workspace cleanup + single consolidated educational guide. DELETED the two earlier standalone write-up dirs (explanations/project_deep_dive.md and docs/methodology_supplement.{tex,pdf}) -- both were created earlier this session and are now superseded. Core assets (src/, poc/, experiments/, results/, theory/, external/, workspace_checkpoint.json, checkpoint_log.md) untouched; verified 13 core files intact after deletion.",
+    "new_asset": "proposal/detailed_project_guide.tex + detailed_project_guide.pdf",
+    "format": "article 11pt, 1in margins, NO page limit -> 10-page long-form pedagogical tutorial. Zero exotic LaTeX deps (amsmath/amssymb/booktabs/xcolor/enumitem/hyperref only); custom dependency-free 'takeaway' callout + 'intuition' macro. Table of contents.",
+    "audience": "reader who knows only basic RL (states/actions/rewards/MDPs); analogies-first, equations-second.",
+    "contents": "60-sec version; S1 confounding+POMDP from scratch (salesperson/ICU analogies; naive eval is BIAS not variance -> +0.14..0.33, 8-22%, flat-in-N); S2 bridges as O_0-windowed corrective lens, negative control before the decision, Fredholm ill-posedness, Stage-1/Stage-2 solve alpha=(G+N2 lam2 I)^-1 p_hat, WHY lambda regularizers exist + grid calibration (0.7:0.3, lam1=1/N1, lam2=0.03/sqrt(N2)) + cond(G) is a liar use sigma2; S3 |O|>|S| null-space -> ellipsoid needle -> vanilla V_low table -1.12..-1755, SVD signal-projection (0.000 regret) + honest 21% leak / coverage-vs-informativeness tension (heuristic not sound bound); S4 4.4e-16/3.0e-15/2.4e-15 oracle handshake, monotone error table + N^-0.36/-0.39, 12/12 toy, benchmark reversal (naive dominates, kappa=0 23-46x = variance-not-bias), js shrinkage 6x, MF under-identification. Epilogue: 3 lessons incl 'reasoning proposes, oracle disposes'.",
+    "verified": "compiles clean to 10 pages (twice for ToC; 22 ToC entries resolved; one cosmetic 0.35pt overfull, invisible); pages visually inspected (callout boxes + tables + math render correctly); every number cross-checked against code + experiments/*.json.",
+    "tone": "HONEST: signal-projection = useful heuristic with a measured price, benchmark = genuine negative (naive wins). No overclaiming."
+  },
+  "upgrade_round_agents": {
+    "date": "2026-07-09",
+    "protocol": "3 specialist agents PROPOSED designs; I implemented each backward-compatibly (new files / subclass flags, defaults byte-identical), verified against oracles, then ran a unified sweep. Pinned oracle math (oracle_module, toy_pomdp, bridge_estimator, value_plugin, ellipsoid_opt) UNTOUCHED; regression GREEN post-round (V1=4.4e-16, 12/12, V4 both PASS).",
+    "agent1_variance_reduction": {
+      "file": "src/estimation/shrinked_big_bridge_estimator.py -> ShrinkedBigBridgeEstimator(BigBridgeEstimator)",
+      "modes": "shrinkage='none'|'pool'|'js' (default none), tau_scale, pool_group='ta'|'marg', k_folds>=2 (cross-fit M2 out-of-fold / Ytab in-fold), cf_seed",
+      "math": "true M2 factors through a CELL-INDEPENDENT emission Em2, so per-(t,a) group rows share a 2-param family -> pool marker counts across cores x to a low-variance CONFOUNDING-AWARE prior, shrink each noisy cell row with EB weight w=n/(n+tau) ('pool') or JS w=max(0,1-tau_G/n) ('js'); det(M2) pushed toward well-conditioned det(M2_pool)=0.40*(r1_pool-r0_pool). Chain ops inherited unchanged.",
+      "default_byte_identical": "VERIFIED: bR max|diff|=0.0, _zk equal, _zvals 0.0 vs parent at N=8k",
+      "result_kappa1": "js HALVES MAE (0.22->0.08 at N=20k, 2.8x) and cuts across-seed std 6x (0.20->0.03); mean shrink w rises 0.26->0.46 as N grows (consistency preserved). RECOMMENDED MODE = 'js'.",
+      "honest_boundary": "NO variant beats the confounding-blind naive at benchmark N (naive ~0.002-0.008 MAE); js is best model-based but variance is the fundamental wall. 'pool' with fixed tau can HURT at kappa=0 (unconfounded data -> any deconfounding adds variance). Consistent with the Entry-9 boundary finding."
+    },
+    "agent2_model_free_baseline": {
+      "file": "src/baselines/model_free_proximal.py -> MinimaxValueBridgeOPE (Shi ICML 2022, chosen over Nair-Jiang for tabular tractability)",
+      "math": "policy-DEPENDENT value bridge b_V^[t](a,o) via tabular minimax GMM: E[b_V(A_t,O_t)|A_t,O_0] = E[(R_t + V_{t+1}(O_{t+1})) pi_e(A|O) | A_t,O_0], O_0 = past-proxy instrument. Collapses to per-stage regularized GLS beta=(A Wreg A^T + N rho I)^{-1} A Wreg c. BACKWARD recursion carries target-policy continuation; J = E_{o~nu_1}[V_1(o)] on the policy-INDEPENDENT initial marginal.",
+      "BUG_CAUGHT_BY_ORACLE": "First impl summed per-stage rewards against the BEHAVIOR marginal -> systematically biased off-policy (always_a0 -> 1.61 != 1.865, flat in N). Oracle DP check caught it; backward-recursion fix -> max|MF-V_true|=0.0076 @200k, CONSISTENT. (Documented as a live case study in reasoning_model_impact.md.)",
+      "imports_nothing_pinned": "cannot perturb V1/V4."
+    },
+    "agent3_reasoning_doc": "theory/reasoning_model_impact.md: honest analytical assessment (no o1/o3 used, no fabricated benchmarks) - reasoning helps DERIVATION/SYNTHESIS (tensor dims, vec-ordering, primal/dual identity, null-space spectral argument), does NOT replace EMPIRICAL verification (V1, the 21% leak, 15/16 negative, the MF off-policy bug all caught by RUNNING vs oracle). Thesis: 'reasoning proposes, the oracle disposes.'",
+    "new_artifacts": "poc/run_comprehensive_benchmark.py (sweep 5 kappa x 3 N x 3 seeds, 4 methods) -> experiments/results_comprehensive.json + results/figures/fig6_mb_vs_mf.png (MAE-vs-kappa @N=20k; MAE-vs-N @kappa=1)",
+    "comprehensive_result": {
+      "headline": "On the 720x2 benchmark, NAIVE dominates all bridge methods at every (kappa,N) (MAE 0.013-0.078, improving with N). This confirms + generalizes the Entry-9 boundary result across the full confounding range, not just kappa in {0,1}.",
+      "MB_plain": "0.079-0.175 MAE; does not beat naive anywhere at benchmark scale.",
+      "MB_js": "best model-based in several strong-confounding cells (kappa=0.25 N=60k: 0.052 vs plain 0.175; kappa=1 N=60k: 0.084 vs 0.119; kappa=0.5 N=60k: 0.059 vs 0.090) but NOISY across the grid -- the JS factor can over-shrink at small N (kappa=0.75 N=5k: 0.336). Net: variance-reduction helps at large N under confounding but is not a uniform win; still above naive.",
+      "MF_proximal": "WORST and FLATTEST (~0.165-0.180 at every N and kappa). Signature of UNDER-IDENTIFICATION: a binary O_0 proxy cannot pin the 1442-dim value bridge, so MAE does not improve with N (the MAE-vs-N panel shows a flat line while naive descends). A genuine finding: the model-free value-bridge OPE needs a RICHER proxy to scale; the model-based factored estimator sidesteps this by exploiting the core-diagonal 2x2 structure (only the binary marker is unknown per core).",
+      "MF_toy_consistency": "On the TOY (|O|=3, identified) MF is CONSISTENT: max|MF-Vtrue|=0.0076 @200k -- so the flatness is benchmark under-identification, not a code bug.",
+      "landscape_summary": "Model-based > model-free at benchmark scale (MF under-identified by the binary proxy), but BOTH are dominated by confounding-blind naive because per-cell/per-bridge estimation VARIANCE exceeds the small structural confounding bias at feasible N. Shrinkage (js) narrows the model-based gap under strong confounding but does not close it. The through-line of the whole project holds: variance, not identification, is the operative wall at 720x2."
+    }
+  },
+  "bigenv_scaling": {
+    "module": "src/estimation/big_bridge_estimator.py: three exact factorizations - (F1) hashed X_t (memory scales with data, never |X_t| ~ 2e9), (F2) core-diagonal bridge support (deterministic core channel => moment equations decouple per core), (F3) per-cell square 2x2 marker-x-O_0 systems in closed form (square design => no structural null space; signal projection = identity there). Sparse bD triplets -> dense 1442x1442 policy-folded chain operators (16MB), exact terminal self-loops",
+    "results_kappa1_N60k": "bR RMSE (ok cells) ~ 1.0-1.2 (noise-dominated; ok-cell set composition changes with N), ok-cell frac 0.60 -> 0.74; plug-in |bias| 0.006-0.12 (AUDITED range across kappa/N/policies) vs population-naive structural bias 0.004-0.011",
+    "HONEST_BOUNDARY_FINDING": "At 720x2 scale with N <= 60k, per-cell estimation VARIANCE exceeds the (small) structural confounding bias it removes - de-biasing pays off under strong confounding (toy regime) but not at mild confounding + feasible N. Reportable 'when does it break' result; identified fix: cross-fitting (Venkatesh-Malikopoulos) / partial pooling across cells - future work, NOT claimed",
+    "results_file": "experiments/results_bigenv.json"
+  },
+  "deliverables": {
+    "figures": "results/figures/fig1_naive_bias.png (toy + benchmark kappa contrast), fig2_bridge_recovery.png (log-log vs N + N^-1/2 guide), fig3_value_debias.png (naive vs plug-in |bias| across N), fig4_pessimism.png (coverage + regret vs c, vanilla vs projected)",
+    "tables": "results/table1_naive_bias.csv .. table5_bigenv_debias.csv",
+    "proposal": "proposal/proposal.pdf - COMPILED, exactly 2 pages: verified claim + differentiation list, grid-calibrated hyperparameters, sigma2 spectrum rule, Eq.-17 blow-up + signal-projection repair as contributions, benchmark boundary result stated honestly",
+    "validation_suites": "poc/run_phase1_check.py, run_phase2_check.py, run_phase34_check.py, run_bigenv_check.py (all green), poc/plot_results.py"
+  },
+  "phase3_value_plugin": {
+    "module": "src/estimation/value_plugin.py: plugin_value(bR, bD, pi_obs, p_o1) -- Theorem-3.5 chain as exact einsum contractions; forward G_t / backward Hb_t recursions give V = G_1.Hb_1 AND exact per-block gradients (gR[t] = pi (x) r (x) G_t depends only on b_D -> all reward blocks minimize jointly; gD[j] = pi (x) G_j (x) Hb_{j+1})",
+    "V1_true_bridges_vs_DP": "4.4e-16 max gap across all candidate policies (einsum == enumeration == DP)",
+    "V2_debiasing": {
+      "result": "plug-in |bias| < naive |bias| in 12/12 (N, policy) cells; naive bias FLAT in N (structural +0.13..+0.33), plug-in bias SHRINKS with N",
+      "worst_policy_plugin_bias": {"N=5000": 0.1105, "N=20000": 0.0566, "N=50000": 0.0314},
+      "note": "plug-in slightly negative-biased on 3 policies (ridge shrinkage), converging to 0"
+    }
+  },
+  "phase4_pessimism": {
+    "modules": "src/pessimism/ellipsoid_opt.py (BlockEllipsoid: H = T2 + lam2*I, exact ellipsoid, closed-form linear min b_hat - sqrt(xi)*H^{-1}g/||g||_{H^-1}, optional signal-subspace projection; pessimistic_value: blockwise coordinate descent + multi-restart) + src/pessimism/pessimistic_optimizer.py (sigma2-calibrated widths xi_t = c/(N2*sigma2_t), coverage instrumentation, selection harness)",
+    "HEADLINE_FINDING_vanilla_eq17_blowup": "The literal anchor Eq.-17 joint minimization is catastrophically loose at coverage-guaranteeing widths: at the smallest c with joint coverage=1 (c=0.1), V_low(best policy) = -1.12 (outside the feasible [0,3] value range!) and selection regret = 0.684; V_low diverges (-61 at c=1, -1755 at c=10). Mechanism: structural |O|>|S| null directions have H-weight only lam2; the JOINT multilinear min couples null perturbations across blocks (b_D moves rotate the chain state off the emission row-space, making downstream null components value-relevant). Verified by restart-gap growth (1e-13 -> 38).",
+    "REPAIR_signal_projected_pessimism": "Restrict each region to the empirically identified signal subspace (per-action eigengap eigenvectors of the design (x) identity on the index space -- Nair-Jiang-style rank restriction, built from the SAME spectra as the sigma2 width rule; no oracle input). Result: joint coverage onset improves 0.1 -> 0.03 (truth's projection covered at 3x smaller widths since null-direction junk excluded), and AT the coverage onset c=0.03: V_low informative (1.346 for best policy), ZERO selection regret, all lower bounds valid, restart gaps ~1e-12. Vanilla has NO c with coverage=1 AND regret=0.",
+    "V4_foundational_guarantee": "V_low <= V_true holds for ALL policies, seeds, and c values in BOTH variants (PASS; asserted under joint coverage, empirically true everywhere)",
+    "policy_rankings_operating_point_projected_c0.03_N20k": {
+      "V_low": {"obs_dependent": 1.3456, "uniform": 0.9557, "always_a0": 0.9423, "always_a1": 0.8448},
+      "V_true": {"obs_dependent": 2.189, "always_a0": 1.8648, "always_a1": 1.6944, "uniform": 1.505},
+      "selected": "obs_dependent (correct, all 3 seeds)",
+      "suboptimality": 0.0
+    },
+    "coverage_curves_joint": {
+      "vanilla": {"c=0.001": 0.0, "c=0.01": 0.0, "c=0.03": 0.67, "c=0.1": 1.0, "c>=0.3": 1.0},
+      "projected": {"c=0.001": 0.0, "c=0.01": 0.0, "c=0.03": 1.0, "c>=0.1": 1.0}
+    },
+    "suboptimality_curves": {
+      "vanilla": {"c<=0.03": 0.0, "c>=0.1": 0.684},
+      "projected": {"c<=0.03": 0.0, "c=0.1": 0.228, "c>=0.3": 0.684},
+      "plugin_selection": 0.0
+    },
+    "caveat": "V_low <= V_true is verified EMPIRICALLY (V4: all policies/seeds/widths, both variants), NOT algorithmically certified. AUDIT-CLARIFIED (Entry 8): the blockwise coordinate-descent min UPPER-bounds the exact inner min (reward blocks solved globally & exactly; the T-1 coupled dynamic blocks heuristically), so even at c >= coverage onset -- where the truth is feasible and the EXACT inner min would be <= V_true -- the computed V_low could in principle exceed V_true (canonical stall: min of x*y over [-1,1]^2 from the origin returns 0, not -1). restart_gap monitors non-global stalls (~1e-12 at the c=0.03 projected operating point, so empirically tight here). Below coverage onset, validity additionally leans on plug-in near-unbiasedness. The projected variant stays informative where vanilla does not."
+  },
+  "audit_entry9_4lens": {
+    "date": "2026-07-09",
+    "method": "4 lens-specific reviewers (theory / software-perf / empirical-skeptic / peer-review). Every high finding independently RE-VERIFIED by me with direct computation before acting (reviewers not rubber-stamped either). This round found MORE than Entry 8 -- two genuine high-severity issues that materially change the honest story.",
+    "MAJOR_REFRAME_projected_pessimism_NOT_a_sound_repair": {
+      "finding": "Agent A (high, verified by reproducing the unit-test AND measuring real-data leak): the signal-PROJECTED region structurally EXCLUDES the true bridge whenever it leaks out of the identified subspace. On the real toy the true bridges leak up to 21% of their norm (bR_t3 leak 0.38 / norm 1.80). So the projected region NEVER honestly contains the truth.",
+      "consequence": "The Entry-5 headline 'signal-projected repair achieves coverage=1 at c=0.03' was an ARTIFACT of coverage_report checking only the truth's PROJECTION. With honest leak-gating (coverage requires leak <= 5% of ||b_true||), projected joint_coverage = 0 at ALL widths. The projection is a HEURISTIC, not a sound pessimistic bound: it keeps V_low informative and empirically selects the right policy (regret 0 at c=0.03, all seeds), and V_low <= V_true still held empirically at every width -- but by SIGN-ALIGNMENT, not containment. Honest headline is now a COVERAGE/INFORMATIVENESS TENSION: vanilla covers the truth (c>=0.1) but V_low blows up and mis-selects (regret 0.68); projected stays informative and selects correctly but never covers.",
+      "fixes": "coverage_report now gates 'covered' on BOTH in-subspace fit AND small leak (leak_frac_tol=0.05); returns max_subspace_leakage. BlockEllipsoid docstring: removed the unverified 'value-irrelevant' premise, added SOUNDNESS CAVEAT. proposal PoC(v) fully rewritten (heuristic not repair). fig4 relabeled 'coverage/informativeness tension'. This is DISTINCT from Entry-8's coordinate-descent finding (that was about not reaching the global inner min; this is about the feasible set excluding the truth)."
+    },
+    "MAJOR_REFRAME_benchmark_more_negative": {
+      "finding": "Agent C (high, verified): the plug-in is WORSE than naive in 15/16 benchmark cells vs population-naive (14/16 vs empirical-naive), not a wash. Harm is largest at kappa=0 (NO confounding): 23-46x the naive bias at N=20k. Plug-in bias also non-monotone in N (grows 20k->60k for 2/4 policies).",
+      "consequence": "Entry-6/8 framing 'variance merely exceeds the small structural bias' UNDERSTATED it -- the estimator is strictly dominated by naive at every feasible-N benchmark point, worst where there is nothing to correct. Entry-8's 'mass_frac 0.32 => more favorable boundary' was a red herring (Agent C-low, is_new=false): high-traffic ok-cells did NOT translate to better value estimates.",
+      "fixes": "proposal (vi) reframed as an explicit NEGATIVE result with the 15/16 count + kappa=0 harm + non-monotonicity; research question (Sec 1) now poses 'characterize WHERE it helps vs where variance dominates' so the negative benchmark answer is a stated deliverable. New fig5_bigenv_failure.png plots plug-in vs naive side-by-side (the failure is now visible, not buried in a CSV). Only baseline is confounding-blind naive -- no confounding-AWARE baseline exists (Agent C-med, acknowledged as a limitation; proposal does not claim to beat any confounding-aware method)."
+    },
+    "peer_review_reframes_agentD": {
+      "novelty": "'first end-to-end ... by any method' depended on the unread DPC-MBRL -> reframed as a CAPABILITY claim ('first empirical demonstration that BOTH bridge families can be carried through to a tractable pessimistic selection step; we do not claim primacy over concurrent work we have not reviewed').",
+      "contribution_size": "ellipsoidal-pessimism per-block reduction is the STANDARD ellipsoid support-function identity -> now stated as such; novelty relocated to the empirical diagnosis (Eq.-17 blow-up) + the coverage/informativeness finding.",
+      "number_fix": "toy naive bias '+0.13 to +0.32 (7.8-21.5%)' was WRONG on both ends -> corrected to '+0.14 to +0.33 (8.1-22.0%)' (verified from raw JSON)."
+    },
+    "software_fixes_agentB": "fallback_mass_frac was computed-but-never-read -> plumbed into run_bigenv_check + results (ok_mass_frac). Added a feasible-range assert on big-env plug-in values (catches gross chain transposes; the chain itself was independently hand-traced correct by Agent A this round + Entry 8). Guarded the eigengap empty-ratios edge case (crash guard only; did NOT add the k_floor change that would have altered real results). Persisted per-seed std in run_phase2 (C-med).",
+    "theory_confirmations_agentA": "Independently re-verified correct: stage-2 primal/dual (2.8e-16), value-plugin gradients (FD 3.x e-10), big-env chain ops (hand-trace), NaN/singularity reachability. Half-Hessian wording fixed (H = T2+lam2 I is HALF the Hessian; quadratic form still exact).",
+    "revalidation": "ALL suites re-run GREEN after fixes: phase1 OK, phase2 PASS (eigengap guard inert on real data), phase34 V1=4.4e-16/V2=12-12/V4 both PASS (V4:projected now VACUOUS -- projected never jointly covers, which is the honest state), bigenv feasible-range assert holds. Figures regenerated (fig4 honest, fig5 new). Proposal recompiled to 2 pages.",
+    "confidence": "HIGH on correctness (no functional bug; all math independently re-verified), and the artifacts are now substantially MORE HONEST than after Entry 8: the projected 'repair' is correctly downgraded to a heuristic, and the benchmark result is correctly stated as a negative (dominated by naive). The pessimism CONTRIBUTION is weaker than previously framed but far more defensible: a verified diagnosis + an honest coverage/informativeness tension."
+  },
+  "audit_entry8_final_polish": {
+    "date": "2026-07-09",
+    "method": "4 independent refute-oriented reviewers (workflow wf_8072ef78) cross-referencing each core math file against the anchor digest + a proposal-number auditor vs raw JSON; findings then verified by me on the merits (not rubber-stamped).",
+    "verdicts": {
+      "value_plugin.py": "CONFIRMED_CORRECT (independent FD gradient test <4e-10 + brute-force nested contraction 1e-15). 2 low doc findings fixed.",
+      "big_bridge_estimator.py": "CONFIRMED_CORRECT (chain ops folded_operator/_reward_head independently hand-traced; tower-property validity of the no-H_{t-1} conditioning confirmed). 1 nit (metric) + 2 low (documented deviations) addressed.",
+      "ellipsoid_opt.py": "1 MEDIUM (framing: V_low is not a certified lower bound -- coordinate descent upper-bounds the exact inner min), 1 low (U orthonormality unchecked), 1 nit (cholesky). Framing already honest in code; hardened.",
+      "proposal.tex": "2 number-bracket errors + 1 code/proposal drift + phrasing -- all fixed."
+    },
+    "fixes_applied": [
+      "value_plugin: reward_levels ORDERING contract documented (not just SET); assert-scope comment corrected (self-consistency only; convention validated externally by run_phase34 V1)",
+      "ellipsoid_opt: added per-action orthonormality ASSERT in _build_U (was unchecked assumption; passes -- eigh vectors orthonormal, confirmed by V4:projected running to completion); module docstring GUARANTEE SCOPE block added (V_low upper-bounds exact inner min; empirical not certified)",
+      "big_bridge: added fallback_MASS_frac (visit-weighted) alongside fallback_cell_frac; docstring corrected (was claiming 'value mass' but computed unweighted cell fraction); Thm 4.2 rate-void caveat made explicit for the no-split deviation",
+      "proposal: '7-22%'->'7.8-21.5%' (raw range); rate 'N^-0.40'->'N^-0.39' with OLS method stated (4-pt OLS: errR -0.365, errD -0.392; prior -0.40 was 2-pt-endpoint only); 'N1>>N2'->'2.3:1, consistent with N1>=N2'; REMOVED false 'Woodbury correction' claim (code uses dense Cholesky; off-span handled by signal projection); (iv) scoped to 'toy'; 'catastrophically loose'->'loose enough to be uninformative' + true-value anchor; (vi) reworded as qualitative + backed with the 0.006-0.12 vs 0.004-0.011 numbers; 'exceeds all published work'->'to our knowledge, goes beyond'; 'first...' hedged 'to our knowledge'"
+    ],
+    "revalidation": "run_phase34_check re-run GREEN after all edits: V1=4.4e-16, V2=12/12, V4 both variants PASS (orthonormality assert exercised via V4:projected). big_bridge fit smoke-tested (N=3k): fallback_cell_frac=0.68 but fallback_mass_frac=0.32 -- deconfoundable cells are the high-traffic ones, a MORE favorable boundary picture than the cell fraction implied. Proposal recompiled to exactly 2 pages.",
+    "no_functional_bugs_found": "No finding produced a concrete failing input on a real code path. All fixes are documentation accuracy, defensive hardening, honest-framing, and proposal-number corrections. The medium ellipsoid finding is a genuine conceptual clarification (already reflected honestly in the code docstring and the proposal's challenges section)."
+  },
+  "completed_modules": [
+    "Phase 0: workspace scaffold + proposal/proposal.tex (dual-bridge + ellipsoidal-pessimism framing, verified claim)",
+    "Phase 1: src/envs/simulated_env.py (benchmark tabular SCM 720x2+2 terminals, O_0 negative control, kappa confounding knob) - TESTED",
+    "Phase 1: src/envs/toy_pomdp.py + src/envs/oracle_module.py - bridges verified 1e-16, Theorem-3.5 chain 4.4e-16, naive structural bias isolated (results_phase1.json)",
+    "Phase 2: src/estimation/bridge_estimator.py - two-stage estimator, tabular one-hot instantiation, primal (operator Eq.12) + dual (representer alpha) closed forms - ALL CHECKS PASSED",
+    "Phase 2: poc/run_phase2_check.py - population-limit test, primal/dual equivalence, N-scaling sweep, O_0-noise sweep (results_phase2.json)"
+  ],
+  "phase2_estimation": {
+    "estimator_api": "TabularBridgeEstimator(n_obs, n_act, n_o0, n_r, T, lambda1, lambda2, split_frac, mode, dual_cap, seed).fit(O0, O, A, R) -> .bridges() = (bR_hat (T,a,o~,r,o), bD_hat (T-1,a,o~,o~',o)); .diagnostics = per-stage cond numbers",
+    "stage1_closed_forms": "ridge CME mu_hat(w|x) = count1(w,x)/(count1(x) + N1*lambda1) [push-through-equivalent to Gamma = (K_X+N1 lam1 I)^{-1} K_XX']; pmf target p_hat(y|x) = MLE counts with marginal fallback (unseen-x rows are inert: mu_hat = 0)",
+    "stage2_closed_forms": "DUAL: G = (M_hat^T M_hat) hadamard K_Y'' (= Gamma^T K_W Gamma hadamard K_Y'' under delta kernels); alpha = (G + N2 lam2 I)^{-1} p_hat_vec; b = sum_n alpha_n psi_n. PRIMAL: (T2 + lam2 I) vec(b) = g2, T2 = Psi^T Psi/N2, D = |W||Y| <= 54. Verified identical to 2.4e-15",
+    "hyperparameters_calibrated": {
+      "split_frac": 0.7,
+      "lambda1": "1/N1 (parametric-rate pseudo-count; N^{-1/2} schedules over-shrink tabular CME 80% at t=3)",
+      "lambda2": "0.03/sqrt(N2) (must dominate stage-1 noise leaking into weakly-identified directions, decay slower than 1/N; grid-calibrated, see checkpoint_log entry 4)",
+      "grid_evidence": "split 0.7 > 0.5 (confirms anchor's N1 >> N2 prescription); lambda1 insensitive in tested range"
+    },
+    "verification_results": {
+      "P0_population_limit": "3.0e-15 max gap vs oracle pinv bridges, ALL stages/families -> estimator target structurally EXACT (min-Frobenius-norm solution decouples per (a,y)-slice = oracle pinv)",
+      "P1_primal_dual_equivalence": "2.4e-15",
+      "P2_scaling_sweep_mean3seeds": {
+        "errR_total": {"1000": 1.3601, "5000": 0.7748, "10000": 0.5807, "20000": 0.4592},
+        "errD_total": {"1000": 0.7321, "5000": 0.4223, "10000": 0.3116, "20000": 0.223},
+        "oracle_norms": {"bR": 1.803, "bD": 1.321},
+        "empirical_rate": "~N^{-0.36..-0.40}, MONOTONE decrease at every step - EXIT CRITERION MET",
+        "cond_T2_reg": "grows with N (30->113 for bR_t1): lambda2 decays so the structural null space (|O|>|S| rank deficiency) is progressively exposed; expected, not pathological"
+      },
+      "P3_O0_noise_sweep_N10k": {
+        "errR_stage1": {"nu=0.05": 0.1278, "nu=0.15": 0.2008, "nu=0.30": 0.4802, "nu=0.45": 1.2564},
+        "errR_stage3": {"nu=0.05": 0.4406, "nu=0.45": 0.471},
+        "interpretation": "10x degradation at stage 1 as the negative control saturates (X_1 = (a_1, o_0) has no other latent channel); later stages barely affected (history compensates) - matches completeness theory",
+        "IMPORTANT_DIAGNOSTIC_FINDING": "cond(T2 + lam2 I) stays FLAT (~7.7-8.0e1) across the nu sweep because eig_min is pinned at ~0 by the STRUCTURAL null space; the regularized condition number is NOT a sufficient ill-posedness monitor. The informative statistic is the smallest SIGNAL singular value (per-(a)-slice sigma_2 of the design). Feed this into the pessimism-width design (condition-number-driven xi must use the restricted spectrum)."
+      }
+    },
+    "active_tensor_shapes": {
+      "toy_bridge_tables": "bR_hat (3, 2, 3, 2, 3) [t,a,o~,r,o]; bD_hat (2, 2, 3, 3, 3) [t,a,o~,o~',o]",
+      "stage_design": "Psi (N2, D) with D = |W||Y| = 36 (bR) / 54 (bD); T2 (D,D); dual G (N2,N2) formed iff N2 <= 3000",
+      "X_t_sizes_toy": "|X_1|=4, |X_2|=24, |X_3|=144 (grows (n_obs*n_act)^{t-1} * n_act * n_o0)"
+    }
+  },
+  "loaded_parameters": {
+    "source_pickle": "external/gumbel-max-scm/data/extracted/diab_txr_mats-replication.pkl",
+    "tx_mat": "(2, 8, 720, 720) row-stochastic (verified)",
+    "rdest": "(720,) in {-1,0,+1}: 416 neg-terminal, 1 pos-terminal destinations",
+    "p_initial_state": "(2, 720); p_mixture [0.8, 0.2]"
+  },
+  "environment_knobs": {"T": 3, "q0": 0.3, "q1": 0.7, "eps0": 0.15, "kappa": "confounding knob", "tau": 0.15, "eps_u": 0.05},
+  "next_mathematical_steps_NOT_STARTED": [
+    "1. Scale to the 720x2 benchmark env: X_t encoding needs factored/sparse representation (|X_t| explodes: 8*(1442*8)^{t-1}*2); practical variants: truncated-history or (A_t, O_t-recent, O_0) conditioning with documented bias; bridge solves stay per-x block-decoupled (2x2 marker inversion structure)",
+    "2. Headline figures for the paper: (i) bridge error vs N [DONE, results_phase2.json]; (ii) value bias naive-vs-plugin vs N [DONE, results_phase34.json V2 -- plot it]; (iii) coverage + suboptimality vs c, vanilla vs projected [DONE, V3 -- plot it]; (iv) big-env de-biasing vs kappa [TODO after step 1]",
+    "3. Proposal fill-in: PoC results table (V2 + V3 tables), the two methods findings (hyperparameter schedule transfer; vanilla-Eq.17 blow-up + signal-projection repair) as contributions",
+    "4. Optional stretch: sigma2-adaptive per-stage c (currently global multiplier); O_0-noise x pessimism interaction study (does the projected variant degrade gracefully as nu -> 0.5?)"
+  ],
+  "resume_instructions": "END-TO-END PIPELINE DONE on toy (rerun poc/run_phase1_check.py, run_phase2_check.py, run_phase34_check.py to verify; ~6 min total). Resume at next_mathematical_steps_NOT_STARTED[1] (big-env scaling). Data format (o_0, o_1, a_1, r_1, ..., o_T, a_T, r_T); NEVER pass S/U diagnostics to estimators. Defaults: split 0.7, lam1 = 1/N1, lam2 = 0.03/sqrt(N2), mode='auto' (dual iff N2<=3000); pessimism operating point: signal_projection=True, c at the projected coverage onset (0.03 on toy at N=20k).",
+  "fallbacks": {
+    "if_pickle_missing_on_resume": "Re-extract external/gumbel-max-scm/data/diab_txr_mats-replication.zip or re-clone repo",
+    "scope_ladder": "(1) tabular-exact only; (2) pessimistic SELECTION over fixed candidates instead of optimization; (3) floor = oracle-verified bridge estimation + value de-biasing curves (bridge-error half is ALREADY DONE)"
+  }
+}

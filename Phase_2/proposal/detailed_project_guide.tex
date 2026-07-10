@@ -1,0 +1,558 @@
+% detailed_project_guide.tex
+% A long-form, pedagogical tutorial guide to our Phase-2 project.
+% No page limit. Compile: pdflatex detailed_project_guide.tex  (run twice for the ToC/refs)
+% Zero exotic dependencies -- compiles on any standard TeX Live install.
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\setlist{itemsep=2pt,topsep=3pt}
+
+% A dependency-free "callout" for intuitions and takeaways: a light rule-bounded
+% quotation with a bold lead-in. Compiles anywhere; no tcolorbox/mdframed needed.
+\newenvironment{takeaway}
+  {\par\vspace{4pt}\noindent\begin{center}\begin{minipage}{0.94\linewidth}%
+   \color{black!88}\rule{\linewidth}{0.7pt}\par\vspace{3pt}\small\itshape}
+  {\par\vspace{3pt}\rule{\linewidth}{0.7pt}\end{minipage}\end{center}\vspace{4pt}}
+
+\newcommand{\intuition}[1]{\vspace{2pt}\noindent\textbf{Intuition.}\ #1\par\vspace{2pt}}
+\newcommand{\Ob}{O_0}
+
+\title{\vspace{-1.5em}\textbf{From Hidden Confounders to Honest Answers}\\[0.3em]
+\large A Ground-Up Guide to Our Confounded-POMDP Project}
+\author{Deep RL Project (Phase 2) --- Sharif University of Technology\\
+S.~Sayah Varg, M.~Shirinbayan, M.~Ostadmohammadi}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent This is a self-contained tutorial. If you know what \emph{states},
+\emph{actions}, \emph{rewards}, and \emph{MDPs} are, you know enough to read every
+word of it. Everything else is built up from scratch --- analogies first, equations
+second. We explain the problem our project attacks (learning from decision logs
+poisoned by a hidden variable), the elegant 2024 theory we implemented to fix it,
+the place where that theory quietly explodes when you actually run it, the repair we
+invented, and --- being honest --- the sobering limits of both the repair and the
+whole approach. Read it top to bottom like a story; each section sets up the next.
+\end{abstract}
+
+\tableofcontents
+\vspace{1em}
+
+% =====================================================================
+\section*{The 60-Second Version}
+\addcontentsline{toc}{section}{The 60-Second Version}
+
+We do \textbf{offline reinforcement learning}: we have a big log of decisions someone
+already made (say, doctors treating patients) and we want to judge \emph{new}
+strategies without ever running them for real. The catch is that the log is
+\textbf{poisoned by a hidden variable} --- something the historical decision-maker
+could see and react to, but which was never written down. That hidden variable makes
+the naive way of scoring strategies \emph{systematically wrong}, and no amount of
+extra data fixes it. A 2024 paper (Hong, Qi \& Xu) proposed an elegant cure using two
+objects called \textbf{bridge functions} plus a special ``before-the-decision''
+measurement. It was pure theory. \textbf{We built it, ran it, and stress-tested it},
+found where the math explodes in practice, invented a fix, and honestly mapped where
+the fix (and the whole method) helps versus where it loses to a dumb baseline.
+
+% =====================================================================
+\section{The Intuitive Problem: Confounding and Partial Observability}
+
+\subsection{The comfortable world: a normal MDP}
+In a standard \textbf{Markov Decision Process (MDP)} you see the full \textbf{state}
+$s$, take an \textbf{action} $a$, get a \textbf{reward} $r$, and the world moves to
+$s'$. ``Markov'' means the state holds everything relevant: given $s$ and $a$, the
+future ignores the past. Here, offline RL is easy in principle: collect a log of
+$(s,a,r,s')$, average ``after state $s$ and action $a$, what happened,'' and you can
+score any strategy. The quiet assumption baking this cake is that \textbf{you can see
+the whole state}. That is exactly what breaks in reality.
+
+\subsection{Two things go wrong at once}
+\textbf{Partial observability.} You rarely see the true state $s$. In an ICU you see
+\emph{vital signs} $O$ (the observation), but the true physiological state $s$ is
+hidden --- vitals are a blurry shadow of it. A system where you see only observations
+of a hidden state is a \textbf{POMDP} (Partially Observable MDP).
+
+\textbf{Confounding.} Here is the killer. The doctor who generated your log
+\emph{could see more than you can}: training, intuition, an unrecorded sense of how
+sick the patient ``really'' was. They used that hidden information to \emph{choose the
+treatment}, and the same hidden information also drove the \emph{outcome}. A hidden
+variable that touches both the action and the outcome is a \textbf{confounder}. It is
+the single most dangerous thing in causal inference.
+
+\subsection{An analogy that makes it click}
+You study a company's sales logs to decide whether sending a salesperson to a client
+is worth it. You notice: \emph{visited clients almost always buy}. Naive conclusion:
+\emph{visiting works, send salespeople to everyone!} But a hidden variable the sales
+manager saw and you cannot: \textbf{which clients were already eager to buy}. The
+manager sent salespeople \emph{precisely} to the clients about to buy anyway. The
+visits did not cause the sales --- the hidden ``eagerness'' caused both the visit and
+the sale. Roll out ``visit everyone'' and you will be disappointed, because you now
+visit un-eager clients too. That hidden eagerness is the confounder; it made your log
+say visiting is magic when it is not. This is exactly our situation, with doctors,
+treatments, and hidden patient severity.
+
+\subsection{Why naive evaluation is \emph{systematically} biased (not just noisy)}
+This is the point people underestimate. When you score a new strategy naively ---
+treating the observation $O$ as the state and averaging log outcomes --- you do not
+get a \emph{noisy} answer that averages out with more data. You get a \textbf{biased}
+answer that stays wrong \emph{no matter how much data you collect}. The reason: the
+log's actions are correlated with the hidden confounder, and so are the outcomes, so
+your average silently mixes ``the effect of the action'' with ``the effect of the
+hidden thing that made this action get chosen.'' More data just estimates \emph{the
+wrong number} more precisely.
+
+In our experiments this is concrete. On our controllable test environment (the
+``toy''), the naive evaluator over-scores policies by $+0.14$ to $+0.33$ in value
+units ($8\%$ to $22\%$ relative), and this bias is \textbf{flat as $N$ grows}: at
+$N=5{,}000$ and $N=50{,}000$ it barely moves. That flatness is the fingerprint of
+\emph{bias}, not variance --- variance shrinks with data, bias does not.
+
+\begin{takeaway}
+Offline RL breaks when a hidden variable drove both the logged actions and the
+outcomes. The naive ``pretend the observation is the state'' evaluator is then
+\emph{systematically} biased, and --- unlike noise --- that bias never washes out
+with more data. That is the enemy.
+\end{takeaway}
+
+% =====================================================================
+\section{The Anchor's Core Solution: The Dual-Bridge Idea}
+
+Our project builds on \textbf{Hong, Qi \& Xu, ``Model-based RL for Confounded
+POMDPs'' (ICML 2024)} --- the ``anchor paper.'' It gives a beautiful way to
+un-poison the log. We build it up in plain language before any equation.
+
+\subsection{The secret ingredient: a ``negative control'' taken \emph{before} the decision}
+The trick starts with an extra measurement we call $\Ob$: a reading taken
+\emph{before the first action is chosen} --- a snapshot at the very start.
+
+\intuition{Because $\Ob$ happens \emph{before} the doctor acts, it is a clean
+``echo'' of the hidden state that is \textbf{not contaminated by the decision}. It is
+like a \textbf{fingerprint of the hidden state, taken at the door before the crime}.
+It does not reveal the hidden state directly (it is noisy), but it is correlated with
+it \emph{and} untainted --- exactly what lets us correct for a variable we never
+actually observe.}
+
+In causal-inference language $\Ob$ is a \textbf{negative control} (or \emph{proxy}).
+Its formal job (the paper's Assumption~3.1) is: \emph{given the true hidden state and
+the action, $\Ob$ is independent of the later observations, next-states, and
+rewards}. In words: once you know the hidden truth, the early fingerprint tells you
+nothing new. All of $\Ob$'s value is that it is an untainted window onto the hidden
+state --- nothing sneaky.
+
+\subsection{What a ``bridge function'' actually is}
+Now the centerpiece: two \textbf{bridge functions}, $b_R$ (reward bridge) and $b_D$
+(dynamics bridge).
+
+\begin{takeaway}
+A bridge function is a \textbf{re-expression of a hidden-state quantity purely in
+terms of things you can see}, built so that its average --- \emph{viewed through the
+lens of the negative control $\Ob$} --- matches a quantity you can measure from data.
+\end{takeaway}
+
+\intuition{You want to know something about the hidden state (e.g.\ the true reward a
+policy would earn), but you only see observations. A bridge function is a
+\textbf{corrective lens}: a function of the \emph{observed} variables shaped so that
+looking at it \emph{through the $\Ob$ window} reproduces the real conditional
+probabilities in the data. The deep theorem says: if a function of observables
+reproduces the observable data when viewed through $\Ob$, then that same function
+reproduces the \emph{hidden-state} quantity you actually wanted. The $\Ob$ window ties
+the two together.}
+
+There are two bridges because there are two hidden-state quantities to rebuild:
+\begin{itemize}
+  \item \textbf{$b_R$ --- the reward bridge:} recovers the reward model (what rewards
+  a policy would really earn).
+  \item \textbf{$b_D$ --- the dynamics bridge:} recovers the transition model (how the
+  hidden state would really evolve).
+\end{itemize}
+Together they rebuild the \emph{entire} confounded-POMDP machinery from the poisoned
+log (this is why the method is ``model-based'' and ``dual-bridge''). Chain them and
+you can evaluate \emph{any} policy cleanly, with confounding subtracted out.
+
+\subsection{From infinite theory to finite matrices: where approximation sneaks in}
+The paper is written for \emph{infinite populations and integral equations}. Reality
+gives a \emph{finite pile of trajectories}. The gap is where every practical
+difficulty lives. The bridge's defining ``matching condition'' is really a
+\textbf{Fredholm integral equation of the first kind} --- ``solve for the function
+$b$ inside an averaging operator'':
+\begin{equation}
+\underbrace{\mathbb{E}\big[\,b(W_t, y)\;\big|\;X_t\,\big]}_{\text{average of }b\text{ you can see, given the }\Ob\text{-window}}
+\;=\;\underbrace{p(y\mid X_t)}_{\text{a probability you can measure}},
+\end{equation}
+for every index $y$, where $W_t=(A_t,O_t)$ are the observed variables and
+$X_t=(A_t,H_{t-1},\Ob)$ is the conditioning that includes the negative control.
+
+\intuition{Solving for $b$ means \textbf{inverting an averaging operator}. But
+averaging \emph{smooths things and throws information away}, so un-averaging it is
+\textbf{ill-posed}: tiny noise wiggles in the measured right-hand side get
+\emph{amplified} into big wiggles in the recovered $b$. This ill-posedness is the
+villain of Section~3.}
+
+The paper's estimator, which we implemented, handles this in \textbf{two stages}:
+\begin{itemize}
+  \item \textbf{Stage~1 (learn the lens).} From part of the data, estimate the
+  averaging operator itself (a \emph{conditional mean embedding}). In our tabular
+  setting this is literally \textbf{counting}: build tables of conditional
+  frequencies. Call the result the ``lens matrix'' $\Gamma$.
+  \item \textbf{Stage~2 (solve for the bridge).} From the \emph{other} part of the
+  data, solve the matching equation using the Stage-1 lens. In closed form:
+  \begin{equation}
+  \alpha \;=\; (G + N_2\,\lambda_2\,I)^{-1}\,\hat p,
+  \qquad G=(\Gamma^\top K_W\,\Gamma)\odot K_{Y''},
+  \label{eq:stage2}
+  \end{equation}
+  where $G$ is built from the lens and the data, $\hat p$ is the measured right-hand
+  side, $\odot$ is an element-wise product, and $\alpha$ are the coefficients that
+  \emph{are} the estimated bridge.
+\end{itemize}
+The only genuinely new piece in \eqref{eq:stage2} is the term
+$+\,N_2\lambda_2 I$: the \textbf{regularizer}.
+
+\intuition{Because inverting an ill-posed operator amplifies noise, we deliberately
+add a little ``stiffness'' ($\lambda_1$ in Stage~1, $\lambda_2$ in Stage~2) that
+stops the solution from chasing noise --- at the cost of a little bias. It is the
+universal \textbf{bias--variance knob}: turn $\lambda$ up for a stable-but-slightly-wrong
+answer; turn it down for a less-biased but wildly noisy one.}
+
+\subsection{What our hyperparameter calibration actually did}
+The paper prescribes \emph{theoretical schedules} like $\lambda\propto N^{-1/2}$,
+derived for the \emph{infinite-dimensional kernel} version. We implemented the
+\emph{tabular} version --- and hit our first real finding.
+
+\begin{takeaway}
+The paper's theoretical $\lambda$ schedules do \textbf{not} transfer to the tabular
+setting. Plugging in $\lambda_1\propto N^{-1/2}$ injected $\sqrt{N_1}$ fake
+``pseudo-counts'' into our count tables, over-shrinking the Stage-1 lens by roughly
+$80\%$ by the third time-step. The theory's stiffness was calibrated for a different
+object and was far too stiff for ours.
+\end{takeaway}
+
+So we did the honest thing: a \textbf{grid calibration} --- sweep the knobs over a
+small grid, across three seeds, and \emph{measure} which settings minimize error. The
+winners:
+\begin{itemize}
+  \item \textbf{Data split $N_1:N_2 = 0.7:0.3$} --- give Stage~1 (learning the lens
+  over a growing history) more data. This confirmed the paper's qualitative ``Stage~1
+  needs more'' intuition.
+  \item $\boldsymbol{\lambda_1 = 1/N_1}$ --- a gentle, parametric-rate stiffness.
+  \item $\boldsymbol{\lambda_2 = 0.03/\sqrt{N_2}}$ --- crucially, this decays
+  \emph{slower} than $1/N_2$. It must, because $\lambda_2$'s job is to
+  \textbf{dominate the noise leaking out of Stage~1} into the weakly-identified
+  directions of the bridge. Too fast, and that leaked noise wins.
+\end{itemize}
+A subtler lesson that matters in Section~3: the obvious ``is my matrix healthy?''
+check is its \textbf{condition number} --- and here it is a \textbf{liar}. Because of
+the null-space structure (Section~3), it stays flat and reassuring even as the
+estimate quietly collapses. The honest health-check is the smallest \emph{signal}
+eigenvalue $\hat\sigma_2$ --- the weakest direction that still carries real
+information. We verified this by degrading $\Ob$: the true Stage-1 error blew up
+$10\times$ while the condition number \emph{did not budge}. So all our stability
+monitoring watches $\hat\sigma_2$, not the condition number.
+
+\begin{takeaway}
+A ``bridge'' is an observable function whose $\Ob$-windowed average reproduces the
+data --- and, by a deep theorem, thereby reproduces the hidden-state model you
+wanted. Estimating it from finite data is a two-stage, ill-posed matrix inversion,
+tamed by regularizers $\lambda_1,\lambda_2$ whose right values we had to \emph{measure},
+not inherit from the theory.
+\end{takeaway}
+
+% =====================================================================
+\section{The Vanilla Breakdown and Our Innovation}
+
+This is the most interesting part: where the beautiful theory, actually run,
+\textbf{detonates} --- and what we did about it.
+
+\subsection{The plan: ``pessimism''}
+Once you can estimate the model, you want to \emph{pick a good policy}. But your
+bridges are noisy, so if you just trust them and pick the best-looking policy, you
+fall for one that got \emph{lucky} in your noisy estimate. The standard defense is
+\textbf{pessimism}: score a policy by a cautious \emph{lower bound}, and pick the
+policy whose \emph{cautious} score is highest. This ``be paranoid about what you can't
+pin down'' principle is provably right for offline RL.
+
+The anchor paper draws, around the estimate $\hat b$, a \textbf{confidence region} ---
+a fuzzy ball of ``bridges that fit the data almost as well as $\hat b$.'' Because the
+underlying error is exactly quadratic, this region is a clean \textbf{ellipsoid}. The
+pessimistic value is then
+\[
+V_{\text{low}}(\pi) \;=\; \min_{\,b\ \in\ \text{confidence ellipsoid}}\; V(\pi, b),
+\]
+``the smallest value of policy $\pi$ you can get as the bridges range over the whole
+plausible region.'' Minimizing a linear value over an ellipsoid has a gorgeous
+closed form --- the \textbf{support function}:
+\begin{equation}
+V_{\text{low}} \;=\; V(\hat b)\;-\;\sqrt{\xi}\;\lVert g\rVert_{H^{-1}},
+\label{eq:supp}
+\end{equation}
+where $\xi$ is the ellipsoid's size, $g$ is the value's gradient, and
+$\lVert\cdot\rVert_{H^{-1}}$ measures length in the ellipsoid's own stretched
+geometry. In words: \emph{start at the estimated value, then subtract a penalty for
+how much the value could wiggle within the plausible region}. Beautiful. So what
+goes wrong?
+
+\subsection{The detonation: why vanilla pessimism yields $-1755$}
+Here is the crux, and it is a genuinely subtle geometric fact.
+
+Recall from Section~1 that \textbf{the observation is richer than the hidden state}
+($|O| > |S|$). In our benchmark, $720$ observable ``core'' states stand in for a
+$2$-valued hidden variable; even in the tiny toy there are $3$ observations for $2$
+hidden states. That mismatch means the data-fitting matrix has a \textbf{null space}
+--- directions in ``bridge space'' the data says \emph{nothing} about. You can move
+the bridge along a null direction and the data-fit \emph{does not change at all},
+because those directions describe patterns in the rich observation with no
+counterpart in the poor hidden state.
+
+Now look at the ellipsoid. Its ``stiffness'' in a direction is how much moving there
+hurts your fit. In the null directions, moving hurts \emph{only} through the tiny
+regularizer $\lambda_2$. So the ellipsoid is \textbf{catastrophically elongated} along
+the null space --- not a round ball, but a \textbf{needle} stretching almost
+infinitely into the directions where the data is blind. Concretely, the pessimism may
+travel a distance $\lVert d\rVert=\sqrt{\xi/\lambda_2}$ along a null direction, and
+since $\lambda_2$ is tiny, that distance is \emph{enormous}.
+
+The vanilla recipe minimizes the value \textbf{jointly over all bridge blocks at
+once}. Let a joint minimization loose on a needle stretching to the horizon in the
+blind directions, and it \emph{runs to the horizon}: it finds these free,
+data-invisible directions, pushes the bridges way out along them, and the multi-step
+value chain amplifies the excursion into nonsense. We measured exactly this:
+
+\begin{center}\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Ellipsoid size $c$ & $0.1$ & $0.3$ & $1.0$ & $3.0$ & $10.0$\\
+\midrule
+$V_{\text{low}}$ (best policy) & $-1.12$ & $-10.4$ & $-61.6$ & $-301.7$ & $\mathbf{-1755}$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+True policy values live between about $+1.5$ and $+2.2$, so a ``cautious lower
+bound'' of $-1.12$ is already \emph{physically impossible}, and $-1755$ is
+\textbf{deranged}. It is so busy being paranoid about directions the data cannot even
+see that it produces numbers with no connection to reality and ``selects'' policies
+essentially at random.
+
+\begin{takeaway}
+\textbf{One-sentence diagnosis:} the paper's pessimism spends all its paranoia on the
+empty, data-blind \emph{null space} instead of on the directions where the data
+actually has something to say.
+\end{takeaway}
+
+\subsection{The innovation: Signal-Projected Pessimism}
+Once you \emph{see} the problem, the fix writes itself. If the disaster comes from the
+pessimism wandering into the null space (the empty noise directions), then
+\textbf{do not let it go there}: confine the whole computation to the \textbf{signal
+subspace} --- the directions the data actually informs.
+
+How do you find the signal subspace? With the workhorse of applied linear algebra:
+the \textbf{SVD / eigen-decomposition}. Decompose the data's design matrix into
+directions ranked by how much real information (signal) they carry. Top directions
+with healthy eigenvalues are \textbf{signal} (the data speaks clearly). Bottom
+directions with near-zero eigenvalues are the \textbf{null space} (the data is
+silent). An \emph{eigengap} rule draws the line. We then build an orthonormal basis
+$U$ for the signal directions and run the \emph{same} support-function pessimism, but
+\textbf{restricted to $U$}:
+\begin{equation}
+b_{\min} \;=\; \hat b \;-\; \sqrt{\xi}\;\frac{U\,H_{\mathrm{sub}}^{-1}\,U^\top g}
+{\lVert U^\top g\rVert_{H_{\mathrm{sub}}^{-1}}},
+\qquad H_{\mathrm{sub}} = U^\top H\,U.
+\end{equation}
+
+\intuition{Project everything onto the signal subspace first, then be pessimistic
+only within it. The pessimism can no longer escape into the blind directions because
+we walled them off. The needle becomes a sensible ellipsoid again.}
+
+\textbf{And on the surface it works, beautifully.} The projected pessimistic value
+stays \emph{informative}: for the best policy it is $V_{\text{low}}=1.35$ (sane,
+in-range) instead of $-1.12$. And it \textbf{picks the right policy}:
+\textbf{$0.000$ selection regret}, across every random seed. Where vanilla chose
+garbage, the projected version reliably identifies the truly best policy.
+
+\subsection{The honest twist: a heuristic, not a guaranteed cure}
+Here is the part we refuse to sugar-coat, because being honest here is the most
+valuable thing the project did.
+
+Walling off the null space \emph{assumes the true bridge lives inside the signal
+subspace}. We \emph{checked} that assumption by measuring how much of the true bridge
+leaks \emph{out} of the signal subspace. The answer: about \textbf{21\%} of its length
+(for one bridge, the leaked-out part had length $0.38$ while the whole bridge had
+length $1.80$).
+
+That leakage is fatal to the \emph{guarantee}. If the truth is $21\%$ outside the
+region you search, your ``confidence region'' \textbf{does not contain the truth} ---
+its honest coverage is \emph{zero}. A pessimistic bound is only trustworthy if the
+truth is in the set you minimize over; ours is not. So $V_{\text{low}}\le
+V_{\text{true}}$ held in all our runs \emph{by luck of sign-alignment}, not because
+the geometry guarantees it.
+
+\begin{takeaway}
+There is a fundamental \textbf{tension between coverage and informativeness}. The
+vanilla method \emph{covers} the truth but is \emph{uninformative} (blows up to
+$-1755$, picks garbage). Our projected method is \emph{informative} (sane numbers,
+$0.000$ regret) but does \emph{not} cover the truth (walls off $21\%$ of it). You
+cannot have both with this estimator. Signal-Projected Pessimism is an excellent,
+practically-useful \textbf{heuristic} --- but it is \emph{not} a mathematically
+guaranteed pessimistic bound, and we say so plainly.
+\end{takeaway}
+
+The real intellectual product here is not ``we fixed the paper,'' but ``we found
+precisely \emph{why} the paper's beautiful pessimism is unusable as written, we made
+it usable, and we mapped the exact price of doing so.''
+
+% =====================================================================
+\section{The Empirical Verdict}
+
+Theory and analogies are nice, but this was fundamentally an
+\emph{engineering-and-measurement} project. Here is what we actually observed, in
+order of increasing humility.
+
+\subsection{The math is implemented correctly (the $10^{-15}$ handshake)}
+Before trusting any result, prove the code computes what the equations say. We used
+\textbf{oracle checks} --- comparisons against a ground truth computed exactly in a
+small environment:
+\begin{itemize}
+  \item The value chain matches exact dynamic programming to $\mathbf{4.4\times
+  10^{-16}}$. Feeding the \emph{true} bridges into our evaluator reproduces the
+  exactly-correct value to machine precision (essentially the smallest gap a 64-bit
+  computer can represent). Our tensor contractions \emph{are} the equations, bit for
+  bit.
+  \item The estimator hits the right target to $\mathbf{3.0\times10^{-15}}$: in the
+  infinite-data limit our bridge solver lands on the exact ideal solution.
+  \item Two independent derivations (a ``dual'' and a ``primal'' form of
+  Eq.~\eqref{eq:stage2}) agree to $\mathbf{2.4\times10^{-15}}$ --- a strong internal
+  consistency proof.
+\end{itemize}
+These $10^{-15}$-level agreements are the bedrock: every \emph{interesting} result
+later is a fact about the \emph{method}, not a bug in the \emph{code}.
+
+\intuition{A humbling aside that captures the whole project's spirit: while building a
+comparison baseline, our first version was a perfectly reasonable-looking derivation
+that the oracle immediately exposed as \emph{systematically wrong} (it gave $1.61$ for
+a policy whose true value is $1.865$, and the error did not shrink with data). Only
+running it against the exact answer caught it. The lesson we kept relearning:
+\textbf{reasoning proposes, the oracle disposes}.}
+
+\subsection{More data $\rightarrow$ smoothly less error}
+On the toy, where we can measure bridge-recovery error against the true bridges, the
+error drops \textbf{monotonically at every step} as we add data:
+
+\begin{center}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Trajectories $N$ & $1{,}000$ & $5{,}000$ & $10{,}000$ & $20{,}000$\\
+\midrule
+Reward-bridge error $\mathrm{err}_{b_R}$ & $1.360$ & $0.775$ & $0.581$ & $\mathbf{0.459}$\\
+Dynamics-bridge error $\mathrm{err}_{b_D}$ & $0.732$ & $0.422$ & $0.312$ & $\mathbf{0.223}$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Fitting a line on a log--log plot gives decay rates of about $N^{-0.36}$ and
+$N^{-0.39}$ --- steady, honest statistical convergence. The payoff: our de-biased
+evaluator beats the naive (confounding-blind) baseline in \textbf{12 out of 12} test
+cases on the toy. \emph{Where confounding is strong and identification is clean, the
+method does exactly what it promised: it removes the bias that more data alone never
+could.} This is the success story.
+
+\subsection{The boundary condition: where it loses to a dumb baseline}
+Now the humbling and most scientifically important result. Scaling to the full
+benchmark ($720$ observable states, a realistic size), the story \textbf{reversed}.
+We ran a comprehensive sweep --- five confounding strengths $\kappa$ from $0$ (none)
+to $1$ (maximal), three data sizes up to $60{,}000$, three seeds, four methods --- and
+measured every method against the true policy values.
+
+\begin{takeaway}
+The naive, confounding-blind baseline \textbf{beats} our sophisticated de-biasing
+method almost everywhere at benchmark scale. The plug-in's error ($0.006$--$0.12$) is
+comparable to or \emph{larger} than the structural bias it was built to remove
+($0.004$--$0.011$).
+\end{takeaway}
+
+\intuition{Recall the two enemies: \emph{bias} (from confounding) and \emph{variance}
+(from finite data). The bridge method kills the \emph{bias} --- but killing it
+requires inverting ill-posed matrices, and \textbf{inverting ill-posed matrices
+amplifies noise}, i.e.\ it \emph{injects variance}. At benchmark scale each little
+$2\times2$ correction is estimated from a handful of samples, so the variance it
+injects is \emph{bigger than the bias it removes}. You pay more in noise than you gain
+in bias reduction. The cure is worse than the disease.}
+
+The most telling data point: the method's \emph{worst} performance is at
+$\boldsymbol{\kappa=0}$, where there is \emph{no confounding at all} --- up to
+$\mathbf{23}$--$\mathbf{46\times}$ worse than naive. A correction tool that damages
+the answer when there is nothing to correct is telling you loudly that its problem is
+\emph{variance}, not bias.
+
+We tried to fix this honestly. A \textbf{James--Stein shrinkage} upgrade (pool each
+noisy little matrix toward a stable, confounding-aware group average) genuinely helped
+where it should: under strong confounding it \textbf{halved} the error
+($0.22\rightarrow0.08$) and cut run-to-run variance $\mathbf{6\times}$. A real,
+defensible improvement --- but \emph{not enough to overturn the boundary}; shrinkage
+narrows the gap to naive without closing it.
+
+We also built a \textbf{model-free} competitor (estimate value functions directly
+instead of the model). It was worse and \emph{flatter} still --- its error
+\emph{did not improve with more data at all}. The reason is instructive: our negative
+control $\Ob$ is only a \emph{binary} fingerprint, too little information to pin down
+a value function over $720$ observations. It is \textbf{under-identified} --- like
+reconstructing a detailed photograph from a single bit. (Reassuringly, on the toy
+where identification is clean, this same method \emph{is} consistent --- so its
+benchmark failure is a genuine identification limit, not a bug.)
+
+\subsection{The honest bottom line}
+\begin{itemize}
+  \item \textbf{Model-based beats model-free} at benchmark scale (the model-free
+  method is starved by the tiny proxy).
+  \item \textbf{But both lose to naive} at realistic sample sizes, because estimation
+  \emph{variance} overwhelms the confounding \emph{bias} they are designed to remove.
+  \item \textbf{Shrinkage helps under strong confounding} but does not change the
+  verdict.
+  \item \textbf{The method shines exactly where the theory promised} --- strong
+  confounding, clean identification, enough data (our toy) --- and struggles exactly
+  where practice bites (large observation spaces, weak proxies, limited data).
+\end{itemize}
+
+\begin{takeaway}
+The through-line of the entire project, in one sentence: \textbf{at realistic scale,
+variance --- not identification --- is the wall.} The anchor paper solved the
+identification problem elegantly; what it (understandably, being pure theory) never
+had to confront is that solving identification by matrix inversion re-introduces a
+variance problem that can be worse than the bias you started with.
+\end{takeaway}
+
+% =====================================================================
+\section*{Epilogue: What This Project Taught Us}
+\addcontentsline{toc}{section}{Epilogue}
+
+\begin{enumerate}
+  \item \textbf{A gorgeous theory can be silently unusable, and only running it
+  reveals where.} The $-1755$ blow-up, the null-space geometry, the $21\%$ leak, the
+  benchmark reversal --- none are visible in the paper. They appeared only when exact
+  code met exact oracles. Every real finding came from \emph{measurement}, not from
+  thinking harder.
+  \item \textbf{Honesty about a heuristic beats a fake theorem.} We could have called
+  Signal-Projected Pessimism a ``repair'' and moved on. Instead we measured the $21\%$
+  leak and reported the coverage/informativeness tension. That negative result is more
+  useful --- and more true --- than a victory lap.
+  \item \textbf{The bias--variance trade-off is the deepest force in the room.}
+  Confounding is a bias problem; the elegant fix is a variance-injecting inversion; at
+  scale the variance wins. Understanding \emph{that}, and mapping exactly where the
+  crossover happens, is the most valuable thing to hand to whoever builds on this next.
+\end{enumerate}
+
+\noindent If you read this far, you now understand --- from first principles --- a
+genuine research-grade problem in causal reinforcement learning, an elegant proposed
+solution, exactly how and why it breaks in practice, a clever-but-honestly-limited
+fix, and the sober empirical reality of when it helps and when it does not. That full
+arc --- the promise, the breakdown, the repair, and the honest verdict --- is the
+real education.
+
+\end{document}
