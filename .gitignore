@@ -1,0 +1,41 @@
+# Third-party dependency: the gumbel-max-scm clinical simulator clone (~133 MB).
+# Not our code. See README for the upstream repository and setup instructions.
+Phase_2/external/
+Phase_3/external/
+external/
+
+# Published papers by other authors — referenced in the README, not redistributed here.
+Papers/
+
+# Course handout
+project-overview.pdf
+
+# Submission bundles (redundant with the tracked sources they were built from)
+*.zip
+Phase_2/DRL_Spring_2026___Project___G18/
+
+# LaTeX build byproducts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
