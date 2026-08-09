@@ -1,0 +1,99 @@
+{
+  "F1_oracle_max_gap": 0.0,
+  "F2_recovery_scaling": {
+    "300": {
+      "errR_mean": 0.14669861706956105,
+      "errR_std": 0.08261195582865806,
+      "errD_mean": 0.2706068219090326,
+      "errD_std": 0.12290170385963653
+    },
+    "800": {
+      "errR_mean": 0.14065771968052154,
+      "errR_std": 0.07784938465291992,
+      "errD_mean": 0.2507037206043591,
+      "errD_std": 0.052088243920747866
+    },
+    "2000": {
+      "errR_mean": 0.08310886995964469,
+      "errR_std": 0.0488512050549401,
+      "errD_mean": 0.15603999927692605,
+      "errD_std": 0.03968673456410305
+    },
+    "4000": {
+      "errR_mean": 0.07065666508352686,
+      "errR_std": 0.029691248118316135,
+      "errD_mean": 0.08564960466124794,
+      "errD_std": 0.04209261970054612
+    }
+  },
+  "F3_debiasing": {
+    "never_treat": {
+      "bias_naive_mean": -0.10312868186679576,
+      "bias_naive_ci95": 0.03183195940907061,
+      "bias_plugin_mean": 0.0032305314294560185,
+      "bias_plugin_ci95": 0.09236184664054109,
+      "abs_naive": 0.10312868186679576,
+      "abs_plugin": 0.08221500156787317
+    },
+    "low_dose": {
+      "bias_naive_mean": -0.008051757945578285,
+      "bias_naive_ci95": 0.01957713380254739,
+      "bias_plugin_mean": -0.0625780728577229,
+      "bias_plugin_ci95": 0.05396704884824845,
+      "abs_naive": 0.018539508400103388,
+      "abs_plugin": 0.0807621179596842
+    },
+    "high_dose": {
+      "bias_naive_mean": 0.008884930756613141,
+      "bias_naive_ci95": 0.02605046056157256,
+      "bias_plugin_mean": 0.04026684701202639,
+      "bias_plugin_ci95": 0.04939710840253699,
+      "abs_naive": 0.021928670878577573,
+      "abs_plugin": 0.06198203282481316
+    },
+    "mixed": {
+      "bias_naive_mean": -0.052202882165748664,
+      "bias_naive_ci95": 0.019473608491016658,
+      "bias_plugin_mean": -0.009104786740183534,
+      "bias_plugin_ci95": 0.04937530440133024,
+      "abs_naive": 0.052202882165748664,
+      "abs_plugin": 0.04460106491122744
+    }
+  },
+  "F3_plugin_beats_naive": "2/4",
+  "F4_pessimism_sweep": {
+    "0.03": {
+      "all_valid": 1.0,
+      "subopt_pess": 0.21052500000000007,
+      "subopt_plugin": 0.0,
+      "max_restart_gap": 0.0
+    },
+    "0.1": {
+      "all_valid": 1.0,
+      "subopt_pess": 0.21052500000000007,
+      "subopt_plugin": 0.0,
+      "max_restart_gap": 1.1102230246251565e-16
+    },
+    "0.3": {
+      "all_valid": 1.0,
+      "subopt_pess": 0.28872000000000003,
+      "subopt_plugin": 0.0,
+      "max_restart_gap": 2.220446049250313e-16
+    },
+    "1.0": {
+      "all_valid": 1.0,
+      "subopt_pess": 0.6014999999999999,
+      "subopt_plugin": 0.0,
+      "max_restart_gap": 4.440892098500626e-16
+    },
+    "3.0": {
+      "all_valid": 1.0,
+      "subopt_pess": 0.6014999999999999,
+      "subopt_plugin": 0.0,
+      "max_restart_gap": 5.331457163414226
+    }
+  },
+  "F4_mean_regret_pessimistic": 0.382554,
+  "F4_mean_regret_plugin": 0.0,
+  "F4_verdict": "pessimistic selection still WORSE than plug-in"
+}
