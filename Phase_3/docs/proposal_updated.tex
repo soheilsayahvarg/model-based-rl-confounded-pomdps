@@ -1,0 +1,587 @@
+% Phase 3 Progress Checkpoint --- Updated Research Proposal
+% Compile: pdflatex proposal_updated.tex  (twice, for references)
+% This is a NEW file inside Phase_3/. It does not modify, and is not compiled from,
+% the frozen Phase_2/proposal/proposal.tex, which remains on file unchanged.
+% All quantitative claims are drawn from Phase_3/phase3_progress_report.md and
+% Phase_3/experiments/*.json (5-seed re-run) and are audit-verified.
+\documentclass[11pt]{article}
+
+\usepackage[
+    top=0.8in,
+    bottom=0.9in,
+    left=0.9in,
+    right=0.9in
+]{geometry}
+\usepackage{times}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+\setlist{nosep,leftmargin=*}
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black, urlcolor=blue!50!black}
+
+\title{\textbf{Research Proposal --- Updated for the Phase 3 Progress Checkpoint}\\
+Causal Reinforcement Learning with Hidden Confounders and Partial Observability}
+\author{Team Members: Soheil Sayah Varg, Mahdi Shirinbayan, Mahdi Ostadmohammadi}
+\date{Deep Reinforcement Learning --- Phase 3 Progress Checkpoint}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\begin{minipage}{0.92\textwidth}
+\small\itshape
+\noindent\textbf{Revision note.} This document supersedes nothing on file: our original
+Phase 2 proposal remains submitted and unchanged. It is a self-contained, updated version
+of that proposal, prepared for the Phase 3 Progress Checkpoint, incorporating a
+complete oracle-verified implementation, a corrected 5-seed empirical study, and two
+findings that changed since Phase 2 --- including two of our own numbers that we
+re-verified and revised downward before this checkpoint (\S\ref{sec:poc},
+\S\ref{sec:phase3}). Full logs,
+code, and raw results live in \texttt{Phase\_3/}, isolated from the frozen Phase 2
+submission.
+\end{minipage}
+\end{center}
+
+\vspace{4pt}
+
+% =====================================================================
+\section{Motivation \& Contribution}
+
+Offline reinforcement learning from logged data is unreliable when the behavior policy
+acted on information the learner never sees. In a partially observable MDP (POMDP) whose
+\emph{latent} state drives both the logged actions and the outcomes, the data are
+\emph{confounded}: a learner that treats the observation as the state systematically
+mis-estimates policy value, and no amount of data fixes the bias. This is the central
+obstacle to trustworthy offline RL in healthcare, operations, and any domain with
+unrecorded drivers of decisions.
+
+Hong, Qi \& Xu (ICML 2024)~\cite{hong2024} give an elegant theory for exactly this
+setting: using a pre-decision \emph{negative control} $O_0$, they identify the confounded
+POMDP's reward and transition models through two families of \emph{bridge functions}
+($b_R$, $b_D$), then plan pessimistically over a policy-independent confidence region. The
+paper is, however, \emph{theory only} --- no algorithm, no code, no experiments. Its
+neighbors are likewise unrealized empirically for this exact pipeline: the closest
+follow-up runs the bridge \emph{estimator} in isolation~\cite{venkatesh2026}, and the
+pessimism precedent is theory-only and for the \emph{un}confounded case~\cite{guo2022}.
+
+\textbf{Contribution (capability, not primacy) --- now empirically settled.} We have built
+and fully verified, end-to-end, what is to our knowledge the first empirical
+implementation that jointly estimates \emph{both} bridge families via the paper's
+two-stage procedure and carries them through plug-in value identification to a tractable
+pessimistic policy-\emph{selection} step. We deliberately narrowed this from a primacy
+claim in our original proposal: we have not reviewed all concurrent model-based
+confounded-POMDP work (e.g.\ DPC-MBRL), so we claim only that we can verify ourselves ---
+a capability, not a ranking. Per block, the pessimistic inner minimization is the standard
+ellipsoid support-function identity (exact, because the stage-2 risk is quadratic and the
+plug-in value multilinear) --- \emph{not} new mathematics, and we say so explicitly rather
+than implying the closed form itself was the contribution. Our genuinely new content,
+confirmed by a complete implementation, is: (i) a \emph{diagnosis} of a failure mode in the
+paper's coupled multi-block pessimism, (ii) an honest, quantified account of a
+signal-subspace remedy and its limits, and (iii) a full empirical characterization of
+\emph{where} the method helps and where it does not, run at two scales with 95\%
+confidence intervals.
+
+% =====================================================================
+\section{Research Question}
+
+\emph{When the Hong--Qi--Xu confounded-POMDP framework is implemented end-to-end, does
+model-based bridge identification actually de-bias policy evaluation and yield good
+policies at practical sample sizes, and can its abstract pessimistic $\max$--$\min$ step be
+made computationally tractable?} Our Phase 2 proposal anticipated that the answer would be
+\textbf{regime-dependent}; Phase 3 confirms this precisely rather than approximately. Our
+deliverable is therefore a quantified characterization of \emph{where} de-biasing helps
+(strong confounding, exact identification, toy scale: \S\ref{sec:poc}) versus where
+estimation variance dominates and the method is beaten by a naive baseline (benchmark
+scale, all 15 cells of our confounding-strength $\times$ sample-size sweep:
+\S\ref{sec:poc}).
+
+% =====================================================================
+\section{Method}
+\label{sec:method}
+
+\subsection{Estimation}
+
+Stage 1: conditional mean embedding $\hat\mu_{W_t|x}$ by kernel ridge regression, plus
+conditional density/pmf targets $\hat p(y_t|x_t)$. Stage 2: closed-form bridge solve
+$\alpha = (G + N_2\lambda_2 I)^{-1}\hat p$, $G = (\Gamma^\top K_W \Gamma) \odot K_{Y''}$,
+implemented and verified in \emph{both} the dual (representer) and primal (operator) forms
+(agreement $2.4\times10^{-15}$).
+
+\textbf{Regularization (a Phase 2 finding, unchanged).} The paper's RKHS hyperparameter
+schedules do \emph{not} transfer to the tabular class: applied literally, they over-shrink
+the estimator by $\approx 80\%$ by the third time-step. We grid-calibrated instead: split
+$0.7{:}0.3$ ($N_1 \ge N_2$), $\lambda_1 = 1/N_1$, $\lambda_2 = 0.03/\sqrt{N_2}$ --- values
+that work, measured rather than derived from the paper.
+
+\textbf{The spectral-monitor fix.} Ill-posedness cannot be monitored by the ordinary
+condition number $\mathrm{cond}(G)$ here: because the observation space is structurally
+richer than the latent space ($|O|>|S|$), the design matrix carries a null space that pins
+$\mathrm{cond}(G)$ artificially flat even as true estimation quality degrades tenfold (we
+confirmed this directly with an $O_0$-noise sweep: stage-1 error degrades $10\times$ while
+$\mathrm{cond}(G)$ does not move). We instead monitor the smallest \emph{signal}
+eigenvalue $\hat\sigma_2$ of the restricted design --- the eigenvalue restricted to the
+subspace the data can actually inform. This is the same structural null space responsible
+for the pessimism failure mode below, so the fix and the diagnosis share one root cause.
+
+\subsection{Tractable Pessimism, its Failure Mode, and its Repair}
+\label{sec:pessimism-method}
+
+Confidence regions are exact ellipsoids centered at $\hat b$; the per-block minimum is
+$V(\hat b) - \sqrt{\xi}\,\|g_\pi\|_{H^{-1}}$, $H = \hat T_2 + \lambda_2 I$. The hard part is
+the paper's \emph{coupled} multilinear minimization across blocks.
+
+\textbf{Finding, Phase 3: the literal formula is numerically unusable.} Run as written, the
+joint multi-block minimization exploits exactly the null-space directions identified
+above: because those directions cost the confidence-region geometry almost nothing, the
+optimizer walks arbitrarily far into them. At every width that provably contains the truth
+($c \ge 0.1$), the pessimistic value diverges to physically impossible magnitudes ---
+$-1.15$ at onset, to $-1779$ at $c=10$, against true values of roughly $1.5$--$2.2$ --- and
+mis-selects the best policy (regret $0.68$). This is not a tuning artifact: we traced the
+mechanism to the interaction between the null-space geometry and the joint optimization,
+and it reproduces under a full seed re-run (5-seed check: $-1.15\to-1779$, materially the
+same as our original 3-seed numbers, $-1.12\to-1755$).
+
+\textbf{The multilinear joint-minimization repair: Signal-Projected Pessimism.} We restrict
+the pessimistic search to the empirically identified signal subspace via an SVD/eigengap
+decomposition, using an orthonormal basis $U$ and $H_{\mathrm{sub}} = U^\top H U$. This
+keeps $V_{\mathrm{low}}$ informative ($1.35$ at $c=0.03$) and selects the optimal policy
+correctly, with \textbf{0.000 selection regret across every seed}.
+
+\textbf{The honest limit (found by our own adversarial self-audit, not by the mentor or a
+reviewer).} The repair is a heuristic, not a certified bound. The true bridge functions
+leak up to \textbf{21\% of their norm} outside the projected signal subspace, so the
+projected confidence region does not actually contain the truth --- its honest joint
+coverage is zero. We describe this as a \textbf{coverage/informativeness trade-off}:
+vanilla pessimism covers the truth but is uninformative; our projection is informative and
+empirically correct but does not provably cover the truth. $V_{\mathrm{low}} \le
+V_{\mathrm{true}}$ held in every test we ran, but by empirical sign-alignment, not
+certification. We report this as our headline honest finding rather than an overclaimed
+fix.
+
+\subsection{Extensions Added During Phase 3 (scope addition, not a backbone change)}
+\label{sec:extensions}
+
+In direct response to the benchmark-boundary result (\S\ref{sec:poc}), we implemented two
+extensions not in the original proposal, to characterize --- not merely disclose --- the
+boundary:
+
+\begin{itemize}
+  \item \textbf{Variance-reduction estimator.} A backward-compatible subclass adding
+  James--Stein shrinkage and $K$-fold cross-fitting to the benchmark estimator.
+  \textbf{Honest result (corrected in our 5-seed re-run, \S\ref{sec:phase3}):} its variance-reduction
+  benefit does \emph{not} hold up under a proper 5-seed re-check; we retract an earlier
+  claim to the contrary. It gives a modest, noisy $\approx 7\%$ average MAE reduction, not
+  a reliable variance-reduction guarantee.
+  \item \textbf{Model-free proximal baseline.} An independent implementation of the Shi et
+  al.\ (2022) minimax value-bridge estimator~\cite{shi2022} for a genuine head-to-head
+  comparison, not a strawman. Two real bugs were caught only by oracle checks during
+  development (\S\ref{sec:phase3}); the corrected version is consistent on the toy
+  ($0.0076$ max error at $N{=}200\mathrm{k}$) but under-identified by the benchmark's
+  binary proxy variable at scale --- a genuine identification limit of that baseline, not a
+  bug.
+  \item \textbf{Continuous state/action proof of concept.} A toy-scale extension of the
+  same bridge-identification and pessimism pipeline to continuous state-action spaces, via
+  a kernel/RKHS bridge estimator on a linear-Gaussian environment with an exact
+  closed-form oracle; reuses \texttt{ellipsoid\_opt.py}'s pessimism engine unmodified in
+  coefficient space. This tests the paper's own stated generality --- its theory is not
+  inherently tabular --- rather than assuming it transfers. Full results in
+  \S\ref{sec:continuous}; full derivation and code map in
+  \texttt{Phase\_3/docs/continuous\_extension.md}.
+\end{itemize}
+
+% =====================================================================
+\section{Datasets / Environments}
+\label{sec:envs}
+
+\textbf{Primary: the public \texttt{clinicalml/gumbel-max-scm} tabular
+benchmark}~\cite{oberst2019} (720 observable-core states $\times$ 2 latent states, 8
+actions, $T{=}3$). The latent index drives dynamics and behavior but is censored from the
+logs; we construct a pre-decision negative control $O_0$ that satisfies the paper's
+Assumption 3.1 by construction, plus a per-step noisy marker that guarantees bridge
+existence (deterministic masking alone gives rank $720<1440$, i.e.\ no valid one-step
+bridge). A confounding-strength knob $\kappa \in \{0, 0.25, 0.5, 0.75, 1.0\}$ lets us sweep
+from no confounding to strong confounding. A naive, confounding-blind observation-MDP
+evaluator serves as the baseline every method is measured against.
+
+\textbf{Companion: a minimal toy POMDP} ($|S|{=}2, |A|{=}2, |O|{=}3, T{=}3$) with
+\emph{exact}, closed-form oracle bridge functions --- the only substrate where recovery
+error against ground truth is directly measurable, and where we run our machine-precision
+correctness checks (\S\ref{sec:poc}).
+
+\textbf{Continuous companion: a linear-Gaussian confounded POMDP.} Because the paper's
+theory is stated for general --- including \emph{continuous} --- spaces (its bridge
+functions live in an RKHS), we added a third environment in which state, action,
+observation and reward are all real-valued, and the hidden state is observed only through
+a noisy proxy $o_t = s_t + \varepsilon_t$ (the classical measurement-error setting proximal
+causal inference was built for). Restricting candidate policies to affine, observation-only
+maps $a = K o + c$ --- as all our discrete candidate policies already are --- makes the
+closed-loop mean trajectory an exact scalar recursion, so this environment too has an
+\emph{exact} closed-form oracle for both policy values and bridge coefficients
+(\S\ref{sec:continuous}).
+
+Ground truth throughout is exact dynamic programming on the latent SCM. The full pipeline
+runs on a laptop in NumPy; no GPU is used or required.
+
+% =====================================================================
+\section{Proof of Concept / Empirical Evidence}
+\label{sec:poc}
+
+The pipeline is \textbf{already implemented and oracle-verified end-to-end}. Every number
+below is machine-generated from \texttt{Phase\_3/experiments/*.json}; the benchmark and toy
+pessimism/de-biasing numbers reflect our final 5-seed re-run (up from 2--3 seeds), which we
+undertook specifically because two headline claims below turned out to rest on an
+unstably small sample of seeds (\S\ref{sec:phase3}).
+
+\subsection{Oracle verification}
+
+\begin{center}
+\begin{tabular}{@{}lc@{}}
+\toprule
+Check & Result \\
+\midrule
+Policy-value chain (Theorem 3.5) vs.\ exact dynamic programming & $4.4\times10^{-16}$ \\
+Estimator vs.\ exact oracle bridges (population limit) & $3.0\times10^{-15}$ \\
+Dual vs.\ primal closed-form solve (independent derivations) & $2.4\times10^{-15}$ \\
+Analytic pessimism gradients vs.\ finite differences & $4.9\times10^{-10}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Every subsequent result is therefore a fact about the \emph{method}, not an
+artifact of the code.
+
+\subsection{Bridge recovery (toy; 3 seeds, unchanged since Phase 2 --- see \S\ref{sec:phase3})}
+
+\begin{center}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+$N$ & 1,000 & 5,000 & 10,000 & 20,000 \\
+\midrule
+Reward-bridge error & 1.360 & 0.775 & 0.581 & \textbf{0.459} \\
+Dynamics-bridge error & 0.732 & 0.422 & 0.312 & \textbf{0.223} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent L2 recovery error vs.\ the oracle decreases monotonically at every step
+(log--log OLS slopes $N^{-0.36}$, $N^{-0.39}$). This specific check is the one script in
+our suite too slow to safely re-run at more seeds before this checkpoint ($\approx$12 minutes for
+3 seeds, dominated by an exhaustive-enumeration population check, not the seed loop); it
+already persists full per-seed std, and is queued for a 5-seed re-check post-checkpoint.
+
+\subsection{De-biasing (toy, where the method works as intended; 5 seeds)}
+
+The plug-in beats the confounding-blind naive evaluator in \textbf{12/12}
+$(N,\text{policy})$ cells, confirmed on 5 seeds. Worst-policy plug-in bias shrinks
+$0.104 \to 0.053 \to 0.036$ as $N$ grows from $5\mathrm{k}$ to $50\mathrm{k}$, while naive
+bias stays essentially flat at $0.13$--$0.33$ regardless of $N$ --- the textbook signature
+of removed \emph{bias} versus irreducible \emph{bias}.
+
+\subsection{Pessimism --- the honest headline (5 seeds)}
+
+\begin{center}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Region size $c$ & 0.1 & 0.3 & 1.0 & 3.0 & 10.0 \\
+\midrule
+Vanilla $V_{\mathrm{low}}$ (best policy) & $-1.15$ & $-10.4$ & $-62.2$ & $-305.2$ &
+\textbf{$-1779$} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent True policy values lie between roughly $1.5$ and $2.2$. Signal-Projected
+Pessimism repairs this to $V_{\mathrm{low}}=1.35$ at $c=0.03$ with \textbf{0.000 selection
+regret} (vs.\ vanilla's $0.68$), but leaks $\approx21\%$ of the true bridge norm outside
+the projected subspace, so its honest coverage is zero (\S\ref{sec:pessimism-method}).
+
+\subsection{Benchmark boundary --- the most important negative result (5 seeds)}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Method & MAE range (15-cell sweep) & Behavior with $N$ \\
+\midrule
+Naive & \textbf{0.013 -- 0.074} & improves with $N$ \\
+Model-based (plain) & 0.072 -- 0.230 & beats naive in \textbf{0/15} cells \\
+Model-based (shrunk) & 0.063 -- 0.240 & beats naive in \textbf{0/15} cells \\
+Model-free proximal~\cite{shi2022} & 0.164 -- 0.180 & \textbf{flat --- does not improve} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.95\textwidth]{../results/figures/fig6_mb_vs_mf.png}
+\end{center}
+\begin{center}
+\small\textit{Naive vs.\ model-based (plain/shrunk) vs.\ model-free MAE, 5-seed 95\% CIs.
+Left: vs.\ confounding strength $\kappa$ at $N{=}20{,}000$. Right: vs.\ sample size $N$ at
+$\kappa{=}1$. Naive stays lowest throughout both panels; the wide, overlapping error bars
+on MB-plain/MB-js are the visual evidence behind the retracted shrinkage-variance claim
+below.}
+\end{center}
+
+At the full $720\times2$ scale, across the entire confounding-strength sweep, the
+\textbf{naive, confounding-blind baseline beats every bridge-based method in every single
+cell}. The de-biasing method's worst performance is at zero confounding
+($\kappa=0$), where it is \textbf{2.8--6.8$\times$ worse} than naive --- precisely where
+there is nothing to correct. This is the clearest possible signature that the dominant
+error source at this scale is \emph{estimation variance}, not the confounding bias the
+method targets: inverting many small, noisy per-cell matrices injects more noise than the
+bias it removes.
+
+\subsection{Continuous state and action spaces (5 seeds)}
+\label{sec:continuous}
+
+The framework is \emph{not} inherently tabular. Re-reading the paper to verify rather than
+assume, it states that \emph{``both S and O are continuous,''} that \emph{``function
+approximation is inevitable when state and observation spaces are continuous,''} and that
+its two-stage procedure is built on kernel methods~\cite{mastouri2021}. Our discrete
+implementation is therefore one \emph{instantiation} of the theory, not its full scope. We
+tested that generality directly, replacing the tabular estimator with a two-stage
+\textbf{kernel/RKHS} bridge estimator (Stage-1 conditional mean embedding with an RBF
+instrument kernel; Stage-2 closed-form regularized solve) on the continuous linear-Gaussian
+environment of \S\ref{sec:envs}, and reusing our ellipsoidal pessimism machinery
+\emph{unmodified} --- it operates purely in coefficient space and never assumed a tabular
+origin.
+
+\begin{center}
+\begin{tabular}{@{}lc@{}}
+\toprule
+Check & Result \\
+\midrule
+Oracle self-consistency (true bridges vs.\ closed-form value) & $1.665\times10^{-16}$ \\
+Value-gradient check (analytic/hybrid vs.\ numerical) & $\approx 1\times10^{-11}$ \\
+Bridge recovery, reward / dynamics ($N: 300 \to 4{,}000$) & $0.220 \to 0.055$ / $0.240 \to 0.102$ \\
+De-biasing vs.\ naive ($N{=}2{,}000$, 95\% CIs) & plug-in wins \textbf{4/4}, $3$--$11\times$ smaller bias \\
+Pessimism validity $V_{\mathrm{low}} \le V_{\mathrm{true}}$ (5 widths $\times$ 5 seeds) & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{A correction to our own framing, from that same re-reading.} The paper's
+sentence continues: \emph{``...while the action space A is finite.''} Our environment uses
+a real-valued action, so it varies \textbf{two} things at once relative to the paper ---
+continuous observations (covered) and continuous actions (not covered). The identification
+chain still reproduced the exact oracle to $1.665\times10^{-16}$, so nothing here is
+numerically wrong, but this is \textbf{empirical extrapolation beyond the stated theorem,
+not an instantiation of it}, and we claim none of the paper's guarantees for it. The
+paper-faithful configuration --- continuous $S$/$O$, \emph{finite} $A$ --- is the first
+item of our Phase 4 program (\S\ref{sec:fallback}). We flag this rather than relabel the
+work, on the same principle that produced the 21\% leakage disclosure above.
+
+\noindent The de-biasing result is the direct continuous analogue of the discrete 12/12
+story, with the same bias/variance signature visible in the CIs (naive $-1.255 \pm 0.018$
+vs.\ plug-in $-0.401 \pm 0.216$ on the worst policy). \textbf{Honest caveat, held to the
+same standard as \S\ref{sec:pessimism-method}: validity is not selection quality.}
+$V_{\mathrm{low}} \le V_{\mathrm{true}}$ holds in every test, but \emph{ranking} policies by
+$V_{\mathrm{low}}$ is consistently worse than ranking by the plain plug-in value across the
+entire width grid tested (regret $0.40$--$0.48$ vs.\ $0.241$), unlike the discrete toy's
+$0.000$. Our hypothesis is chain-compounding across the $T{=}3$ stages --- corroborated by
+restart gaps growing from $2\times10^{-16}$ to $62.2$ as the region widens --- but it is not
+root-caused, so we report it as an open item, not a solved one. Two new bottlenecks also
+appear: dense kernel ridge costs $O(N_1^3)$ (capping this proof of concept at $N\approx
+4{,}000$ absent a low-rank approximation), and a \emph{finite-dimensional} kernel silently
+re-creates the same rank-deficiency pathology diagnosed in
+\S\ref{sec:pessimism-method} --- caught only by checking the Gram matrix's rank directly,
+since recovery numbers looked correct either way.
+
+% =====================================================================
+\section{Phase 3 Progress Update}
+\label{sec:phase3}
+
+\subsection{Completed Milestones Since the Phase 2 Proposal}
+
+\begin{itemize}
+  \item \textbf{Core pipeline.} The toy and $720\times2$ benchmark environments, both with
+  exact oracle bridges/values, and the naive baseline evaluator (\S\ref{sec:envs}).
+  \item \textbf{Estimation layer.} The two-stage bridge estimator in both dual and primal
+  forms (verified algebraically identical), plus a factored, benchmark-scale version
+  avoiding a combinatorial blow-up in the conditioning-set size (\S\ref{sec:difficulties}).
+  \item \textbf{Identification and pessimism layer.} The exact Theorem-3.5
+  tensor-contraction chain, the closed-form ellipsoidal pessimism solver, and Signal-
+  Projected Pessimism (\S\ref{sec:pessimism-method}).
+  \item \textbf{Benchmark-scale extensions.} Variance-reduction (James--Stein) estimator
+  and an independent model-free proximal baseline (\S\ref{sec:extensions}), plus a
+  comprehensive $5\,\kappa \times 3\,N \times 5\,\text{seeds} \times 4\,\text{methods}$
+  sweep with 95\% confidence intervals.
+  \item \textbf{Continuous state/action extension.} A toy-scale kernel/RKHS proof of
+  concept carrying the same identification and pessimism machinery into continuous
+  spaces, oracle-verified to $1.665\times10^{-16}$, with 4/4 de-biasing wins and 100\%
+  pessimism validity (\S\ref{sec:continuous}).
+  \item \textbf{Validation infrastructure.} Four independent regression suites
+  (environment/oracle, estimator, plug-in/pessimism, benchmark), all currently green,
+  under three rounds of adversarial self-audit that materially changed how we report two
+  of our own headline claims.
+\end{itemize}
+
+\subsection{Preliminary Findings}
+
+The full numbers are in \S\ref{sec:poc}. In one sentence: the method works exactly as
+theorized in the clean, small-scale regime (12/12 de-biasing wins, machine-precision
+correctness) and is well-diagnosed but not fully repairable in its pessimism step (a
+genuine null-space failure mode, a working but uncertified heuristic remedy), and is beaten
+by a naive baseline at realistic scale because estimation variance there outweighs the bias
+it targets. \textbf{Our final rigor pass changed two of these findings materially}: the
+$\kappa{=}0$ harm ratio was $23$--$46\times$ on 3 seeds and is $2.8$--$6.8\times$ on 5; a
+claimed ``shrinkage cuts variance sixfold'' finding does not replicate at all (lower
+variance in only 7 of 15 sweep cells) and is retracted rather than carried into the final
+paper. Neither was a coding bug --- both were correctly computed statistics over too few
+seeds to be stable, which is itself the finding we report in \S\ref{sec:difficulties}.
+
+\subsection{Difficulties Encountered, and How We Resolved Them}
+\label{sec:difficulties}
+
+\begin{enumerate}
+  \item \textbf{RKHS regularization theory does not transfer to a tabular
+  implementation}, over-shrinking the estimator $\approx80\%$ by the third time-step.
+  \emph{Resolved} by an empirical grid search (\S\ref{sec:method}).
+  \item \textbf{The standard condition-number diagnostic is misleading} here, pinned flat
+  by a structural null space regardless of true estimation quality. \emph{Resolved} by
+  monitoring the restricted-spectrum signal eigenvalue $\hat\sigma_2$ instead
+  (\S\ref{sec:method}).
+  \item \textbf{Diagnosing the pessimism blow-up} required tracing the interaction between
+  the null-space geometry and the joint multi-block optimization --- not visible from the
+  paper, only from watching the number diverge and working backward. \emph{Resolved} by
+  the diagnosis itself (\S\ref{sec:pessimism-method}), which motivated the repair.
+  \item \textbf{Catching our own overclaim.} Our first framing of Signal-Projected
+  Pessimism was ``the repair''; only a subsequent adversarial self-audit surfaced the 21\%
+  leakage that invalidates the coverage claim. \emph{Resolved} by reframing it as a
+  disclosed heuristic (\S\ref{sec:pessimism-method}).
+  \item \textbf{The benchmark variance wall.} Scaling to 720 observations exposed that
+  per-cell estimation variance can dominate the structural bias entirely, the opposite of
+  the toy story. \emph{Resolved} by characterizing it with a full confounding-strength
+  sweep rather than dismissing it as a tuning issue (\S\ref{sec:poc}).
+  \item \textbf{Two real bugs in the model-free baseline, caught only by oracle checks.}
+  An off-policy bias (true value $1.865$ evaluated to $1.61$, error not shrinking with
+  $N$) was fixed with a proper backward recursion; a subsequent $\sim$11,500$\times$11,500
+  dense-matrix blow-up ($\approx$2 GB per fit) was fixed by exploiting a block-diagonal
+  structure the naive implementation missed. Neither was visible from the derivation alone.
+  \item \textbf{Combinatorial blow-up in the benchmark's conditioning set} (billions of
+  cells under a direct implementation). \emph{Resolved} by three structural
+  factorizations specific to the environment's observation design (hashed encoding,
+  core-diagonal bridge support, closed-form $2\times2$ local inversions).
+  \item \textbf{Balancing rigor against the timeline.} Every finding above came from
+  deliberately adversarial, repeated self-review, which is expensive; \S\ref{sec:fallback}
+  states how we are prioritizing the time remaining before Phase 4.
+  \item \textbf{Our own 3-seed statistics were not stable enough to report as claims.}
+  Bumping the benchmark sweep to 5 seeds changed the $\kappa{=}0$ harm ratio and
+  fully retracted the shrinkage-variance claim (\S\ref{sec:phase3}, above). The lesson: a
+  claim derived from a \emph{standard deviation}, not just a mean, needs more seeds than a
+  claim about the mean alone.
+\end{enumerate}
+
+\subsection{Adjustments to the Original Proposal}
+
+\begin{itemize}
+  \item \textbf{Novelty claim narrowed} from an implicit primacy claim to a capability
+  claim we can verify ourselves (\S1).
+  \item \textbf{The pessimism ``reduction'' is now correctly attributed} to the standard
+  ellipsoid support-function identity; our new content is the diagnosis and the
+  coverage/informativeness finding, not the closed form itself (\S\ref{sec:pessimism-method}).
+  \item \textbf{Signal-Projected Pessimism reframed} from ``repair'' to ``heuristic with a
+  measured price'' after our own adversarial audit surfaced the 21\% leak
+  (\S\ref{sec:pessimism-method}).
+  \item \textbf{The benchmark result reframed} from a soft boundary condition to an
+  explicit, quantified negative result, generalized from two confounding levels to the
+  full 15-cell sweep (\S\ref{sec:poc}).
+  \item \textbf{Scope addition, not a backbone change:} the variance-reduction estimator
+  and model-free baseline (\S\ref{sec:extensions}) were not in the original proposal; we
+  added them to characterize the benchmark boundary rather than leave it unexamined. We
+  consider this an extension of the original method, not a change to it, and flag it for
+  the mentor's judgment under the course's backbone-change policy.
+\end{itemize}
+
+% =====================================================================
+\section{Challenges, Fallback Plan, and Roadmap to Phase 4}
+\label{sec:fallback}
+
+\subsection{What Might Still Fail, and Our Fallback}
+
+\begin{itemize}
+  \item \textbf{Pessimism guarantees.} The coupled inner minimum is heuristic and the
+  signal projection provably excludes part of the truth, so $V_{\mathrm{low}} \le
+  V_{\mathrm{true}}$ is empirical, not certified. \emph{Fallback:} report the
+  heuristic-with-honest-caveat finding as the contribution (lowest risk, already
+  complete); a certified alternative (explicitly bounding the excluded-subspace value
+  swing) remains a stretch goal only, not a dependency.
+  \item \textbf{Estimation variance at scale.} \emph{Confirmed, not merely anticipated}:
+  the benchmark result now shows the estimator dominated by naive at every feasible $N$ we
+  tested. We tried the identified next step (James--Stein shrinkage / cross-fitting); its
+  benefit is real but small and does not close the gap (\S\ref{sec:extensions}).
+  \emph{Fallback:} report this as the honest negative result it is, rather than
+  characterize it as fully solved.
+  \item \textbf{Baselines.} Only a confounding-blind naive baseline and one
+  under-identified model-free baseline are in place. \emph{Fallback:} report the current
+  comparison, which is already informative and honestly scoped, and note a
+  confounding-aware second baseline as a stated limitation rather than a gap we pretend
+  isn't there.
+  \item \textbf{Further adversarial review of new code} could surface additional issues
+  close to the deadline. \emph{Fallback:} our validation suites are fast (minutes) and
+  modular, so we re-verify incrementally rather than needing a final big-bang check.
+\end{itemize}
+
+\subsection{Roadmap to Phase 4}
+
+We have not pinned an exact Phase 4 date, since our understanding is that the course
+timeline has shifted; we intend to confirm it with the mentor. Stages, in priority order:
+
+\begin{enumerate}[label=\textbf{\Alph*.}]
+  \item \textbf{Immediate.} Finalize and deliver this checkpoint; no code changes required.
+  \item \textbf{Strengthen empirical rigor.} \emph{Done} for the benchmark sweep
+  and the toy pessimism/de-biasing checks (5 seeds, 95\% CIs, two claims corrected). The
+  toy $N$-scaling sweep remains at 3 seeds (too slow to safely re-run before this checkpoint;
+  queued next). Still open: a second, confounding-\emph{aware} baseline beyond naive. The
+  continuous extension (\S\ref{sec:extensions}) has its own, separately-tracked open item
+  --- diagnosing why pessimistic selection underperforms plug-in selection there ---
+  documented in \texttt{docs/continuous\_extension.md} and not gating this roadmap.
+  \item \textbf{Decide the pessimism narrative for the final paper.} We recommend
+  reporting the heuristic-with-honest-caveat finding as the contribution (lowest risk,
+  already complete, fits the course's accepted ``critical analysis'' project form), with a
+  certified alternative as a stretch goal only if time permits.
+  \item \textbf{Draft the ICML-format final paper.} Nearly all technical content already
+  exists in this document and our internal write-ups; remaining work is compression into
+  the required structure within the page budget.
+  \item \textbf{Mentor-feedback incorporation pass} after comments on the near-final draft.
+  \item \textbf{Final polish and presentation prep} --- figure/table cleanup, proofreading,
+  page-budget trimming.
+  \item \textbf{Continuous-space program.} Re-reading the paper to verify its own scope
+  produced a concrete work plan, in priority order: (i) a \textbf{paper-faithful}
+  continuous environment --- continuous $S$/$O$ but \emph{finite} $A$, the only
+  configuration where Theorem 3.5 and its rates actually apply (\S\ref{sec:continuous});
+  (ii) diagnosing the [C4] pessimistic-selection gap; (iii) sweeping the horizon $T$,
+  which directly tests the chain-compounding hypothesis rather than merely scaling;
+  (iv) more realistic data, subject to a hard constraint --- measuring de-biasing needs
+  \emph{ground-truth} policy values, which logged datasets cannot supply, and Assumption
+  3.1 needs a valid pre-decision negative control, which they rarely record. Standard
+  offline-RL suites fail both tests and are additionally unconfounded by construction, so
+  the realistic target is a simulator or semi-synthetic construction in the medical
+  setting the paper itself uses as motivation.
+\end{enumerate}
+
+% =====================================================================
+\begin{thebibliography}{9}
+\small
+\bibitem{hong2024} M.~Hong, Z.~Qi, Y.~Xu.
+\textit{Model-based Reinforcement Learning for Confounded POMDPs}. ICML, 2024.
+\bibitem{venkatesh2026} V.~Venkatesh, A.~Malikopoulos.
+\textit{Cross-fitted Proximal Learning for Model-Based Reinforcement Learning}. arXiv:2604.05185, 2026.
+\bibitem{guo2022} X.~Guo, M.~Cai, Z.~Yang, Z.~Wang.
+\textit{Provably Efficient Offline Reinforcement Learning for Partially Observable Markov Decision Processes}.
+ICML, 2022.
+\bibitem{oberst2019} M.~Oberst, D.~Sontag.
+\textit{Counterfactual Off-Policy Evaluation with Gumbel-Max Structural Causal Models}. ICML, 2019.
+\bibitem{shi2022} C.~Shi, M.~Uehara, J.~Huang, N.~Jiang.
+\textit{A Minimax Learning Approach to Off-Policy Evaluation in Confounded POMDPs}. ICML, 2022.
+\bibitem{bennett2024} A.~Bennett, N.~Kallus.
+\textit{Proximal Reinforcement Learning: Efficient Off-Policy Evaluation in POMDPs}.
+Operations Research, 2024.
+\bibitem{mastouri2021} A.~Mastouri et al.
+\textit{Proximal Causal Learning with Kernels}. ICML, 2021.
+\end{thebibliography}
+
+\end{document}
