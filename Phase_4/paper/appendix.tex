@@ -1,0 +1,262 @@
+\section{Experimental Setup}
+\label{app:setup}
+
+\paragraph{Environments.}
+\emph{Toy POMDP:} $|S|{=}2$, $|A|{=}2$, $|O|{=}3$, $T{=}3$, with closed-form
+oracle bridge functions obtained by pseudo-inverse and exact dynamic-programming
+policy values. This is the only substrate where recovery error against ground
+truth is directly measurable, and it carries every machine-precision correctness
+check.
+
+\emph{Benchmark:} 720 observable-core states $\times$ 2 latent states, 8 actions,
+$T{=}3$, built on the public \texttt{gumbel-max-scm} clinical simulator
+\citep{oberst2019}. The latent index drives dynamics and behavior but is censored
+from the logs. We construct a pre-decision negative control $O_0$ satisfying the
+identification assumption by construction, plus a per-step noisy marker that
+guarantees bridge existence --- deterministic masking alone gives rank
+$720 < 1440$, i.e.\ no valid one-step bridge. A confounding knob
+$\kappa \in \{0, 0.25, 0.5, 0.75, 1.0\}$ sweeps from no confounding to strong
+confounding.
+
+\emph{Continuous:} scalar linear-Gaussian confounded POMDP, described in
+\cref{app:cont}.
+
+\paragraph{Protocol.} All multi-seed results use seeds $\{0,1,2,3,4\}$ and report
+$1.96\,\hat\sigma/\sqrt{n}$ intervals. Ground truth throughout is exact dynamic
+programming on the latent SCM (tabular) or a closed-form recursion (continuous).
+The full pipeline runs on a laptop in NumPy; no GPU is used or required.
+
+\paragraph{Scaling the benchmark estimator.} A direct implementation of the
+paper's history-conditioning would require on the order of billions of table
+cells at benchmark scale. Three exact structural factorizations specific to the
+environment's observation design --- hashed encoding, core-diagonal bridge
+support, and closed-form $2\times2$ local inversions --- keep the pipeline
+laptop-scale without approximation.
+
+\section{Continuous Extension: Derivation and Details}
+\label{app:cont}
+
+\subsection{Environment}
+State, action, observation and reward are all real-valued. The observation is a
+noisy proxy $o_t = s_t + \varepsilon_t$ for the hidden state, and the logging
+policy may act on the true $s_t$ (confounded) or only on $o_t$ (not confounded),
+mixed by a knob $\kappa$. This is the classical \emph{measurement-error} setting
+that proximal causal inference was designed for: fitting a model that treats the
+noisy proxy as if it were the state induces errors-in-variables bias whenever
+$\kappa > 0$.
+
+Because the reward is linear and candidate policies are affine and
+observation-only ($a = K o + c$), the closed-loop mean trajectory is an exact
+scalar recursion --- no covariance propagation is needed. This yields an exact
+closed-form oracle for both policy values and bridge coefficients, verified to
+reproduce each other to $1.665\times10^{-16}$.
+
+\subsection{Mean-value bridges}
+The paper's bridge functions are \emph{distributional}: they must match
+$p(y \mid X_t)$ for every $y$. Reproducing that in continuous $y$ requires
+conditional density estimation. Since the downstream quantity is a policy-value
+\emph{mean} and the pessimism machinery concerns estimation uncertainty in the
+bridge coefficients rather than the environment's intrinsic reward noise, a
+conditional-mean moment restriction suffices and is exact for that purpose:
+\begin{equation}
+\mathbb{E}\!\left[b(A_t, O_t) \mid X_t = x\right]
+= \mathbb{E}\!\left[Y_t \mid X_t = x\right] \quad \forall x,
+\end{equation}
+with $Y_t = R_t$ (reward bridge) or $O_{t+1}$ (dynamics bridge). This is exactly
+a nonparametric instrumental-variable regression, with $W = (A, O)$ confounded,
+$X = (A, H_{t-1}, O_0)$ the instrument, and $Y$ the outcome --- well precedented
+in the proximal literature \citep{mastouri2021}. It is a deliberate scope
+reduction, not a fundamental barrier.
+
+\subsection{Two-stage kernel solve}
+We derived the closed form directly from a stated objective rather than
+pattern-matching a remembered formula, because a mis-remembered index convention
+would silently produce a wrong-but-plausible estimator --- the exact failure mode
+oracle verification exists to catch. With $K_X$, $K_W$ the instrument- and
+bridge-side kernels,
+\begin{align}
+\Gamma &= \left(K_X(X_1,X_1) + N_1\lambda_1 I\right)^{-1} K_X(X_1,X_2), \\
+Z &= K_W(W_1,W_1)\,\Gamma, \\
+H &= \tfrac{1}{N_2} Z Z^\top + \lambda_2 K_W(W_1,W_1), \quad
+g = \tfrac{1}{N_2} Z y_2,
+\end{align}
+and $\beta = H^{-1} g$. \textbf{Unifying check:} when $K_W$ is a one-hot/delta
+kernel (the tabular case), $K_W(W_1,W_1) = I$ exactly and this reduces to the
+tabular estimator's own primal solve --- a correctness check on the derivation
+itself, not merely an analogy.
+
+\subsection{A rank-deficiency pitfall}
+For the primary verified path we take $K_W$ to be a \emph{linear} kernel, since
+the true bridges are exactly linear and a linear kernel's RKHS therefore contains
+them. But a linear kernel has a finite ($2$-dimensional) feature space, so the
+$N_1 \times N_1$ Gram matrix $K_W(W_1,W_1)$ has rank $\le 2$ --- confirmed
+empirically, with the remaining eigenvalues at the $\sim\!10^{-13}$ floor. The
+dual system is therefore numerically meaningless in those directions.
+
+Notably, the specific projected quantity we originally extracted
+($\hat\theta = W_1^\top \beta$) turned out to be \emph{invariant} to that
+instability and produced identical recovery numbers before and after the fix ---
+so the bug was invisible from the recovery metrics. It still had to be fixed,
+because $H$ and $\hat b$ enter the pessimism ellipsoid directly, where no such
+invariance protects them. The fix is to solve in the $2$-dimensional
+\emph{primal} coordinates: mathematically identical, exactly well-conditioned,
+and incidentally $\sim\!1000\times$ cheaper.
+
+\subsection{Spectral monitoring}
+The tabular fix for a misleading condition number was a hard eigengap on the
+smallest signal eigenvalue, correct there because the null space is
+\emph{structural} ($|O| > |S|$, exactly zero signal beyond it). A continuous
+kernel Gram matrix has smooth spectral decay rather than a structural wall, so a
+hard eigengap does not transfer. We use the standard kernel-ridge
+\emph{effective dimension} $N_{\mathrm{eff}}(\lambda) = \mathrm{tr}\,K(K + N\lambda I)^{-1}$
+\citep{caponnetto2007} instead.
+
+\subsection{Gradients}
+The value chain is multilinear in each stage's coefficients, so reward-block
+gradients are exact. A dynamics block's coefficients additionally shift the
+\emph{evaluation point} of every later stage, and that dependence runs through
+the kernel nonlinearly; we keep the coefficient-linear part exact and obtain the
+one remaining scalar sensitivity by a single 1-D central difference --- $O(T)$
+extra work per gradient call, not $O(N_1)$ --- verified against numerical
+differentiation of the whole chain to $\approx\!10^{-11}$.
+
+\subsection{Regularization: a tested-and-rejected hypothesis}
+We hypothesized that the tabular-calibrated $\lambda_1 = 1/N_1$ would be too weak
+for a genuine kernel conditional mean embedding, since the measured effective
+dimension came out close to $N_1$ itself. We tested $1/\sqrt{N_1}$ and
+$5/\sqrt{N_1}$ with 5-seed averaging: both performed \emph{worse}. We kept
+$1/N_1$. This is the mirror image of the tabular finding --- there, the paper's
+RKHS schedule failed to transfer to a tabular setting; here, the
+tabular-calibrated schedule transferred fine to a genuine kernel.
+
+\subsection{Full pessimism sweep}
+\begin{center}\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+$c$ & 0.03 & 0.1 & 0.3 & 1.0 & 3.0 \\
+\midrule
+Fraction valid ($V_{\mathrm{low}} \le V_{\mathrm{true}}$) & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
+Pessimistic regret & 0.479 & 0.438 & 0.397 & 0.397 & 0.397 \\
+Plug-in regret & 0.241 & 0.241 & 0.241 & 0.241 & 0.241 \\
+Max restart gap & 2.2e-16 & 1.36 & 5.26 & 20.4 & 62.2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Validity holds everywhere. Selection quality does not match the tabular case, and
+the restart gap grows sharply with region width --- consistent with the
+optimization landscape becoming genuinely harder to solve exactly, rather than
+merely more conservative.
+
+\section{Corrections to Our Own Results}
+\label{app:corrections}
+
+We record these because the verification process producing them is part of the
+contribution, not an embarrassment to be smoothed over.
+
+\paragraph{Correction 1: harm ratio at zero confounding.} On a 3-seed sweep we
+reported the model-based estimator as $23$--$46\times$ worse than naive at
+$\kappa = 0$. At 5 seeds the ratio is $2.8$--$6.8\times$. Still a real, clear
+negative result --- just a substantially smaller one than we had stated.
+
+\paragraph{Correction 2: retracted variance-reduction claim.} We had claimed
+James--Stein shrinkage ``cuts run-to-run variance sixfold under strong
+confounding.'' It does not replicate. Across the full 15-cell sweep, shrinkage
+has lower variance than the plain estimator in only $7/15$ cells --- roughly a
+coin flip --- and at $\kappa = 1$ specifically, the exact condition cited, its
+variance is \emph{higher} at $N{=}5{,}000$ and $N{=}20{,}000$. The claim is
+retracted. The honest summary is a modest, noisy $\approx\!7\%$ average MAE
+reduction, not a variance-reduction guarantee.
+
+Neither was a coding bug: both were correctly computed standard deviations over
+an $n{=}3$ sample, which is too few draws to be stable. The lesson we take
+forward is that a claim derived from a \emph{standard deviation} needs more seeds
+than a claim about a mean alone.
+
+\paragraph{Correction 3: scope of the continuous study.} We initially described
+the continuous extension as testing ``the paper's own generality.'' Re-reading
+\citet{hong2024} showed it assumes continuous $S$ and $O$ but an explicitly
+\emph{finite} action space, while our environment uses a real-valued action. The
+oracle check still passes exactly, but the work is extrapolation beyond the
+stated theorem rather than an instantiation of it. We corrected the framing
+rather than relabel the experiment, and then ran the paper-faithful configuration
+(\cref{sec:exp-fa}).
+
+\paragraph{Correction 4: retracted mechanism for the selection failure.} We had
+hypothesised that pessimistic selection underperformed because worst-case
+perturbations compound through the $T{=}3$ chain, citing coordinate-descent
+restart gaps that grew with region width. The finite-action experiment refutes
+this on two counts: the anomaly persists when the action space is finite, and
+restart gaps there are $\le 4\times10^{-16}$ up to $c{=}1$, so the optimizer is
+finding the global minimum. The mechanism is instead behavior-policy coverage
+(\cref{tab:coverage}). We report the failed hypothesis rather than silently
+substituting the new explanation, because the sequence --- hypothesis, targeted
+experiment, refutation, replacement --- is what makes the final claim credible.
+
+\section{Finite-Action Experiment: Full Results}
+\label{app:fa}
+
+Environment: continuous scalar state and observation, $A = \{0, 0.5, 1.0\}$,
+$T{=}3$, behavior policy a softmax over dose levels driven by the true hidden
+state (so overlap holds by construction). Candidate policies are
+observation-independent distributions over $A$; that restriction is what
+preserves the exact oracle, since the expected bridge feature under such a policy
+is exactly $[\pi, m_t]$ and the chain stays affine in the mean.
+
+Two implementation improvements over \cref{app:cont} follow from the finite
+action space. The bridge feature map $[\mathrm{onehot}(a), o]$ is
+$(K{+}1)$-dimensional, so the primal solve is mandatory from the outset rather
+than discovered. And because the chain is affine in the mean, dynamics-block
+gradients become \emph{exact} via the backward recursion
+$D_t = b_{R,t}[-1] + b_{D,t}[-1]\, D_{t+1}$, replacing the finite difference of
+\cref{app:cont}; verified against numerical differentiation to
+$1.16\times10^{-10}$.
+
+\begin{center}\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+$N$ & 300 & 800 & 2{,}000 & 4{,}000 \\
+\midrule
+Reward-bridge error & 0.147 & 0.141 & 0.083 & \textbf{0.071} \\
+Dynamics-bridge error & 0.271 & 0.251 & 0.156 & \textbf{0.086} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Recovery is monotone in both families, cleaner than the continuous-action run,
+which was non-monotone at an intermediate point.
+
+\begin{center}\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+$c$ & 0.03 & 0.1 & 0.3 & 1.0 & 3.0 \\
+\midrule
+Fraction valid & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
+Pessimistic regret & 0.211 & 0.211 & 0.289 & 0.602 & 0.602 \\
+Plug-in regret & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+Max restart gap & 0.0 & 1.1e-16 & 2.2e-16 & 4.4e-16 & 5.33 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Plug-in selection is perfect at every width; pessimistic selection is not, and
+the near-zero restart gaps rule out an optimization explanation. See
+\cref{tab:coverage} for the coverage diagnostic that does explain it.
+
+\section{Bugs Found by Oracle Verification}
+\label{app:bugs}
+
+Two implementation bugs in the model-free comparator were invisible from the
+derivation and surfaced only against exact ground truth. First, a per-stage
+direct-method implementation was silently biased off-policy: a policy with true
+value $1.865$ evaluated to $1.61$, with the error \emph{not} shrinking in $N$ ---
+the fingerprint of a derivation error rather than noise. It was fixed with a
+proper backward recursion. Second, the corrected version naively scaled to the
+benchmark attempted to build and invert an $\approx\!11{,}500 \times 11{,}500$
+dense matrix per policy per fit ($\approx\!2$\,GB), which stalled the run
+entirely; exploiting a block-diagonal structure the naive implementation missed
+resolved it.
+
+The rank-deficiency issue of \cref{app:cont} belongs to the same category, with
+the additional wrinkle that it was invisible even from the downstream recovery
+metrics.

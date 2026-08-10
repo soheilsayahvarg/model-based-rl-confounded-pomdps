@@ -32,8 +32,9 @@ Every number below is machine-generated from the tracked experiment scripts, ver
 | Dual vs. primal closed-form solve (independent derivations) | `2.4 × 10⁻¹⁵` |
 | De-biasing vs. confounding-blind baseline (toy scale) | wins **12/12** cells |
 | De-biasing vs. baseline (continuous extension) | wins **4/4** policies |
+| Oracle self-consistency (continuous / finite-action) | `1.7 × 10⁻¹⁶` / `0.0` |
 
-### Three findings that only appear when you run the theory
+### Four findings that only appear when you run the theory
 
 **1. The paper's pessimism step is numerically unusable as written.** Run literally, its
 confidence-region optimization returns policy values that diverge to `-1779`, against true
@@ -56,10 +57,24 @@ model-based estimator is *worst* at zero confounding, precisely where there is n
 correct — the clearest possible signature that **estimation variance**, not confounding
 bias, dominates at this scale.
 
-This negative result is reported in full rather than buried. So is a correction we made to
-our own work: two earlier headline numbers rested on a 3-seed standard deviation, and when
-re-checked at 5 seeds one changed materially and the other did not replicate at all and was
-retracted.
+**4. Pessimistic *selection* fails for a reason that turned out not to be our first
+hypothesis.** Pessimism reliably produces valid lower bounds (`V_low ≤ V_true` in 100% of
+tests) yet ranks policies worse than a plain plug-in estimate. We hypothesised that
+worst-case perturbations compound through the horizon, and designed an experiment to test
+it — a paper-faithful configuration with continuous states and a *finite* action space, the
+setting the anchor paper actually assumes. The hypothesis was **refuted**: the anomaly
+persists, and coordinate-descent restart gaps there are `≤ 4e-16`, so the optimizer is
+finding the global minimum. A direct diagnostic found the real mechanism — the pessimism
+penalty is monotonically inverse to **behavior-policy coverage**, and in that environment
+the optimal policy is the least-covered one (12% vs 62%). Pessimism is not malfunctioning;
+it is penalising policies the data does not support, and the best policy is the unsupported
+one.
+
+These negative results are reported in full rather than buried. So are corrections we made
+to our own work: two earlier headline numbers rested on a 3-seed standard deviation, and
+when re-checked at 5 seeds one changed materially while the other did not replicate at all
+and was retracted; and the compounding hypothesis above was retracted in favour of the
+coverage explanation that replaced it.
 
 ---
 
@@ -83,6 +98,12 @@ Phase_3/              Progress checkpoint — extended pipeline and rigor pass
   src/baselines/      Independent model-free proximal comparator
   poc/                Driver scripts (5-seed, 95% CI reporting)
   docs/               Updated proposal, progress report, continuous extension writeup
+
+Phase_4/              Final paper draft (ICML format) and the paper-faithful experiment
+  paper/              main.tex, appendix.tex, refs.bib, compiled main.pdf
+  src/                Continuous-state / finite-action environment, estimator, pessimism
+  poc/                Driver for the finite-action study
+  docs/               Writeup of the finite-action experiment and its diagnostic
 ```
 
 ---
@@ -126,9 +147,16 @@ python poc/run_phase2_check.py            # estimator convergence
 python poc/run_phase34_check.py           # plug-in identification + pessimism
 python poc/run_comprehensive_benchmark.py # full sweep (long-running)
 python poc/run_continuous_benchmark.py    # continuous kernel/RKHS extension
+
+cd ../Phase_4
+python poc/run_finite_action_benchmark.py # paper-faithful: continuous states, finite actions
 ```
 
 Results are written to `experiments/*.json`; figures to `results/figures/`.
+
+The final paper draft (ICML format, 4-page main body plus appendix) is
+`Phase_4/paper/main.pdf`; rebuild it with
+`cd Phase_4/paper && pdflatex main && bibtex main && pdflatex main && pdflatex main`.
 
 The 720-observation benchmark builds on the public
 [`clinicalml/gumbel-max-scm`](https://github.com/clinicalml/gumbel-max-scm) clinical
