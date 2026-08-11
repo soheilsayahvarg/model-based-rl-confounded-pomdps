@@ -10,7 +10,9 @@ Papers/
 # Course handout
 project-overview.pdf
 
-# Submission bundles (redundant with the tracked sources they were built from)
+# Submission bundles (regenerate with `python tools/make_bundles.py` -- they are
+# derived from the tracked sources, so committing them would duplicate the repo)
+bundles/
 *.zip
 Phase_2/DRL_Spring_2026___Project___G18/
 

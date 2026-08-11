@@ -17,10 +17,14 @@ paper/
   main.tex        Paper source (main body + appendix include)
   appendix.tex    Appendix: setup, continuous derivation, corrections, bugs
   refs.bib        Bibliography
-  main.pdf        Compiled draft — 8 pages (4 main + references + appendix)
+  main.pdf        Compiled draft — 10 pages (4 main + references + appendices)
   figures/        Figures used by the paper
   icml2024.sty    Official ICML 2024 style files (unmodified)
   icml2024.bst
+src/              Continuous-state / finite-action environment, estimator, pessimism
+poc/              Drivers: finite-action benchmark, coverage sweep, negative-control sweep
+experiments/      Raw result JSON, one file per driver
+docs/             Writeups of the three studies run in this phase
 ```
 
 ## Compliance with §5
@@ -28,15 +32,15 @@ paper/
 | Requirement | Status |
 |---|---|
 | ICML template | Official `icml2024.sty`, unmodified |
-| Main body ≤ 4 pages excluding references | Main body ends on page 4; references begin there |
+| Main body ≤ 4 pages excluding references | Main body ends on page 4; references begin at the top of page 5 |
 | Abstract | Yes |
 | Introduction | §1 |
 | Related work | §2 |
-| Method or analysis | §3 |
-| Experiments or evidence | §4 (five subsections) |
-| Discussion of limitations | §5 (five named limitations) |
+| Method or analysis | §3 (four subsections) |
+| Experiments or evidence | §4 (seven subsections) |
+| Discussion of limitations | §5 (four named limitations) |
 | Conclusion | §6 |
-| Appendix (unlimited) | Appendices A–D |
+| Appendix (unlimited) | Appendices A–H, pages 6–10 |
 
 ## Building
 
@@ -67,14 +71,20 @@ empirical content is:
    disclosed heuristic, not a certified bound.
 3. At benchmark scale a naive confounding-blind baseline beats every bridge-based
    method in all 15 sweep cells, worst at zero confounding.
+4. Pessimistic *selection* fails for a mechanism we first got wrong. We
+   hypothesised that worst-case perturbations compound through the horizon, built
+   the paper-faithful configuration to test it, and the hypothesis was refuted.
+   A coverage sweep then confirmed the real mechanism quantitatively
+   (correlation `-0.944`; regret falls to exactly `0.000` at 73% coverage).
 
-Three self-corrections are recorded in Appendix C, including one to the scope of
-our own continuous study: the anchor paper assumes a *finite* action space, while
-our continuous environment uses a real-valued action, so that experiment is
-extrapolation beyond the stated theorem rather than an instantiation of it.
+Self-corrections are recorded in Appendix E, including one to the scope of our
+own continuous study: the anchor paper assumes a *finite* action space, while the
+Phase 3 continuous environment uses a real-valued action, so that experiment is
+extrapolation beyond the stated theorem rather than an instantiation of it. The
+paper-faithful configuration built here (continuous states and observations,
+three discrete action levels) closes that gap.
 
 Open items suitable for mentor input: whether the honest-negative-result framing
-is the right spine for the final version, whether to prioritize a paper-faithful
-continuous configuration (continuous states/observations, finite actions) before
-the final submission, and whether a second confounding-aware baseline is worth
-the remaining time.
+is the right spine for the final version, whether a second confounding-aware
+baseline is worth the remaining time, and whether to spend it instead on a
+horizon sweep (`T = 1..6`) or vector-valued state and observation spaces.

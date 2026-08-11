@@ -80,8 +80,20 @@ coverage explanation that replaced it.
 
 ## Repository layout
 
+The project was developed and submitted in phases, and each phase directory is
+**self-contained**: it has its own `README.md`, its own sources, its own drivers and its
+own results, and no script in one phase reads from or writes to another. Earlier phases
+stay frozen as submitted rather than being retrofitted.
+
+| Directory | Course phase | Deliverable |
+|---|---|---|
+| `Phase_1/` | Literature review | Eight-paper review and mentor presentation |
+| `Phase_2/` | Research proposal and proof of concept | Two-page proposal plus first complete implementation |
+| `Phase_3/` | Progress checkpoint | Progress report, extended pipeline, rigor pass |
+| `Phase_4/` | Final checkpoint | Complete paper draft (ICML format) and the paper-faithful experiment |
+
 ```
-Literature Review/    Survey of the surrounding literature (proximal causal inference,
+Phase_1/              Survey of the surrounding literature (proximal causal inference,
                       model-free OPE in POMDPs, pessimism in offline RL)
 
 Phase_2/              First complete implementation
@@ -160,8 +172,26 @@ The final paper draft (ICML format, 4-page main body plus appendix) is
 
 The 720-observation benchmark builds on the public
 [`clinicalml/gumbel-max-scm`](https://github.com/clinicalml/gumbel-max-scm) clinical
-simulator, which is **not vendored here**. Clone it into `Phase_2/external/gumbel-max-scm`
-to run the benchmark drivers; the toy-scale and continuous suites run without it.
+simulator, which is **not vendored here**. Clone it into the `external/gumbel-max-scm`
+directory of whichever phase you are running; the toy-scale and continuous suites run
+without it.
+
+---
+
+## Building the per-phase bundles
+
+Each phase is submitted separately, so each is packaged separately:
+
+```bash
+python tools/make_bundles.py             # all phases
+python tools/make_bundles.py Phase_4     # just one
+```
+
+This writes `bundles/Phase_N_<slug>.zip`, one per phase, each unzipping to a single
+`Phase_N/` directory. Contents are taken from `git ls-files`, so a bundle contains
+exactly the tracked files of that phase — never the third-party simulator clone, LaTeX
+byproducts, or `__pycache__`. The script also checks that no path inside a phase resolves
+outside it, and the bundles themselves are not committed, since they are derived.
 
 ---
 
