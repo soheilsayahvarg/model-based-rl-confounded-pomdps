@@ -1,0 +1,65 @@
+{
+  "coverage_sweep": [
+    {
+      "b_pref": 0.0,
+      "coverage": 0.12363333333333333,
+      "regret_pess": 0.366915,
+      "regret_pess_ci": 0.05108739999999996,
+      "regret_plugin": 0.0,
+      "penalty_best": 2.5370649886891004,
+      "penalty_others": 1.374458726780529,
+      "penalty_ratio": 1.8458648042723032
+    },
+    {
+      "b_pref": -1.0,
+      "coverage": 0.24409999999999998,
+      "regret_pess": 0.21052500000000007,
+      "regret_pess_ci": 0.0,
+      "regret_plugin": 0.0,
+      "penalty_best": 1.7532266415271838,
+      "penalty_others": 1.2525574593514366,
+      "penalty_ratio": 1.3997175366589485
+    },
+    {
+      "b_pref": -2.0,
+      "coverage": 0.4072333333333334,
+      "regret_pess": 0.21052500000000007,
+      "regret_pess_ci": 0.0,
+      "regret_plugin": 0.0,
+      "penalty_best": 1.3697276455820855,
+      "penalty_others": 1.31985432131435,
+      "penalty_ratio": 1.0377869916871356
+    },
+    {
+      "b_pref": -3.0,
+      "coverage": 0.5824666666666667,
+      "regret_pess": 0.14035000000000006,
+      "regret_pess_ci": 0.0,
+      "regret_plugin": 0.0,
+      "penalty_best": 1.1816710417142624,
+      "penalty_others": 1.6163444687662818,
+      "penalty_ratio": 0.7310762430586374
+    },
+    {
+      "b_pref": -4.0,
+      "coverage": 0.7272666666666667,
+      "regret_pess": 0.0,
+      "regret_pess_ci": 0.0,
+      "regret_plugin": 0.0,
+      "penalty_best": 1.1341084585219685,
+      "penalty_others": 2.3354076174441096,
+      "penalty_ratio": 0.4856147809276852
+    }
+  ],
+  "true_values": {
+    "never_treat": 1.5434999999999999,
+    "low_dose": 1.2427499999999998,
+    "high_dose": 0.942,
+    "mixed": 1.3329749999999998
+  },
+  "optimal_policy": "never_treat",
+  "corr_coverage_vs_regret": -0.9440327400568328,
+  "regret_at_lowest_coverage": 0.366915,
+  "regret_at_highest_coverage": 0.0,
+  "prediction_confirmed": true
+}

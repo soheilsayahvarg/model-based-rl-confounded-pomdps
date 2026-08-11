@@ -56,15 +56,40 @@ ACTION_LEVELS = np.array([0.0, 0.5, 1.0])   # the finite action set A
 N_ACTIONS = len(ACTION_LEVELS)
 
 
-def default_params(T=3, kappa=1.0):
+def default_params(T=3, kappa=1.0, b_pref=0.0, delta_nc=0.0, sigma_0=0.25):
+    """Default configuration.
+
+    Two knobs exist purely to support the sweeps in poc/, and both default to
+    values that leave the base configuration bit-for-bit unchanged:
+
+    b_pref   : dose-preference offset in the behavior policy's logits. Negative
+               values shift the logging policy toward LOW doses, which increases
+               how well the logged data covers the optimal (never-treat) policy.
+               This is the knob the coverage sweep varies; it changes the DATA,
+               never the environment dynamics, so every candidate policy's true
+               value is invariant to it (see true_value, which does not read it).
+    delta_nc : leakage of the negative control's own noise into the reward,
+               r_t += delta_nc * eps_0. This VIOLATES Assumption 3.1, since O_0
+               then carries information about R_t beyond (S_t, A_t, H_{t-1}).
+               Because E[eps_0] = 0 the mean reward is unchanged, so the exact
+               oracle stays valid while identification degrades -- which is what
+               makes the damage measurable.
+    sigma_0  : negative-control noise. Larger = a weaker (less informative)
+               instrument. Note this degrades instrument STRENGTH while
+               Assumption 3.1 still holds exactly; delta_nc is the separate knob
+               that breaks validity. The two failure modes are distinct and the
+               sweep reports them separately.
+    """
     return dict(
         T=T,
         phi=0.85, psi=0.35, sigma_s=0.30,          # transition
         beta_s=0.60, beta_a=-0.40, sigma_r=0.25,   # reward
         sigma_o=0.35,                              # observation noise
-        sigma_0=0.25,                              # negative-control noise
+        sigma_0=sigma_0,                           # negative-control noise
         mu1=1.0, sigma1=0.40,                      # initial state
         eta=1.6,                                   # behavior-policy sharpness
+        b_pref=b_pref,                             # dose preference offset
+        delta_nc=delta_nc,                         # Assumption 3.1 violation
         kappa=kappa,
         actions=ACTION_LEVELS.copy(),
     )
@@ -85,8 +110,13 @@ def candidate_policies():
 
 
 def _behavior_probs(driver, params):
-    """Softmax over dose levels: logits_k = eta * driver * a^k. (N, K)."""
-    logits = params["eta"] * np.outer(driver, params["actions"])
+    """Softmax over dose levels: logits_k = (eta*driver + b_pref) * a^k. (N, K).
+
+    b_pref shifts the logging policy's dose preference without touching the
+    confounding channel (which is the eta*driver term).
+    """
+    acts = params["actions"]
+    logits = np.outer(params["eta"] * driver + params.get("b_pref", 0.0), acts)
     logits -= logits.max(axis=1, keepdims=True)
     e = np.exp(logits)
     return e / e.sum(axis=1, keepdims=True)
@@ -109,7 +139,9 @@ def sample_trajectories(params, N, rng):
 
     s = rng.normal(params["mu1"], params["sigma1"], size=N)
     S[:, 0] = s
-    O0 = s + rng.normal(0.0, params["sigma_0"], size=N)
+    eps0 = rng.normal(0.0, params["sigma_0"], size=N)
+    O0 = s + eps0
+    delta_nc = params.get("delta_nc", 0.0)
 
     for t in range(T):
         o_t = s + rng.normal(0.0, params["sigma_o"], size=N)
@@ -122,7 +154,10 @@ def sample_trajectories(params, N, rng):
         a_t = acts[k]
         A_idx[:, t] = k
         A[:, t] = a_t
+        # delta_nc>0 leaks the negative control's own noise into the reward,
+        # violating Assumption 3.1 while leaving E[R] (hence the oracle) intact.
         R[:, t] = (params["beta_s"] * s + params["beta_a"] * a_t
+                   + delta_nc * eps0
                    + rng.normal(0.0, params["sigma_r"], size=N))
         s = (params["phi"] * s + params["psi"] * a_t
              + rng.normal(0.0, params["sigma_s"], size=N))
