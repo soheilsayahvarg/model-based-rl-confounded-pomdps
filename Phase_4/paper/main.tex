@@ -56,24 +56,20 @@ Offline reinforcement learning is systematically biased when the behavior policy
 acted on latent state the learner never observes. \citet{hong2024} give a
 model-based theory for this setting, identifying reward and transition models
 through two families of \emph{bridge functions} and planning pessimistically over
-a confidence region. The paper is theory only: no algorithm, no code, no
+a confidence region --- but the paper is theory only: no algorithm, no code, no
 experiments. We build the pipeline end-to-end, verify it against exact ground
-truth to machine precision, and report what running the theory reveals. Three
-findings stand out. First, the paper's pessimism step is numerically unusable as
-written: its joint multi-block minimization diverges to $-1779$ against true
-values in $[1.5, 2.2]$, and we trace the mechanism to a structural null space in
-the design matrix. Second, a signal-subspace projection repairs the numbers and
-achieves zero selection regret, but we show it forfeits coverage --- the true
-bridge leaks $21\%$ of its norm outside the projected subspace --- making it a
-disclosed heuristic rather than a certified bound. Third, at benchmark scale a
+truth to machine precision, and report what running it reveals. The pessimism
+step is numerically unusable as written, diverging to $-1779$ against true values
+in $[1.5, 2.2]$, which we trace to a structural null space; a signal-subspace
+projection repairs the numbers and achieves zero regret but forfeits coverage,
+making it a disclosed heuristic rather than a bound. At benchmark scale a
 confounding-blind baseline beats every bridge-based method in all 15 sweep cells,
-worst at \emph{zero} confounding, identifying estimation variance rather than
-confounding bias as the binding constraint. Extending to continuous spaces with
-kernel bridges preserves validity but not selection quality, and a diagnostic in
-the paper-faithful configuration (continuous states, \emph{finite} actions)
-explains why: the pessimism penalty is monotonically inverse to behavior-policy
-coverage, so pessimism systematically avoids the optimal policy exactly when the
-logging policy under-covers it.
+worst at \emph{zero} confounding --- estimation variance, not confounding bias,
+is the binding constraint. Pessimistic \emph{selection} fails for a reason we
+establish by sweeping it: the penalty tracks behavior-policy coverage, and
+driving coverage of the optimal action up drives regret to exactly zero. A
+negative-control quality sweep then quantifies how good the framework's central
+assumption has to be.
 \end{abstract}
 
 \section{Introduction}
@@ -232,32 +228,15 @@ laptop in NumPy; no GPU.
 
 \subsection{Correctness}
 \label{sec:exp-correct}
-We first pin the implementation against exact ground truth
-(\cref{tab:correct}). The dual-versus-primal check is the most informative: the
-two solves are independent derivations of the same estimator, so agreement to
-$2.4\times10^{-15}$ rules out derivation errors a single implementation would
-silently carry. This is what licenses reporting the negative results below as
-findings rather than bugs.
-
-\begin{table}[t]
-\caption{Oracle verification. Every downstream result is therefore a fact about
-the method, not an artifact of the code.}
-\label{tab:correct}
-\vskip 0.1in
-\begin{center}\small
-\begin{tabular}{@{}lc@{}}
-\toprule
-Check & Max gap \\
-\midrule
-Policy-value chain vs.\ exact DP & $4.4\times10^{-16}$ \\
-Estimator vs.\ oracle bridges (population) & $3.0\times10^{-15}$ \\
-Dual vs.\ primal solve (independent derivations) & $2.4\times10^{-15}$ \\
-Analytic vs.\ finite-difference gradients & $4.9\times10^{-10}$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-\vskip -0.15in
-\end{table}
+We first pin the implementation against exact ground truth. The policy-value
+chain matches exact dynamic programming to $4.4\times10^{-16}$; the estimator
+matches the oracle bridges in the population limit to $3.0\times10^{-15}$; the
+dual and primal solves, independent derivations of the same estimator, agree to
+$2.4\times10^{-15}$; analytic gradients match finite differences to
+$4.9\times10^{-10}$. The dual-versus-primal check is the most informative, since
+it rules out derivation errors a single implementation would silently carry. This
+is what licenses reporting the negative results below as findings rather than
+bugs.
 
 \subsection{De-biasing works where identification is clean}
 On the toy environment the plug-in evaluator beats the confounding-blind baseline
@@ -268,27 +247,13 @@ signature of removed versus irreducible bias.
 
 \subsection{The pessimism step, run literally, diverges}
 \label{sec:exp-pess}
-\begin{table}[t]
-\caption{Vanilla pessimism (the paper's Eq.~17) at increasing region size $c$.
-True policy values lie in $[1.5, 2.2]$.}
-\label{tab:pess}
-\vskip 0.1in
-\begin{center}\small
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-$c$ & 0.1 & 0.3 & 1.0 & 3.0 & 10.0 \\
-\midrule
-Best-policy $V_{\mathrm{low}}$ & $-1.15$ & $-10.4$ & $-62.2$ & $-305.2$ & $\mathbf{-1779}$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-\vskip -0.15in
-\end{table}
-
-A ``pessimistic lower bound'' of $-1.15$ is already outside the physically
-feasible range, and it degrades from there; selection regret is $0.68$. This is
-not a tuning artifact --- it reproduces across seeds and we traced the mechanism
-to the null-space geometry of \cref{sec:method-pess}.
+Run as written, the paper's Eq.~17 gives a best-policy $V_{\mathrm{low}}$ of
+$-1.15$ at region size $c{=}0.1$, degrading through $-10.4$, $-62.2$ and
+$-305.2$ to $\mathbf{-1779}$ at $c{=}10$ --- against true policy values in
+$[1.5, 2.2]$. Even the mildest setting is already outside the physically feasible
+range, and selection regret is $0.68$. This is not a tuning artifact: it
+reproduces across seeds, and we traced the mechanism to the null-space geometry
+of \cref{sec:method-pess}.
 
 Signal-Projected Pessimism repairs it: $V_{\mathrm{low}} = 1.35$ at $c = 0.03$,
 in range, with \textbf{0.000 selection regret} across every seed.
@@ -324,18 +289,6 @@ Model-free proximal & $0.164$--$0.180$ & $0/15$ \\
 \vskip -0.15in
 \end{table}
 
-\begin{figure}[t]
-\begin{center}
-\includegraphics[width=\columnwidth]{figures/fig6_mb_vs_mf.png}
-\end{center}
-\vskip -0.15in
-\caption{Naive vs.\ model-based (plain/shrunk) vs.\ model-free, 5-seed 95\% CIs.
-Left: vs.\ confounding strength $\kappa$ at $N{=}20{,}000$. Right: vs.\ sample
-size at $\kappa{=}1$. Naive stays lowest throughout.}
-\label{fig:bench}
-\vskip -0.1in
-\end{figure}
-
 The de-biasing method's \emph{worst} performance is at $\kappa = 0$, where it is
 $2.8$--$6.8\times$ worse than naive --- precisely where there is nothing to
 correct. That is the clearest possible signature that the dominant error source
@@ -348,32 +301,14 @@ $N{=}200\mathrm{k}$).
 
 \subsection{Continuous state, action and observation spaces}
 \label{sec:exp-cont}
-\begin{table}[t]
-\caption{Continuous kernel extension, 5 seeds, mean $\pm$ 95\% CI at
-$N{=}2{,}000$. Oracle self-consistency $1.665\times10^{-16}$; gradient check
-$\approx\!10^{-11}$.}
-\label{tab:cont}
-\vskip 0.1in
-\begin{center}\small
-\begin{tabular}{@{}lcc@{}}
-\toprule
-Policy & Naive bias & Plug-in bias \\
-\midrule
-never\_treat & $-1.255 \pm 0.018$ & $\mathbf{-0.401 \pm 0.216}$ \\
-constant\_dose & $+0.093 \pm 0.013$ & $\mathbf{+0.008 \pm 0.032}$ \\
-proportional & $-0.435 \pm 0.013$ & $\mathbf{-0.129 \pm 0.061}$ \\
-aggressive & $+1.357 \pm 0.038$ & $\mathbf{+0.365 \pm 0.178}$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-\vskip -0.15in
-\end{table}
-
-Bridge recovery improves with sample size ($0.220 \to 0.055$ reward,
-$0.240 \to 0.102$ dynamics, for $N: 300 \to 4{,}000$), and plug-in de-biasing
-beats naive in \textbf{4/4} policies by $3$--$11\times$ --- the continuous
-analogue of the tabular $12/12$, with the same signature in the intervals: naive
-bias tight but systematically wrong, plug-in bias smaller but noisier.
+The kernel instantiation reproduces the tabular story. Oracle self-consistency is
+$1.665\times10^{-16}$, the gradient check $\approx\!10^{-11}$, bridge recovery
+improves with sample size ($0.220 \to 0.055$ reward, $0.240 \to 0.102$ dynamics,
+for $N: 300 \to 4{,}000$), and plug-in de-biasing beats naive in \textbf{4/4}
+policies by $3$--$11\times$ in absolute bias --- the continuous analogue of the
+tabular $12/12$, with the same signature: naive bias tight but systematically
+wrong, plug-in bias smaller but noisier (per-policy figures in
+\cref{app:cont-tab}).
 
 Pessimism validity holds throughout, but \textbf{validity is not selection
 quality}: ranking by $V_{\mathrm{low}}$ is consistently worse than ranking by the
@@ -381,27 +316,30 @@ plug-in value (regret $0.40$--$0.48$ versus $0.241$), unlike the tabular case's
 clean $0.000$. Two bottlenecks are regime-specific: dense kernel ridge costs
 $O(N_1^3)$, capping $N \approx 4{,}000$; and a \emph{finite-dimensional} kernel
 silently re-creates the rank deficiency of \cref{sec:method-pess}, caught only by
-checking the Gram matrix's rank, since recovery numbers looked correct either way
-(\cref{app:cont}).
+checking the Gram matrix's rank (\cref{app:cont}).
 
 \subsection{The paper-faithful configuration, and why pessimistic selection fails}
 \label{sec:exp-fa}
 
 \begin{table}[t]
-\caption{Pessimism penalty $V_{\mathrm{plugin}} - V_{\mathrm{low}}$ against
-behavior-policy coverage, finite-action setting ($N{=}2{,}000$, $c{=}0.3$). The
-ordering is monotone, and the \emph{best} policy is the \emph{least} covered.}
+\caption{Coverage sweep. Varying the logging policy's dose preference changes
+\emph{only the data} --- every candidate's true value is invariant and asserted
+so at each grid point. Regret is averaged over $c \in \{0.1, 0.3, 1.0\}$,
+5 seeds. ``Ratio'' is the optimal policy's pessimism penalty divided by the mean
+penalty of the others.}
 \label{tab:coverage}
 \vskip 0.1in
 \begin{center}\small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}cccc@{}}
 \toprule
-Policy & $V_{\mathrm{true}}$ & Penalty & Coverage \\
+Coverage of & Pessimistic & Plug-in & Penalty \\
+optimal policy & regret & regret & ratio \\
 \midrule
-never\_treat (best) & $\mathbf{1.544}$ & $2.058$ & $0.121$ \\
-low\_dose & $1.243$ & $1.350$ & $0.260$ \\
-mixed & $1.333$ & $1.092$ & $0.262$ \\
-high\_dose (worst) & $0.942$ & $0.842$ & $0.619$ \\
+$0.124$ & $0.367 \pm 0.051$ & $0.000$ & $1.85$ \\
+$0.244$ & $0.211$ & $0.000$ & $1.40$ \\
+$0.407$ & $0.211$ & $0.000$ & $1.04$ \\
+$0.582$ & $0.140$ & $0.000$ & $0.73$ \\
+$\mathbf{0.727}$ & $\mathbf{0.000}$ & $0.000$ & $\mathbf{0.49}$ \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -418,19 +356,44 @@ recovery is monotone in $N$, and validity again holds at $100\%$.
 \textbf{The anomaly persists}, refuting our own hypothesis that continuous
 actions caused it. It is also not an optimization failure: restart gaps here are
 $\le 4\times10^{-16}$ up to $c{=}1$, so coordinate descent is finding the global
-optimum. \cref{tab:coverage} identifies the actual mechanism. The pessimism
-penalty is monotonically inverse to how well the behavior policy covers each
-candidate, and in this environment the confounded logging policy prefers high
-doses ($62\%$ of actions) while the optimal policy never treats ($12\%$).
-Pessimism is therefore not malfunctioning --- it is doing its job, penalizing
-policies the data does not support, and here the optimal policy is the
-unsupported one. The account predicts the gap should close as coverage of the
-optimal action improves.
+optimum. A diagnostic instead found the pessimism penalty to be monotonically
+inverse to behavior-policy coverage, with the optimal policy the least covered
+($12\%$ of logged actions, against $62\%$ for the worst policy).
 
-De-biasing here wins $2/4$ rather than $4/4$, consistently: where naive bias is
-already negligible ($0.008$, $0.009$ for the well-covered policies) there is
-nothing to correct and the correction only adds variance --- \cref{sec:exp-bench}
-in miniature.
+\textbf{We turned that into a prediction and tested it.} If coverage is the
+mechanism, raising the logging policy's coverage of the optimal action should
+drive pessimistic regret to zero. \cref{tab:coverage} shows exactly that:
+correlation between coverage and regret is $-0.944$, regret falls from $0.367$ to
+\textbf{exactly zero}, and the penalty ratio crosses $1$ near $40\%$ coverage ---
+below it the optimal policy is penalized \emph{more} than the alternatives, above
+it \emph{less}. Plug-in selection is perfect throughout, the control confirming
+that estimation quality is not what moves.
+
+Pessimism is therefore not malfunctioning. It answers ``which policy can I most
+confidently guarantee?'', which coincides with ``which is best?'' only under
+adequate coverage. De-biasing likewise wins $2/4$ here rather than $4/4$: where
+naive bias is already negligible there is nothing to correct and the correction
+only adds variance --- \cref{sec:exp-bench} in miniature.
+
+\subsection{How good does the negative control have to be?}
+\label{sec:exp-nc}
+
+Every method in this line assumes a valid negative control and proceeds; theory
+cannot say what happens when the assumption only approximately holds, since that
+assumption is what it is conditioned on. A simulator with a quality knob can. We
+sweep two failure modes separately (tables in \cref{app:nc}). Raising the
+negative control's noise $\sigma_0$ leaves Assumption 3.1 exactly true and
+degrades only informativeness; the plug-in's systematic-bias advantage survives
+to $\sigma_0 \approx 1.0$, about \emph{three times} the observation noise. Leaking
+that noise into the reward ($r_t \mathrel{+}= \delta\,\epsilon_0$) instead makes
+the assumption false while leaving $\mathbb{E}[R]$ --- and the oracle --- intact;
+the advantage is gone by $\delta = 0.5$, and bridge recovery degrades
+$9.2\times$ here against $5.7\times$ under weakening. Violating the assumption
+costs more than weakening the instrument, now quantified rather than assumed.
+
+One practical caution: bridge recovery error is a poor proxy for value bias. At
+$\delta{=}1$ recovery error is $9\times$ baseline while systematic value bias
+grows $1.9\times$, so bridge fit does not diagnose the estimate that matters.
 
 \section{Limitations}
 \label{sec:limits}
@@ -440,18 +403,20 @@ excludes part of the truth ($21\%$ norm leakage), so
 $V_{\mathrm{low}} \le V_{\mathrm{true}}$ is an observation across our tests, not
 a theorem.
 
-\paragraph{The coverage explanation rests on one environment.} \cref{tab:coverage}
-gives a monotone four-point ordering plus a mechanism, which we find convincing,
-but a proper test would sweep behavior-policy coverage of the optimal action
-directly and check that the selection gap closes as predicted. We have not run
-that sweep.
+\paragraph{The coverage explanation is tested, but in one environment.} The sweep
+of \cref{tab:coverage} confirms the prediction, but it varies coverage through a
+single channel (a dose-preference offset) in a single linear-Gaussian POMDP with
+three action levels. Other ways of degrading coverage --- actions absent
+entirely, or state-dependent coverage gaps --- are untested. With only four
+candidate policies, regret also takes few discrete values, which coarsens the
+curve: two grid points share a value, so the decrease is monotone but not
+strictly so.
 
-\paragraph{Restricted scope.} Continuous-action candidates are affine and
-observation-only; finite-action candidates are observation-independent, which is
-what preserves the exact oracle. All experiments use $T{=}3$, scalar continuous
-spaces, and $N \le 4{,}000$. Our primary comparator is confounding-\emph{blind};
-the one confounding-aware comparator is under-identified by the benchmark's
-binary proxy, so a second would sharpen \cref{sec:exp-bench}.
+\paragraph{Restricted scope.} Candidate policies are affine and
+observation-only, or observation-independent --- what preserves the exact oracle.
+All experiments use $T{=}3$, scalar continuous spaces, $N \le 4{,}000$. The one
+confounding-aware comparator is under-identified by the benchmark's binary proxy,
+so a second would sharpen \cref{sec:exp-bench}.
 
 \paragraph{Statistical self-correction.} Two earlier headline numbers rested on
 3-seed standard deviations; re-checking at 5 seeds changed one materially and
@@ -460,11 +425,10 @@ refuted the other outright. Both are recorded, with the retracted mechanism for
 
 \section{Conclusion}
 
-Running a theory-only framework end-to-end showed four things the theory did not:
-its pessimism step does not run as written; the repair costs a measurable
-guarantee; a naive baseline dominates at scale through estimation variance, not
-confounding bias; and pessimistic selection fails because the penalty tracks
-behavior-policy coverage rather than value.
+Running a theory-only framework end-to-end showed what the theory did not: its
+pessimism step does not run as written, the repair costs a measurable guarantee,
+a naive baseline dominates at scale through variance rather than bias, and
+pessimistic selection tracks coverage rather than value.
 
 \bibliography{refs}
 \bibliographystyle{icml2024}

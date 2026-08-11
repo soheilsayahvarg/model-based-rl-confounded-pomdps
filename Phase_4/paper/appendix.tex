@@ -148,6 +148,76 @@ the restart gap grows sharply with region width --- consistent with the
 optimization landscape becoming genuinely harder to solve exactly, rather than
 merely more conservative.
 
+\section{Benchmark Sweep Figure}
+\label{app:benchfig}
+
+\begin{center}
+\includegraphics[width=0.85\textwidth]{figures/fig6_mb_vs_mf.png}
+\end{center}
+\begin{center}
+\small\textit{Naive vs.\ model-based (plain/shrunk) vs.\ model-free MAE, 5-seed
+95\% CIs. Left: vs.\ confounding strength $\kappa$ at $N{=}20{,}000$. Right:
+vs.\ sample size at $\kappa{=}1$. Naive stays lowest across both panels. The
+wide, overlapping error bars on the two model-based variants are the visual
+evidence behind the retracted shrinkage-variance claim of
+\cref{app:corrections}.}
+\end{center}
+
+\section{Negative-Control Quality: Full Sweeps}
+\label{app:nc}
+
+Two metrics are reported at every grid point, because they disagree by
+construction and reporting only one inverts the conclusion:
+\emph{systematic bias} is the mean over policies of $|\,$mean over seeds of
+$(\hat V - V)|$, isolating what the method is designed to remove; \emph{total
+error} is the mean over policies and seeds of $|\hat V - V|$, which is what a
+practitioner pays and includes the variance the correction costs. The plug-in
+wins the first and loses the second. $N{=}2{,}000$, 5 seeds.
+
+\begin{center}\small
+\textbf{[N1] Strength: $\sigma_0$ varies, Assumption 3.1 holds throughout}\\[2pt]
+\begin{tabular}{@{}cccccc@{}}
+\toprule
+& & \multicolumn{2}{c}{Systematic bias} & \multicolumn{2}{c}{Total error} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+$\sigma_0$ & Recov.\ err & plug-in & naive & plug-in & naive \\
+\midrule
+0.10 & 0.074 & \textbf{0.027} & 0.043 & 0.061 & 0.049 \\
+0.25 & 0.083 & \textbf{0.029} & 0.043 & 0.067 & 0.049 \\
+0.50 & 0.113 & \textbf{0.033} & 0.043 & 0.076 & 0.049 \\
+1.00 & 0.191 & 0.046 & 0.043 & 0.084 & 0.049 \\
+2.00 & 0.423 & 0.068 & 0.043 & 0.102 & 0.049 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Naive is flat at $0.043$ throughout, as it must be --- it never touches $O_0$ ---
+which makes it a clean control: everything that moves is attributable to the
+negative control's quality.
+
+\begin{center}\small
+\textbf{[N2] Validity: $\delta$ breaks Assumption 3.1}\\[2pt]
+\begin{tabular}{@{}cccccc@{}}
+\toprule
+& & \multicolumn{2}{c}{Systematic bias} & \multicolumn{2}{c}{Total error} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+$\delta$ & Recov.\ err & plug-in & naive & plug-in & naive \\
+\midrule
+0.00 & 0.083 & \textbf{0.029} & 0.043 & 0.067 & 0.049 \\
+0.25 & 0.190 & \textbf{0.032} & 0.041 & 0.067 & 0.047 \\
+0.50 & 0.378 & 0.039 & 0.038 & 0.068 & 0.047 \\
+1.00 & 0.767 & 0.055 & 0.034 & 0.071 & 0.046 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Caveats: $\delta$ implements one specific violation (leakage of the negative
+control's own noise into the reward); others may behave differently. The
+thresholds are properties of this environment, not universal constants --- the
+transferable claim is the ordering, that validity matters more than strength.
+Naive's bias also drifts slightly downward as $\delta$ grows
+($0.043 \to 0.034$), so the widening gap is not purely the plug-in degrading.
+
 \section{Corrections to Our Own Results}
 \label{app:corrections}
 
@@ -192,6 +262,28 @@ finding the global minimum. The mechanism is instead behavior-policy coverage
 (\cref{tab:coverage}). We report the failed hypothesis rather than silently
 substituting the new explanation, because the sequence --- hypothesis, targeted
 experiment, refutation, replacement --- is what makes the final claim credible.
+
+\section{Continuous Extension: Per-Policy De-biasing}
+\label{app:cont-tab}
+
+Continuous kernel extension, 5 seeds, mean $\pm$ 95\% CI at $N{=}2{,}000$
+(summarised in \cref{sec:exp-cont}). The pattern to note is in the intervals:
+naive bias is tight but systematically wrong, plug-in bias is several times
+smaller but noisier --- the bias-for-variance trade that recurs throughout this
+paper.
+
+\begin{center}\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Policy & Naive bias & Plug-in bias \\
+\midrule
+never\_treat & $-1.255 \pm 0.018$ & $\mathbf{-0.401 \pm 0.216}$ \\
+constant\_dose & $+0.093 \pm 0.013$ & $\mathbf{+0.008 \pm 0.032}$ \\
+proportional & $-0.435 \pm 0.013$ & $\mathbf{-0.129 \pm 0.061}$ \\
+aggressive & $+1.357 \pm 0.038$ & $\mathbf{+0.365 \pm 0.178}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \section{Finite-Action Experiment: Full Results}
 \label{app:fa}
