@@ -26,6 +26,14 @@
     },
     {
       "c": 0.03,
+      "method": "box (paper)",
+      "modal": "greedy_lo",
+      "regret": 0.0,
+      "vlow": 1.2752076891349382,
+      "contains_truth": "yes"
+    },
+    {
+      "c": 0.03,
       "method": "projected",
       "modal": "greedy_lo",
       "regret": 0.0,
@@ -54,6 +62,14 @@
       "modal": "soft",
       "regret": 0.25649471999999984,
       "vlow": 0.46907320137879194,
+      "contains_truth": "yes"
+    },
+    {
+      "c": 0.1,
+      "method": "box (paper)",
+      "modal": "soft",
+      "regret": 0.25649471999999984,
+      "vlow": 0.15466405056251245,
       "contains_truth": "yes"
     },
     {
@@ -90,6 +106,14 @@
     },
     {
       "c": 0.3,
+      "method": "box (paper)",
+      "modal": "uniform",
+      "regret": 0.42730687999999994,
+      "vlow": -2.7293608307741244,
+      "contains_truth": "yes"
+    },
+    {
+      "c": 0.3,
       "method": "projected",
       "modal": "soft",
       "regret": 0.25649471999999984,
@@ -122,6 +146,14 @@
     },
     {
       "c": 1.0,
+      "method": "box (paper)",
+      "modal": "uniform",
+      "regret": 0.42730687999999994,
+      "vlow": -10.81169217629767,
+      "contains_truth": "yes"
+    },
+    {
+      "c": 1.0,
       "method": "projected",
       "modal": "uniform",
       "regret": 0.51271296,
@@ -146,5 +178,14 @@
   "M_D_true": [
     1.321362932732714,
     1.321362932732714
+  ],
+  "M_R_inf": [
+    0.8722222222222222,
+    0.8722222222222222,
+    0.8722222222222222
+  ],
+  "M_D_inf": [
+    0.6144444444444442,
+    0.6144444444444442
   ]
 }

@@ -83,6 +83,32 @@ def _inner(H, b_hat, g, xi, nu):
     return b_hat + delta(mu)
 
 
+def _linear_min_box(H, b_hat, g, xi, M_inf):
+    """min <g,b> s.t. (b-b_hat)'H(b-b_hat) <= xi and |b_i| <= M_inf for all i.
+
+    Assumption 4.1(f) of the anchor paper bounds the bridge class in SUP-norm, so
+    the literal class is a BOX, not an L2 ball. A box is not rotationally
+    symmetric, so there is no single scalar multiplier and the ball solver's root
+    find does not apply. Solved directly (linear objective, one quadratic
+    constraint, simple bounds), from two starts to reduce the chance of a local
+    stall.
+    """
+    from scipy.optimize import minimize
+    n = H.shape[0]
+    cons = [{"type": "ineq",
+             "fun": lambda b: xi - float((b - b_hat) @ H @ (b - b_hat)),
+             "jac": lambda b: -2.0 * H @ (b - b_hat)}]
+    bounds = [(-M_inf, M_inf)] * n
+    best, best_val = None, np.inf
+    for start in (np.clip(b_hat, -M_inf, M_inf), np.zeros(n)):
+        r = minimize(lambda b: float(g @ b), start, jac=lambda b: g,
+                     constraints=cons, bounds=bounds, method="SLSQP",
+                     options=dict(maxiter=400, ftol=1e-12))
+        if r.success and r.fun < best_val:
+            best, best_val = r.x, r.fun
+    return best if best is not None else np.clip(b_hat, -M_inf, M_inf)
+
+
 def _exact_linear_min_ball(H, b_hat, g, xi, M):
     """Exact min of <g,b> over conf(xi) INTERSECT {||b|| <= M}.
 
@@ -184,7 +210,7 @@ class BlockEllipsoid:
         y = np.linalg.solve(self.L, g)
         return float(np.sqrt(y @ y))
 
-    def linear_min(self, g, xi, projected=False, M=None):
+    def linear_min(self, g, xi, projected=False, M=None, M_inf=None):
         """argmin/min of <g, b> over conf(xi) (optionally restricted to the
         identified signal subspace). Returns (b_min, penalty).
 
@@ -200,6 +226,10 @@ class BlockEllipsoid:
         alone IS closed-form, and ||b(nu)|| decreases monotonically in nu, so a
         scalar bisection lands on the active-ball solution.
         """
+        if M_inf is not None and not projected:
+            b = _linear_min_box(self.H, self.b_hat, g, xi, M_inf)
+            return b, float(g @ self.b_hat - g @ b)
+
         if M is not None and not projected:
             b, status = _exact_linear_min_ball(self.H, self.b_hat, g, xi, M)
             if b is None:                      # ball and ellipsoid do not meet
@@ -268,7 +298,8 @@ def _block_M(M, i):
 
 def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
                       max_sweeps=30, tol=1e-11, n_restarts=3, rng=None,
-                      projected=False, M_R=None, M_D=None):
+                      projected=False, M_R=None, M_D=None,
+                      M_R_inf=None, M_D_inf=None):
     """min over conf_R x conf_D of the multilinear plug-in value, by blockwise
     closed-form coordinate descent with multi-restart.
 
@@ -295,12 +326,14 @@ def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
             _, gR, _ = value_and_grads(bR, bD)
             for t in range(T):
                 bR[t], _ = blocks_R[t].linear_min(
-                    gR[t], xis_R[t], projected, M=_block_M(M_R, t))
+                    gR[t], xis_R[t], projected, M=_block_M(M_R, t),
+                    M_inf=_block_M(M_R_inf, t))
             # dynamic blocks: gradients depend on the other blocks -> refresh each
             for j in range(T - 1):
                 _, _, gD = value_and_grads(bR, bD)
                 bD[j], _ = blocks_D[j].linear_min(
-                    gD[j], xis_D[j], projected, M=_block_M(M_D, j))
+                    gD[j], xis_D[j], projected, M=_block_M(M_D, j),
+                    M_inf=_block_M(M_D_inf, j))
             V_now = value_and_grads(bR, bD)[0]
             if V_prev - V_now < tol:
                 V_prev = V_now

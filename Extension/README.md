@@ -33,7 +33,7 @@ about a research line.
 | Compare the repair against the norm-constrained baseline | **done, reviewed** | Magnitudes invalid (solver + class-shape defects); D1/D2 survive |
 | Fix the norm-ball solver, per-block admissible `M` | **done** | Certified two-multiplier solver; `M` from the exact bridges |
 | Regret-vs-`c` on a common grid, with the plug-in baseline | **done** | Published advantage is a cross-`c` artifact; plug-in wins at every `c` |
-| Re-run under the paper's sup-norm (box) class | **required** | `M_R` is a box in Assumption 4.1(f); magnitudes depend on class shape |
+| Re-run under the paper's sup-norm (box) class | **done** | Box is the WEAKEST class; our "norm ball beats the repair" claim reverses |
 | (c) A proposition on non-contraction | next | Now covers both the ball-active and ball-inactive regimes |
 
 ## How (b) got unblocked

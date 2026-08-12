@@ -96,17 +96,24 @@ def main():
     bR_true, bD_true, _ = om.toy_true_bridges(params)
     MR_true = [float(np.linalg.norm(np.asarray(bR_true).ravel()))] * T
     MD_true = [float(np.linalg.norm(np.asarray(bD_true).ravel()))] * (T - 1)
+    # Assumption 4.1(f) bounds the class in SUP-norm, so the paper's literal
+    # class is a BOX. Tightest realizable box = max |b_true,i| per family.
+    MR_inf = [float(np.abs(np.asarray(bR_true)).max())] * T
+    MD_inf = [float(np.abs(np.asarray(bD_true)).max())] * (T - 1)
     print("admissible per-block M from the EXACT bridges (M >= ||b_true|| holds "
           "by construction)")
     print("   R blocks:", [f"{m:.3f}" for m in MR_true])
     print("   D blocks:", [f"{m:.3f}" for m in MD_true])
+    print(f"tightest realizable SUP-norm box (the paper's literal class): "
+          f"R {MR_inf[0]:.3f}, D {MD_inf[0]:.3f}")
     print(f"\noptimal policy: {best}  V_true = {v_true[best]:.4f}\n")
 
     print(f"{'c':>6}{'method':>13}{'selected':>11}{'regret':>9}"
           f"{'V_low':>11}{'contains truth':>16}")
     rows = []
     for c in C_GRID:
-        sel = {m: [] for m in ("plug-in", "vanilla", "norm-ball", "projected")}
+        sel = {m: [] for m in ("plug-in", "vanilla", "norm-ball", "box (paper)",
+                               "projected")}
         vlows_best = {m: [] for m in sel}
         for sd in SEEDS:
             d = toy.sample_trajectories(params, N_MAIN, np.random.default_rng(sd))
@@ -144,6 +151,13 @@ def main():
                         M_R=MR_true, M_D=MD_true)["V_low"]
                 except (ValueError, TypeError):
                     v["norm-ball"][name] = float("nan")
+                try:
+                    v["box (paper)"][name] = pessimistic_value(
+                        blocksR, blocksD, xR, xD, vg,
+                        rng=np.random.default_rng(sd),
+                        M_R_inf=MR_inf, M_D_inf=MD_inf)["V_low"]
+                except (ValueError, TypeError):
+                    v["box (paper)"][name] = float("nan")
                 v["projected"][name] = pessimistic_value(
                     blocksR, blocksD, xR, xD, vg,
                     rng=np.random.default_rng(sd), projected=True)["V_low"]
@@ -157,7 +171,7 @@ def main():
                 sel[m].append(pick)
                 vlows_best[m].append(v[m][pick])
 
-        for m in ("plug-in", "vanilla", "norm-ball", "projected"):
+        for m in ("plug-in", "vanilla", "norm-ball", "box (paper)", "projected"):
             picks = [p for p in sel[m] if p is not None]
             if not picks:
                 print(f"{c:>6.2f}{m:>13}{'n/a':>11}")
@@ -165,7 +179,8 @@ def main():
             reg = float(np.mean([v_true[best] - v_true[p] for p in picks]))
             modal = max(set(picks), key=picks.count)
             truth = {"plug-in": "n/a", "vanilla": "yes (no class)",
-                     "norm-ball": "yes", "projected": "NO"}[m]
+                     "norm-ball": "yes", "box (paper)": "yes",
+                     "projected": "NO"}[m]
             print(f"{c:>6.2f}{m:>13}{modal:>11}{reg:>9.4f}"
                   f"{np.nanmean(vlows_best[m]):>11.3f}{truth:>16}")
             rows.append(dict(c=c, method=m, modal=modal, regret=reg,
@@ -177,6 +192,8 @@ def main():
     RESULTS["optimal"] = best
     RESULTS["M_R_true"] = MR_true
     RESULTS["M_D_true"] = MD_true
+    RESULTS["M_R_inf"] = MR_inf
+    RESULTS["M_D_inf"] = MD_inf
     out = os.path.normpath(os.path.join(HERE, "..", "experiments",
                                         "results_pessimism_regenerated.json"))
     os.makedirs(os.path.dirname(out), exist_ok=True)

@@ -29,7 +29,7 @@ block/seed pairs `||b_hat|| < ||b_true||`. So `M = ||b_hat||` **excludes the
 truth**, and the "contains truth: yes" column in `repair_vs_normball.md` §3 was
 false — that comparison pitted two unsound methods against each other.
 
-**0.4 `M_R` is a sup-norm, not an `L2`/RKHS norm** (Assumption 4.1(f) of the
+**0.4 CONFIRMED BY MEASUREMENT — `M_R` is a sup-norm, not an `L2`/RKHS norm** (Assumption 4.1(f) of the
 anchor paper). We imposed the wrong geometry. With the paper's literal box class
 at its tightest realizable size, the rescue nearly vanishes: `−92` at `c = 10`
 against the `−9` an `L2` ball gives. **Every magnitude here is a function of the

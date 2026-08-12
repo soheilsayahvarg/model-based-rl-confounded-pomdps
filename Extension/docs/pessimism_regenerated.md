@@ -53,6 +53,16 @@ Optimal policy `greedy_lo`, `V_true = 2.0177`.
 | 1.00 | norm-ball | uniform | 0.5127 | **−3.026** | **yes** |
 | 1.00 | projected | uniform | 0.5127 | −4.015 | no |
 
+The paper's literal class is the **sup-norm box** of Assumption 4.1(f), tightest
+realizable radius `M_inf = 0.872` (R) and `0.614` (D):
+
+| `c` | box (paper) regret | box `V_low` | `L2` ball `V_low` |
+|---|---|---|---|
+| 0.03 | **0.0000** | 1.275 | 1.278 |
+| 0.10 | 0.2565 | 0.155 | 0.469 |
+| 0.30 | 0.4273 | −2.729 | −0.806 |
+| 1.00 | 0.4273 | **−10.812** | −3.026 |
+
 ## 3. The published advantage is a cross-`c` artifact
 
 **At `c = 0.03` — Phase 3's own operating point — all four methods achieve
@@ -90,10 +100,27 @@ So the catastrophic figures we published as the method's failure mode are largel
 an artifact of omitting the class, but the *ranking* failure they were used to
 illustrate is not — it survives the correction unchanged.
 
-At `c = 1.0` the norm ball is **both more informative and sound** (`−3.026`,
-contains the truth) than our projection (`−4.015`, provably excludes 21% of the
-truth's norm). At `c = 0.3` the projection is more informative but unsound. So the
-trade is width-dependent and neither dominates.
+### Under the paper's actual class the comparison reverses
+
+We previously concluded that the paper's own constraint beats our repair. **That
+holds only for the `L2` ball we chose, not for the class the paper specifies.**
+
+At `c = 1.0`: `L2` ball `−3.026`, projection `−4.015`, **paper's box `−10.812`**.
+The box is the *weakest* of the three.
+
+The reason is dimensional. A sup-norm bound is a much weaker constraint than an
+`L2` bound in high dimensions: the tightest box containing the true bridge,
+`|b_i| <= 0.872` over 36 coefficients, admits vectors of `L2` norm up to `5.2`,
+against the true bridge's `1.803`. So the paper's class is far larger than the
+`L2` ball of the same tightness, and constrains the excursion far less.
+
+**This is a finding about the paper, not about us.** Assumption 4.1(f) bounds the
+bridge class in sup-norm, and in a coefficient space of this dimension that bound
+does very little to contain the pessimistic minimisation.
+
+The earlier claim that the norm ball is "both more informative and sound" than
+our projection is therefore **withdrawn**: under the paper's own class the
+projection is the more informative of the two, though still the only unsound one.
 
 ## 6. What has to change in the phase write-ups
 
