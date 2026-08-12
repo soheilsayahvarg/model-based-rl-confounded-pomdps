@@ -71,12 +71,24 @@ and with the schedule `rho = 0.03/sqrt(N)` the `N` **cancels exactly**. Measured
 | 256,000 | 5.93e-05 | 5.93e-05 | **7.697** | 0.236 |
 
 Across a 64× increase in data the unprojected width does not move, while the
-projected width shrinks at exactly `N^-1/2`. `lambda_min` equals `rho` to every
+projected width shrinks at exactly `N^-1/4`. `lambda_min` equals `rho` to every
 digit — the rule divides by the regularizer, not by anything the data determines.
+
+> **Correction.** This paragraph originally read `N^-1/2` for the projected
+> column. The rate is `N^-1/4`, and the step (c) proposition is what caught it:
+> with the null directions removed the width is set by `sqrt(xi)` alone, giving
+> slope `(kappa-1)/2 = -1/4` at the implemented `kappa = 1/2`. The published
+> numbers already said so — `0.667/0.236 = 2.826` against `64^0.25 = 2.828` — and
+> were misread. Found by prediction, not by re-measurement.
 
 **In the unidentified directions the confidence region never contracts.** More
 data does not help, at any sample size, ever. This is a stronger and more useful
 statement than the value we originally led with.
+
+**Superseded in scope by step (c).** The flatness above is not a property of this
+environment or this schedule — it is the boundary case `e = 0` of a one-parameter
+dichotomy in which no ridge schedule buys contraction without losing coverage.
+See `noncontraction.md`.
 
 ## 5. The family claim, correctly scoped
 

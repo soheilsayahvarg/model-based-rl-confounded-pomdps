@@ -195,11 +195,157 @@ directional.
 
 ## 5. Measurements
 
-*(added after §1–§4 were committed)*
+`poc/run_noncontraction.py`, 3 seeds, `N` from 4,000 to 256,000 (64× range).
+
+### 5.1 The two exact structural claims
+
+The proof rests on two statements about the *implementation*, not the mathematics,
+and either could have been false:
+
+| claim | predicted | measured |
+|---|---|---|
+| `lam_min(H) = lam` under (H1) | exact | max relative error **1.25e-12** |
+| `P_Nul b_hat = 0` | exact | **7.09e-12** |
+
+Both hold to machine precision, across every fit in the sweep.
+
+### 5.2 Width slope, global convention (model-free)
+
+| `kappa` | `e` | predicted slope | measured | error |
+|---|---|---|---|---|
+| 0.25 | −0.50 | −0.250 | **−0.2526** | 0.0026 |
+| 0.50 | 0.00 | 0.000 | **+0.0040** | 0.0040 |
+| 0.75 | +0.50 | +0.250 | **+0.2402** | 0.0098 |
+
+The `kappa = 0.75` row is the claim worth stating on its own. The width goes
+72.4 → 100.8 → 139.3 → 197.3 as `N` goes 4,000 → 256,000:
+
+> **More data makes the pessimistic bound strictly worse, at the predicted rate.**
+
+Nothing in the step (b) table suggested that; it falls out of the exponent.
+
+### 5.3 Width slope, signal convention (model-based)
+
+| `kappa` | `e` | predicted | measured | error |
+|---|---|---|---|---|
+| 0.25 | −0.75 | −0.375 | −0.4141 | 0.0391 |
+| 0.50 | −0.50 | −0.250 | −0.2798 | 0.0298 |
+| 1.00 | 0.00 | 0.000 | −0.0069 | 0.0069 |
+
+The residuals are larger here, and they are **not** noise: all three are negative,
+and they shrink monotonically in `kappa`. The proof says why. The exact finite-`N`
+form is `W^2 = xi * (A_N + beta_g^2/lam)` where `A_N = ||P_S g||^2_{(H|_S)^-1}` is
+the signal contribution; §3 takes the `lam -> 0` limit, in which `A_N` is
+negligible. At finite `lam` the retained `A_N` makes `W` decay slightly *faster*
+than the asymptote, and the smaller `kappa` is, the slower `lam` shrinks and the
+longer the contamination persists. Predicted ordering: residuals negative, largest
+at `kappa = 0.25`, smallest at `kappa = 1.0`. Observed: −0.039, −0.030, −0.007.
+
+**The deviation from the prediction has the shape the prediction implies**, which
+is a better check than agreement would have been.
+
+### 5.4 The projected column is NOT verified
+
+| `kappa` | predicted | measured | error |
+|---|---|---|---|
+| 0.25 | −0.375 | −0.3659 | 0.0091 |
+| 0.50 | −0.250 | −0.2137 | 0.0363 |
+| 0.75 | −0.125 | −0.0641 | 0.0609 |
+
+Right sign, right order of magnitude, but the underlying series is non-monotone —
+at `kappa = 0.75` it runs 2.139, 1.791, 3.565, 1.265. Parallel-analysis rank
+selection carries ±1 noise at these sample sizes (`family_pessimism.md` §9), and a
+±1 change in the retained dimension moves the projected width discontinuously. The
+unprojected column needs no basis at all, which is why it is clean.
+
+**Reported as consistent, not as confirmed.** It needs ~20 seeds. The §4.2
+retrodiction is unaffected: it is arithmetic on numbers already published in
+`family_pessimism.md`, not a re-measurement.
+
+### 5.5 Coverage — the rate holds, the threshold is out of reach
+
+**The test as designed in §4.3 was vacuous, and is reported as such.** Predicted
+crossing at `N* ≈ 1.66e9`; the grid stopped at `N = 1,024,000`, coverage 3/3
+everywhere. A grid 1,600× short of the threshold could not have produced a
+failure. That is exactly the defect for which step (b) withdrew its "validity
+36/36" evidence (`family_pessimism.md` §8.3), and it is not admissible here either.
+
+What *is* falsifiable on a reachable grid is the **rate**. The mechanism is that
+the null-direction coverage margin `m_null := xi / (lam * beta^2)` degrades as
+`N^e`, hitting 1 when coverage fails:
+
+| `N` | 1,000 | 4,000 | 16,000 | 64,000 | 256,000 | 1,024,000 |
+|---|---|---|---|---|---|---|
+| `m_null` | 1238.2 | 680.0 | 332.9 | 159.1 | 82.0 | 41.3 |
+
+Slope **−0.4965** against a predicted **−0.5000**, over three decades of `N`.
+The margin degrades at exactly the predicted exponent. It is the *level* that puts
+the crossing out of reach, and the level is a property of the environment: the
+toy's true bridge has only **2.9%** of its norm in the null space
+(`beta = 0.0532` against `||b_true|| = 1.803`), so (H4) holds but barely, and
+`N* ∝ beta^-4` — an environment with ten times the null share crosses at
+`N2* ≈ 50,000`.
+
+**Post-hoc refinement, labelled as such.** The measurements show the *signal*
+directions still dominate `xi_needed` by 15× at `N = 1,024,000`, so the §3 bound
+`xi_needed >= lam*beta^2` is far from tight here. Retaining the signal term,
+`xi_needed ≈ C/N2 + lam0*beta^2*N2^-kappa` with `C = 0.698` measured, gives
+
+```
+N2* = ( (c/sigma2 - C) / (lam0*beta^2) )^2,   valid only when c > sigma2*C.
+```
+
+That second condition is a **floor on the width constant**: below
+`c > sigma2*C = 0.0111` the region fails to cover at *every* `N`, not just large
+`N`. Phase 3 operates at `c = 0.03`, a factor of **2.7** above its own floor.
+This is more practically relevant than the `N = 1.7e9` threshold — but it was
+derived after seeing the data, so it is a hypothesis for the next round, not a
+confirmed prediction.
+
+### 5.6 Summary
+
+| claim | status |
+|---|---|
+| `lam_min(H) = lam`, `P_Nul b_hat = 0` exactly | **confirmed**, machine precision |
+| width slope `= e/2`, global convention | **confirmed**, ≤0.010 in all cells |
+| width grows with data when `e > 0` | **confirmed**, +0.240 vs +0.250 |
+| width slope `= e/2`, signal convention | **confirmed**, with a finite-`lam` residual whose sign and ordering the proof predicts |
+| coverage margin degrades as `N^e` | **confirmed**, −0.4965 vs −0.5000 |
+| projected slope `= (tau-1)/2` | consistent, **not verified** (PA rank noise) |
+| coverage crossing at `N* = K^(1/e)` | **not tested** — grid 1,600× short |
+| floor `c > sigma2*C` | **post-hoc**, untested |
 
 ## 6. Honest limitations
 
-*(added with §5)*
+- **The coverage branch is not the operative failure mode on this environment.**
+  It is mathematically real and its rate is confirmed, but with a 2.9% null share
+  the crossing sits at `N ≈ 1.7e9`. Any write-up should lead with the width
+  branch, which bites at ordinary sample sizes, and state the coverage branch as
+  a completeness result with its environment-dependent threshold made explicit.
+  Presenting it the other way round would be the same cross-regime flattery the
+  regenerated pessimism table already had to correct.
+- `beta` is computed from the **exact oracle bridge**. A practitioner cannot
+  compute `N*`, because knowing `beta` means knowing the bridge. The proposition
+  says the threshold exists and how it scales, not where it is for real data.
+- 3 seeds. Adequate for the unprojected slopes (residuals ≤0.010 against a signal
+  of 0.25) and inadequate for the projected ones, as §5.4 says.
+- Two environments, one per convention: the `(2,6,4)` dimension-separated POMDP
+  and the Phase 3 toy. (H1) is dimensional and transfers; (H4) is not, and is the
+  hypothesis most likely to fail elsewhere.
+- The width rule family `xi = c/(N*mu)` covers both conventions in this repository
+  but is not the only possible calibration. A rule that made `mu` depend on the
+  *truth* rather than on the design spectrum would escape the dichotomy — and
+  would not be implementable.
+- The proposition assumes the class constraint is inactive for (i)–(iii); (iv)
+  handles the active case but is proved, not measured. The measured evidence for
+  the ball-active regime is the `M`-sweep in `norm_constraint.md` §5.
+
+## 7. Files
+
+| File | Role |
+|---|---|
+| `poc/run_noncontraction.py` | Verification of §4 |
+| `experiments/results_noncontraction.json` | Raw results |
 
 ## 7. Files
 

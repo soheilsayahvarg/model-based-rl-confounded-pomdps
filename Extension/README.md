@@ -34,7 +34,8 @@ about a research line.
 | Fix the norm-ball solver, per-block admissible `M` | **done** | Certified two-multiplier solver; `M` from the exact bridges |
 | Regret-vs-`c` on a common grid, with the plug-in baseline | **done** | Published advantage is a cross-`c` artifact; plug-in wins at every `c` |
 | Re-run under the paper's sup-norm (box) class | **done** | Box is the WEAKEST class; our "norm ball beats the repair" claim reverses |
-| (c) A proposition on non-contraction | next | Now covers both the ball-active and ball-inactive regimes |
+| (c) A proposition on non-contraction | **done** | One exponent governs both width and coverage; predictions committed before the run |
+| Re-run the projected-width slope at 20 seeds | **required** | PA rank noise; slope consistent but not verified |
 
 ## How (b) got unblocked
 
@@ -74,6 +75,36 @@ correction it returns 0 whenever the behavior policy is deterministic.
 
 Step (b) can therefore run in **both** regimes with this selector, and the regime
 restriction is dropped.
+
+## What (c) established
+
+Step (b) reported that the pessimism width did not shrink across a 64× increase in
+data. Step (c) shows that was **the boundary case of a dichotomy**, not a quirk of
+one schedule. With ridge `lam = lam0*N^-kappa` and width `xi = c/(N*mu)`,
+`mu = m*N^-tau`, one exponent `e = tau + kappa - 1` governs both sides:
+
+- `e >= 0`: coverage is sustainable at every `N`, and the width **never contracts**
+  — flat at `e = 0`, **growing with data** for `e > 0`.
+- `e < 0`: the width contracts at `N^(e/2)`, but coverage fails beyond a finite
+  `N* = K^(1/e)`.
+
+No schedule gives both. The exponent that shrinks the width is the one that makes
+the region drop the truth.
+
+Predictions were written and **committed before the verification script existed**
+(commit "stated before it is tested"), because the two results that survived
+adversarial review were both derived analytically first and the withdrawn ones
+were not. Measured: width slopes match to ≤0.010 in all three cells of the global
+convention — including `+0.240` against a predicted `+0.250`, i.e. **more data
+making the bound strictly worse** — and the coverage margin degrades at `−0.4965`
+against a predicted `−0.5000`.
+
+What did **not** work is reported in `docs/noncontraction.md` §5.4–§5.5: the
+projected-width slope is too noisy at 3 seeds to call, and the coverage-crossing
+test was vacuous — the grid stopped 1,600× short of the predicted threshold, so it
+could not have failed. On this environment the true bridge has only 2.9% of its
+norm in the null space, so the coverage branch is real but inoperative at any
+realistic `N`; the width branch is the one that bites.
 
 ## What (a) found, after review
 
