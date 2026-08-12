@@ -1,355 +1,391 @@
-# Step (c): A Contraction/Coverage Dichotomy for Proximal Pessimism
+# Step (c): A Coverage Floor for Proximal Pessimism
 
-**Status: proposition and predictions fixed BEFORE measurement. This document was
-committed with §1–§4 complete and §5 empty; the verification numbers were added in
-a later commit. The git history is the evidence for that ordering, which is the
-point — the two results of ours that survived adversarial review were both derived
-analytically before they were measured, and the ones that failed were not.**
+**Status: revised after adversarial round 6 (`critic_findings_stepc.md`). The
+width branch survived and is stronger. The coverage branch's quantitative content
+on the tested environment is WITHDRAWN. The novelty claim is downgraded to a
+restatement with two novel corollaries.**
+
+**Provenance.** §1–§4 of the original version were committed at `53d71a5` with §5
+empty, so the predict-then-measure order is auditable; the review verified that
+commit and found §1–§4 untouched by the measurement commit. **This revision
+post-dates the review and rewrites §3.** The original statement is retrievable at
+`53d71a5`; §8 lists exactly what changed and why.
 
 ---
 
-## 1. What this replaces
+## 1. What this is
 
-Step (b) reported a measured fact: across a 64× increase in data the pessimism
-width did not move (`family_pessimism.md` §4). That is a statement about four
-numbers in one environment under one ridge schedule. A referee's first question is
-whether a different schedule fixes it.
+Step (b) reported that the pessimism width did not move across a 64× increase in
+data. That was four numbers, one environment, one ridge schedule. The question a
+referee asks first is whether a different schedule fixes it.
 
-The answer is that no schedule fixes it, and the reason is not a property of the
-environment. Both the width and the coverage of the confidence region are governed
-by **one exponent**, with opposite signs. Making the region contract is exactly
-what makes it drop the truth.
+None does, and the reason is two lines rather than a rate calculation. But the
+result is **not** an indictment of the anchor paper: §3.3 shows the paper's own
+schedule already sits on the non-contracting branch, and its Assumption D.16(a)
+explicitly excludes the configuration in which the coverage half could bite. The
+dichotomy **explains the paper's design choice**; it does not break it.
 
 ## 2. Setting and hypotheses
 
-Per bridge block, the stage-2 empirical risk is exactly quadratic, so
+Per bridge block the stage-2 empirical risk is exactly quadratic, so
 
-```
+```text
 conf(xi) = { b : (b - b_hat)' H (b - b_hat) <= xi },    H = T2_hat + lam * I
 ```
 
-and for a value functional linear in the block, `V(b) = <g, b>`, the pessimistic
-value and its penalty (width) are
+and for a value functional linear in the block, `V(b) = <g, b>`,
 
-```
+```text
 V_low = <g, b_hat> - W,     W = sqrt(xi) * ||g||_{H^-1}.
 ```
 
-**(H1) Structural null.** `T2_hat` has an exact null space `Nul` with
-`dim >= |O| - min(|O|, |O_0|) > 0`, fixed by the dimensions and independent of `N`.
-This is step (a)'s surviving result: it is linear algebra, it holds at every sample
-size, and it is checkable before fitting anything.
+**(H1) Exact structural null.** `T2_hat` has an exact null space `Nul` with
+`dim >= |O| - min(|O|, |O_0|) > 0`, fixed by dimensions, independent of `N`. This
+is step (a)'s surviving result. It is exact **because the tabular design is a
+finite-rank count matrix**; see §3.4 for what happens with a PD kernel.
 
-**(H2) Ridge schedule.** `lam(N) = lam0 * N^-kappa`, `lam0 > 0`, `kappa >= 0`. The
-implementation's default is `lam0 = 0.03`, `kappa = 1/2`. The anchor paper's
-Theorem 4.2 sets `lam2 = N2^(-gamma/(gamma*c2+1))`, i.e. `kappa = gamma/(gamma*c2+1)`.
+**(H2) Ridge schedule.** `lam(N) = lam0 * N^-kappa`, `lam0 > 0`. Implemented
+default `lam0 = 0.03`, `kappa = 1/2`.
 
-**(H3) Width rule.** `xi(N) = c / (N * mu(N))` with `mu(N) = m * N^-tau`. Two
-conventions appear in this repository, and both are covered:
+**(H3) Width rule.** `xi(N) = c / (N * mu(N))`, `mu(N) = m * N^-tau`. Two
+conventions appear in this repository:
 
 | convention | `mu` | `tau` | used by |
 |---|---|---|---|
-| **global** | `lam_min(H)`, which under (H1) equals `lam(N)` exactly | `tau = kappa` | the model-free layer, `mf_pessimism.py` |
-| **signal** | `sigma2_signal`, the smallest *retained* eigenvalue, `-> sigma2 > 0` | `tau = 0` | the model-based layer, `BlockEllipsoid.width_rule` |
+| **global** | `lam_min(H)`, `= lam(N)` exactly under (H1) | `tau = kappa` | `mf_pessimism.py` |
+| **signal** | `sigma2_signal`, smallest retained eigenvalue, `-> sigma2 > 0` | `tau = 0` | `BlockEllipsoid.width_rule` |
 
-**(H4) Non-degenerate leakage.** `g(N) -> g_inf` with `P_Nul g_inf != 0`; write
-`beta_g = ||P_Nul g_inf|| > 0`. The truth has a null component
-`beta = ||P_Nul b_true|| > 0`.
+**(H4) Non-degenerate leakage.** `beta_g := ||P_Nul g_inf|| > 0` **and**
+`beta := ||P_Nul b_true|| > 0`.
 
-(H4) is the step (b) result in hypothesis form. When it fails — when the value
-gradient is orthogonal to the null space — nothing below applies, and that is the
-correct behaviour: a null space the value never looks into is harmless.
+> **(H4) is the binding hypothesis, and it FAILS on the Phase 3 toy.** Round 6
+> established that this is structural, not accidental: the anchor paper's
+> completeness assumption (3.3, `K0` invertible) forces the min-norm bridge out of
+> the population null, giving `beta_pop = 0`; and by its Lemma C.1 population
+> gradient leakage is equivalent to `C*_pi = infinity`. **Both halves of (H4) live
+> outside the anchor paper's assumptions.** Everything below is therefore a
+> statement about what happens when those assumptions fail — which is a legitimate
+> question, and is exactly what a robustness study should ask, but it must be
+> labelled as such and not presented as a defect in the paper.
 
-## 3. The proposition
+## 3. The results
 
-Define the **governing exponent**
+### 3.1 The floor — schedule-free, and the statement that should lead
 
-```
-e := tau + kappa - 1.
-```
-
-> **Proposition.** Under (H1)–(H4), while the bridge-class constraint is inactive:
+> **Proposition 1.** Assume (H1) and `P_Nul b_hat = 0`. Then for **any** ridge
+> `lam > 0` and **any** width `xi > 0` — power-law, logarithmic, data-adaptive,
+> truth-dependent, anything — a region that covers the truth satisfies
 >
-> **(i) Width.** `W(N) = Theta(N^(e/2))`. Explicitly
-> `W(N) >= beta_g * sqrt(c/m) * lam0^(-1/2) * N^(e/2)`.
->
-> **(ii) Coverage.** `b_true in conf(xi)` requires `N^e >= K`, where
-> `K := lam0 * beta^2 * m / c`.
->
-> **(iii) Dichotomy.** Exactly one of the following holds.
-> * `e >= 0`: the null-direction coverage requirement is satisfied at every `N`,
->   and `W` is non-decreasing — **the region never contracts**. At `e = 0` it is
->   exactly constant.
-> * `e < 0`: `W` contracts at rate `N^(e/2)`, but coverage **fails for every**
->   `N > N* = K^(1/e)`, a finite and computable threshold.
->
-> **No choice of `(kappa, tau)` delivers contraction with sustained coverage.**
->
-> **(iv) Class-constrained regime.** With `||b|| <= M` imposed, the unconstrained
-> minimiser's excursion is `Theta(N^((e+kappa)/2))`. Whenever `e + kappa > 0` the
-> ball becomes active at a finite `N`, and thereafter
-> `W(N) -> <g_inf, b_inf> + M*||g_inf|| > 0`, a constant. So the penalty has a
-> strictly positive limit in every case.
+> ```text
+> W  >=  beta * beta_g,   at every N.
+> ```
 
-### Proof
+*Proof.* Coverage requires `xi >= xi_needed >= lam*beta^2` (§3.5). And
+`W = sqrt(xi)*||g||_{H^-1} >= sqrt(xi/lam) * beta_g >= beta * beta_g`. The `lam`
+cancels. ∎
 
-**The ridge acts as a scalar on `Nul`.** By (H1), `H|_Nul = lam * I` exactly, so
-`(H^-1)|_Nul = lam^-1 * I`. Splitting `g` into signal and null parts,
+Two lines, no schedule, no rates. **Any width rule that covers the truth pays at
+least `beta * beta_g` at every sample size.** This is due to the round-6 review;
+our own proof steps gave it and we stated something narrower.
 
+### 3.2 The power-law dichotomy, as a corollary
+
+With (H2)–(H3), define `e := tau + kappa - 1`. Then, while the class constraint is
+inactive:
+
+- **(i) Width.** `W(N) = Theta(N^(e/2))`, explicitly
+  `W(N) >= beta_g * sqrt(c/m) * lam0^(-1/2) * N^(e/2)`.
+- **(ii) Coverage, necessary condition.** `b_true in conf(xi)` **requires**
+  `N^e >= K`, `K := lam0*beta^2*m/c`.
+- **(iii) Dichotomy.** If `e < 0`, `W` contracts at `N^(e/2)` but the necessary
+  condition fails for all `N > K^(1/e)`. If `e >= 0`, `W` is non-decreasing —
+  it never contracts.
+- **(iv) Class-constrained regime.** The unconstrained excursion is
+  `Theta(N^((e+kappa)/2))`; when `e + kappa > 0` the ball binds at finite `N` and
+  `W -> <g_inf,b_inf> + M*||g_inf|| > 0`.
+
+**Two corrections to the original statement of (iii), both from round 6.**
+
+1. *The constant was ignored.* "`e >= 0` ⟹ satisfied at every `N`" needs `K <= 1`.
+   For `e > 0` the condition **fails** for all `N < K^(1/e)`. True at the
+   implemented constants (`K ~ 1e-6`), false as a general statement.
+2. *Necessary is not sufficient.* The `e >= 0` branch shows the **null**
+   obstruction is absent, not that coverage holds. The signal directions also
+   demand width — on the toy they dominate `xi_needed` by 15× — and they can
+   break coverage at any `e`. The original wrote "coverage is sustainable", which
+   overstates.
+
+### 3.3 Where the anchor paper sits — `e_paper > 0`, always
+
+This is the one genuinely new consequence, and it is purely analytical. The
+paper's width is `xi ~ M_R * N2^(-alpha/(2*alpha+2))` and its ridge is
+`lam2 = N2^(-alpha/(alpha*c2+1))`, which places it **inside our own family**:
+
+```text
+tau_paper = (alpha+2)/(2*alpha+2),    kappa_paper = alpha/(alpha*c2+1)
+
+e_paper = alpha*(2*alpha + 1 - alpha*c2) / ((alpha*c2+1)*(2*alpha+2))
 ```
-||g||^2_{H^-1} = ||P_S g||^2_{(H|_S)^-1} + ||P_Nul g||^2 / lam  >=  beta_g^2 / lam.
+
+Since Assumption D.16 restricts `c2` to `(1, 2]`, the factor `2*alpha+1-alpha*c2`
+is positive for every `alpha > 0`. Verified independently over the admissible
+grid: **`e_paper > 0` in 30/30 cells**, minimum `0.0217` at `alpha=10, c2=2`.
+
+> **The anchor paper's own schedule never promises a contracting region.** Its
+> construction sits strictly on the non-contracting branch for every admissible
+> smoothness — and by (i), the penalty it assigns to a leaky policy **grows with
+> `N`**. That consequence does not appear in the paper.
+
+This reframes the whole contribution. We are not exhibiting a flaw; we are
+locating the paper's schedule on a trade-off curve and naming the price it pays.
+
+### 3.4 Scope: this is the exact-null specialisation
+
+(H1)'s exactness is a property of the **tabular delta-kernel**, where the design
+is a finite-rank count matrix. For a strictly positive-definite kernel the
+spectrum decays smoothly and there is no atom at zero. Round 6 ran the classical
+calculation (`s_j ~ j^-b`, gradient mass `g_j^2 ~ j^-a`): then
+`||g||^2_{H^-1} = Theta(lam^-theta)` with `theta = 1 - (a-1)/b < 1`, and the
+governing exponent generalises to
+
+```text
+e' = tau + theta*kappa - 1,     theta = 1 exactly iff the null is an atom.
 ```
 
-The first term is `Theta(1)`: `H|_S` has eigenvalues bounded away from 0 by the
-design's own signal spectrum, which converges. So the null term dominates whenever
-`lam -> 0`, giving `||g||_{H^-1} = Theta(lam^-1/2)`.
+The trade-off persists — **that much is Tikhonov source-condition theory, not
+ours** — but the threshold `e = 0` and every numeric constant in §4 are the
+delta-kernel case. The original §3 claimed "any method that regularises a
+rank-deficient bridge design and calibrates against that design inherits this
+dichotomy, whatever the estimator." That is **overstated** and is corrected here.
 
-**(i)** `W = sqrt(xi) * ||g||_{H^-1} = sqrt(c/(N*m*N^-tau)) * Theta(lam0^-1/2 * N^(kappa/2))`
-`= Theta(N^((tau-1)/2 + kappa/2)) = Theta(N^(e/2))`.
+### 3.5 The two exact structural steps
 
-**(ii)** The stage-2 solve is `b_hat = (T2_hat + lam I)^-1 * g2_hat` with
-`g2_hat = Psi' p_hat / N2 in range(Psi') = Nul^perp`. Hence
+`H|_Nul = lam*I` exactly, so `(H^-1)|_Nul = lam^-1 I` and
+`||g||^2_{H^-1} >= beta_g^2/lam`. And the stage-2 solve gives
+`g2_hat = Psi' p_hat/N2 in range(Psi') = Nul^perp`, hence
 
-```
+```text
 P_Nul b_hat = lam^-1 * P_Nul g2_hat = 0    exactly,
 ```
 
-so `P_Nul (b_true - b_hat) = P_Nul b_true` and
+so `P_Nul(b_true - b_hat) = P_Nul b_true` and `xi_needed >= lam*beta^2`. Round 6
+audited both solver paths (primal and dual) for a route by which `g2_hat` could
+acquire a null component and found none.
 
-```
-xi_needed = (b_true-b_hat)' H (b_true-b_hat) >= lam * beta^2.
-```
+## 4. Predictions, as committed before measurement
 
-Coverage therefore requires `c/(N*m*N^-tau) >= lam0*beta^2*N^-kappa`, i.e.
-`N^(tau+kappa-1) >= lam0*beta^2*m/c`, i.e. `N^e >= K`.
+*Unchanged from `53d71a5`. The verdict column is the only addition.*
 
-**(iii)** If `e >= 0` then `N^e` is non-decreasing, so the requirement in (ii) is
-sustainable, and by (i) `W` is non-decreasing. If `e < 0` then `N^e -> 0 < K`, and
-`N^e >= K` fails exactly for `N > K^(1/e)`. The two cases are exhaustive and
-exclusive because they partition the sign of a single real number. **The exponent
-that shrinks the width is the same one that breaks coverage.**
+**4.1 Width slope.** `d log W / d log N = e/2`.
 
-**(iv)** The unconstrained minimiser is `b* = b_hat - sqrt(xi) H^-1 g / ||g||_{H^-1}`,
-so `||b* - b_hat|| = sqrt(xi) * ||H^-1 g|| / ||g||_{H^-1}`, and on `Nul`,
-`||H^-1 g|| >= beta_g/lam`, giving excursion `= Theta(N^(e/2 + kappa/2))`. If
-`e + kappa > 0` this diverges, so it exceeds any fixed `M` at a finite `N`, after
-which the constraint binds and the ellipsoid is inactive; then
-`min_{||b||<=M} <g,b> = -M||g||` and `W = <g,b_hat> + M||g||`, which converges to a
-positive constant since `g -> g_inf` and `b_hat -> b_inf`. QED
+| convention | `tau` | `kappa` | `e` | predicted | verdict |
+|---|---|---|---|---|---|
+| global | `kappa` | 0.25 | −0.50 | −0.25 | **confirmed** |
+| global | `kappa` | 0.50 | 0.00 | 0.00 | **confirmed** |
+| global | `kappa` | 0.75 | +0.50 | +0.25 | **confirmed** |
+| signal | 0 | 0.25 | −0.75 | −0.375 | **confirmed** (§5.3) |
+| signal | 0 | 0.50 | −0.50 | −0.25 | **confirmed** (§5.3) |
+| signal | 0 | 1.00 | 0.00 | 0.00 | **confirmed** |
 
-### Why this is stronger than what step (b) reported
+**4.2 Retrodiction and the correction it forced.** Projected width slope
+`(tau-1)/2 = -1/4`, not `-1/2`. `family_pessimism.md` §4 said `N^-1/2`; its own
+numbers give `0.667/0.236 = 2.826` against `64^0.25 = 2.828`. **Correct, and
+confirmed rank-conditionally at 20 seeds** (§5.4).
 
-Step (b) said: in this environment, at this schedule, the width was flat. The
-proposition says the flatness was **the boundary case `e = 0`**, and that moving
-off it in either direction is worse — one way the width grows with data, the other
-way the region stops containing the truth at a computable sample size.
-
-It also converts the criticism from an implementation complaint into a statement
-about the construction: any method that (a) regularises a rank-deficient bridge
-design and (b) calibrates its region against a spectral quantity from that same
-design inherits this dichotomy, whatever the estimator.
-
-## 4. Predictions, fixed before measurement
-
-All at `lam0 = 0.03` (the implemented default), `beta_g, beta > 0` by (H4).
-
-**4.1 Width slope.** `d log W / d log N = e/2 = (tau + kappa - 1)/2`.
-
-| convention | `tau` | `kappa` | `e` | predicted slope |
-|---|---|---|---|---|
-| global (model-free) | `kappa` | 0.25 | −0.50 | **−0.25** |
-| global (model-free) | `kappa` | 0.50 | 0.00 | **0.00** (flat) |
-| global (model-free) | `kappa` | 0.75 | +0.50 | **+0.25** (grows with data) |
-| signal (model-based) | 0 | 0.25 | −0.75 | **−0.375** |
-| signal (model-based) | 0 | 0.50 | −0.50 | **−0.25** |
-| signal (model-based) | 0 | 1.00 | 0.00 | **0.00** (flat) |
-
-The `kappa = 0.75` global row is the sharpest falsifiable claim: **more data makes
-the pessimistic bound strictly worse**, at rate `N^(+1/4)`.
-
-**4.2 Retrodiction, and a correction it forces.** The step (b) table was run under
-the global convention at `kappa = 1/2`, so `e = 0` and the width is predicted
-exactly flat. Measured: 7.223, 7.684, 7.636, 7.697 across 64× in `N`. Consistent.
-
-The **projected** width removes the null directions, so it is set by `sqrt(xi)`
-alone: slope `(tau-1)/2 = (kappa-1)/2 = **-0.25**`, not `-0.5`.
-`family_pessimism.md` §4 states the projected width "shrinks at exactly `N^-1/2`".
-The measured column is 0.667, 0.471, 0.334, 0.236 over a 64× range, and
-`0.667/0.236 = 2.826` against `64^0.25 = 2.828`. **The proposition says `N^-1/4`,
-the data says `N^-1/4`, and our own published sentence is wrong.** It is corrected
-in that file, by prediction rather than by re-measurement.
-
-**4.3 Coverage crossing.** Under the signal convention at `kappa = 1/2` — which is
-what the model-based layer actually runs, at Phase 3's own operating point — the
-proposition gives `e = -1/2` and hence a finite
-
-```
-N2* = K^(1/e) = ( c / (lam0 * beta^2 * sigma2) )^2.
-```
-
-Beyond `N2*` the region provably excludes the truth. This predicts a **crossing of
-`xi(N)` and `xi_needed(N)` at a specific `N`**, computable from quantities the fit
-already reports. Phase 3 ran at `N = 20,000`, i.e. `N2 = 6,000`. Whether that sits
-below or above `N2*` is the test, and the prediction is quantitative, not
-directional.
+**4.3 Coverage crossing.** Predicted `N2* = (c/(lam0*beta^2*sigma2))^2`, with the
+crossing declared "the test". **Refuted — see §5.5.** Both the number and the
+claim that it was untestable were wrong.
 
 ## 5. Measurements
 
-`poc/run_noncontraction.py`, 3 seeds, `N` from 4,000 to 256,000 (64× range).
+`poc/run_noncontraction.py` (3 seeds), `poc/run_stepc_recheck.py` (5 seeds,
+independent re-derivation of the round-6 headline), `poc/critic_c_*.py` (review).
 
 ### 5.1 The two exact structural claims
 
-The proof rests on two statements about the *implementation*, not the mathematics,
-and either could have been false:
-
 | claim | predicted | measured |
 |---|---|---|
-| `lam_min(H) = lam` under (H1) | exact | max relative error **1.25e-12** |
+| `lam_min(H) = lam` under (H1) | exact | max rel. error **1.25e-12** |
 | `P_Nul b_hat = 0` | exact | **7.09e-12** |
 
-Both hold to machine precision, across every fit in the sweep.
+Both hold to machine precision, and round 6 confirmed they are structural in both
+solver paths rather than numerical luck.
 
-### 5.2 Width slope, global convention (model-free)
+### 5.2 Width slope, global convention — the load-bearing result
 
-| `kappa` | `e` | predicted slope | measured | error |
+| `kappa` | `e` | predicted | measured | error |
 |---|---|---|---|---|
 | 0.25 | −0.50 | −0.250 | **−0.2526** | 0.0026 |
 | 0.50 | 0.00 | 0.000 | **+0.0040** | 0.0040 |
 | 0.75 | +0.50 | +0.250 | **+0.2402** | 0.0098 |
 
-The `kappa = 0.75` row is the claim worth stating on its own. The width goes
-72.4 → 100.8 → 139.3 → 197.3 as `N` goes 4,000 → 256,000:
+The width goes 72.4 → 100.8 → 139.3 → 197.3 as `N` goes 4,000 → 256,000:
 
 > **More data makes the pessimistic bound strictly worse, at the predicted rate.**
 
-Nothing in the step (b) table suggested that; it falls out of the exponent.
+Round 6 confirms this survives, and adds the point that matters: **this is the
+branch the anchor paper itself occupies** (§3.3). A self-calibrated width rule —
+one whose `mu` is read off the same regularised design it is calibrating — has
+this pathology built in. That pairing is the second of the two novel corollaries.
 
-### 5.3 Width slope, signal convention (model-based)
-
-| `kappa` | `e` | predicted | measured | error |
-|---|---|---|---|---|
-| 0.25 | −0.75 | −0.375 | −0.4141 | 0.0391 |
-| 0.50 | −0.50 | −0.250 | −0.2798 | 0.0298 |
-| 1.00 | 0.00 | 0.000 | −0.0069 | 0.0069 |
-
-The residuals are larger here, and they are **not** noise: all three are negative,
-and they shrink monotonically in `kappa`. The proof says why. The exact finite-`N`
-form is `W^2 = xi * (A_N + beta_g^2/lam)` where `A_N = ||P_S g||^2_{(H|_S)^-1}` is
-the signal contribution; §3 takes the `lam -> 0` limit, in which `A_N` is
-negligible. At finite `lam` the retained `A_N` makes `W` decay slightly *faster*
-than the asymptote, and the smaller `kappa` is, the slower `lam` shrinks and the
-longer the contamination persists. Predicted ordering: residuals negative, largest
-at `kappa = 0.25`, smallest at `kappa = 1.0`. Observed: −0.039, −0.030, −0.007.
-
-**The deviation from the prediction has the shape the prediction implies**, which
-is a better check than agreement would have been.
-
-### 5.4 The projected column is NOT verified
+### 5.3 Width slope, signal convention — residuals explained
 
 | `kappa` | predicted | measured | error |
 |---|---|---|---|
-| 0.25 | −0.375 | −0.3659 | 0.0091 |
-| 0.50 | −0.250 | −0.2137 | 0.0363 |
-| 0.75 | −0.125 | −0.0641 | 0.0609 |
+| 0.25 | −0.375 | −0.4141 | 0.0391 |
+| 0.50 | −0.250 | −0.2798 | 0.0298 |
+| 1.00 | 0.000 | −0.0069 | 0.0069 |
 
-Right sign, right order of magnitude, but the underlying series is non-monotone —
-at `kappa = 0.75` it runs 2.139, 1.791, 3.565, 1.265. Parallel-analysis rank
-selection carries ±1 noise at these sample sizes (`family_pessimism.md` §9), and a
-±1 change in the retained dimension moves the projected width discontinuously. The
-unprojected column needs no basis at all, which is why it is clean.
+The residuals are all negative and shrink monotonically in `kappa`. The exact
+finite-`N` form is `W^2 = xi*(A_N + beta_g^2/lam)` with
+`A_N = ||P_S g||^2_{(H|_S)^-1}`; §3 takes the `lam -> 0` limit. At finite `lam`
+the retained `A_N` makes `W` decay faster than the asymptote, more so at small
+`kappa`.
 
-**Reported as consistent, not as confirmed.** It needs ~20 seeds. The §4.2
-retrodiction is unaffected: it is arithmetic on numbers already published in
-`family_pessimism.md`, not a re-measurement.
+**Round 6 confirmed this by direct decomposition** — the split is exact to 1e-14
+and a constant-coefficient model reproduces the slopes to ±0.002. Two honest
+caveats it added:
 
-### 5.5 Coverage — the rate holds, the threshold is out of reach
+- At `kappa = 0.25` the constant-coefficient model is short, because `A_N` itself
+  **drifts upward** toward its limit over the grid; the explanation needs that
+  clause to be complete.
+- The regression test we proposed (fit `W^2 = xi*(A + B/lam)`) is **ill-posed at
+  `kappa = 1`** — fitted `A = -44.8` from collinearity between the two
+  regressors, not because the decomposition is wrong. Our proposed test was a bad
+  test; the direct decomposition is the right one.
 
-**The test as designed in §4.3 was vacuous, and is reported as such.** Predicted
-crossing at `N* ≈ 1.66e9`; the grid stopped at `N = 1,024,000`, coverage 3/3
-everywhere. A grid 1,600× short of the threshold could not have produced a
-failure. That is exactly the defect for which step (b) withdrew its "validity
-36/36" evidence (`family_pessimism.md` §8.3), and it is not admissible here either.
+The per-`kappa` gradient redraw was checked and the ordering is robust to it.
 
-What *is* falsifiable on a reachable grid is the **rate**. The mechanism is that
-the null-direction coverage margin `m_null := xi / (lam * beta^2)` degrades as
-`N^e`, hitting 1 when coverage fails:
+### 5.4 Projected slope — geometry confirmed, deployed estimator refuted
+
+Our original text called this "consistent, not verified" at 3 seeds. At 20 seeds
+the picture splits in two, and **we under-claimed**:
+
+- **Rank-conditional** (conditioning on parallel analysis selecting the correct
+  rank): **−0.374 / −0.250 / −0.125** against predicted `(tau-1)/2` of
+  −0.375 / −0.250 / −0.125. Confirmed to 0.001. The geometry is right.
+- **As deployed** (the mean over whatever rank PA actually selects): at
+  `kappa = 0.75` the mean **grows** at **+0.236** — the unprojected rate. PA
+  over-selects about 5% of the time, and an over-selected rank re-admits a null
+  direction whose contribution is `Theta(N^(e/2))`, so the mixture is dominated by
+  the heavy tail. **More seeds make the mean worse, not better.**
+
+That second bullet is a real finding and it is bad news for the repair: the
+projection's contraction is conditional on a rank selector that is right most of
+the time, and "most of the time" is not enough when the failure mode is unbounded.
+
+### 5.5 WITHDRAWN — the coverage branch's quantitative content
+
+**Everything the original §5.5 asserted about coverage on this environment is
+withdrawn.** The error was not in the honesty labels, which were accurate about
+what had and had not been run. It was in what the measurement *meant*.
+
+The original treated `beta = 0.0532` as an environment constant — "the toy's true
+bridge has 2.9% of its norm in the null space". It is not a constant. It is a
+grid-average of a quantity that decays. Re-derived independently here at 5 seeds:
 
 | `N` | 1,000 | 4,000 | 16,000 | 64,000 | 256,000 | 1,024,000 |
 |---|---|---|---|---|---|---|
-| `m_null` | 1238.2 | 680.0 | 332.9 | 159.1 | 82.0 | 41.3 |
+| `beta` | 0.166 | 0.115 | 0.031 | 0.019 | 0.011 | 0.006 |
 
-Slope **−0.4965** against a predicted **−0.5000**, over three decades of `N`.
-The margin degrades at exactly the predicted exponent. It is the *level* that puts
-the crossing out of reach, and the level is a property of the environment: the
-toy's true bridge has only **2.9%** of its norm in the null space
-(`beta = 0.0532` against `||b_true|| = 1.803`), so (H4) holds but barely, and
-`N* ∝ beta^-4` — an environment with ten times the null share crosses at
-`N2* ≈ 50,000`.
+**Slope −0.4954.** A constant gives 0.000; `N^(-1/2)` misalignment noise gives
+−0.500. And in the population, the design has rank 2 of 3 with a 1-dimensional
+null, and
 
-**Post-hoc refinement, labelled as such.** The measurements show the *signal*
-directions still dominate `xi_needed` by 15× at `N = 1,024,000`, so the §3 bound
-`xi_needed >= lam*beta^2` is far from tight here. Retaining the signal term,
-`xi_needed ≈ C/N2 + lam0*beta^2*N2^-kappa` with `C = 0.698` measured, gives
-
-```
-N2* = ( (c/sigma2 - C) / (lam0*beta^2) )^2,   valid only when c > sigma2*C.
+```text
+beta_pop = ||P_Nul_pop b_true|| = 5.4e-16     (exactly zero)
 ```
 
-That second condition is a **floor on the width constant**: below
-`c > sigma2*C = 0.0111` the region fails to cover at *every* `N`, not just large
-`N`. Phase 3 operates at `c = 0.03`, a factor of **2.7** above its own floor.
-This is more practically relevant than the `N = 1.7e9` threshold — but it was
-derived after seeing the data, so it is a hypothesis for the next round, not a
-confirmed prediction.
+So `beta` was measuring the empirical null rotating around the population null at
+the sampling rate, nothing more. Consequently:
+
+| withdrawn | why |
+|---|---|
+| `N* = 1.66e9` | computed from a decaying `beta` treated as constant |
+| `K = 4.48e-5`, the `beta^-4` sentence | same |
+| the `m_null` table as *evidence* | its slope is algebraically forced (`= e - slope(sigma2)`) and its level is the artifact |
+| "(H4) holds but barely" | (H4) **fails** in the population on this toy |
+| "`c > sigma2*C` fails at EVERY `N` below the floor" | 3/3 coverage measured below the floor at `N = 16,000` |
+| "§4.3 is not testable, the grid is 1,600× short" | it *was* testable by moving `c` toward the floor; tested; the refined crossing does not appear |
+
+The `m_null` withdrawal deserves its own sentence, because it is the trap we
+walked into twice. We replaced a vacuous test with a *rate* test and reported
+−0.4965 against −0.5000 as confirmation. But that slope is forced by the algebra
+of how `m_null` is assembled from `xi`, `lam` and a `beta` we held fixed. **An
+identity is not evidence.** With the per-fit `beta`, the corrected margin slope is
+**+0.41** — the null-direction coverage margin *improves* with data on this
+environment, the opposite of what we published.
+
+**Why this happens, structurally.** `K0` invertible — the anchor paper's own
+completeness Assumption 3.3 — forces the min-norm bridge out of the population
+null. So the coverage horn requires **completeness to fail**. The environment
+where it does fail is the dimension-separated `(2,6,4)` at `confound = 1.0`, which
+is precisely the environment we did **not** run part C on. That is the experiment
+that would decide the coverage branch empirically, and it has not been run.
 
 ### 5.6 Summary
 
 | claim | status |
 |---|---|
-| `lam_min(H) = lam`, `P_Nul b_hat = 0` exactly | **confirmed**, machine precision |
-| width slope `= e/2`, global convention | **confirmed**, ≤0.010 in all cells |
-| width grows with data when `e > 0` | **confirmed**, +0.240 vs +0.250 |
-| width slope `= e/2`, signal convention | **confirmed**, with a finite-`lam` residual whose sign and ordering the proof predicts |
-| coverage margin degrades as `N^e` | **confirmed**, −0.4965 vs −0.5000 |
-| projected slope `= (tau-1)/2` | consistent, **not verified** (PA rank noise) |
-| coverage crossing at `N* = K^(1/e)` | **not tested** — grid 1,600× short |
-| floor `c > sigma2*C` | **post-hoc**, untested |
+| `W >= beta*beta_g`, schedule-free | **holds**, and subsumes the power-law framing |
+| `lam_min(H) = lam`, `P_Nul b_hat = 0` exactly | **confirmed**, machine precision, both solver paths |
+| width slope `= e/2`, both conventions | **confirmed**, ≤0.010 global; signal residuals fully decomposed |
+| more data ⟹ worse bound when `e > 0` | **confirmed**, +0.240 vs +0.250 |
+| `e_paper > 0` for all admissible `(alpha, c2)` | **confirmed**, 30/30 cells, min 0.0217 |
+| projected slope `(tau-1)/2`, rank-conditional | **confirmed** to 0.001 at 20 seeds |
+| projected slope, as deployed | **refuted** — grows at +0.236 when `e > 0` |
+| coverage horn, as instantiated on the toy | **refuted** — `beta_pop = 0`; corrected margin slope +0.41 |
+| the `c` floor as a sharp threshold | **refuted**; order-of-magnitude marker only |
+| dichotomy is novel | **restatement** of source-condition theory, plus two novel corollaries |
+| coverage horn where completeness fails | **not run** |
 
 ## 6. Honest limitations
 
-- **The coverage branch is not the operative failure mode on this environment.**
-  It is mathematically real and its rate is confirmed, but with a 2.9% null share
-  the crossing sits at `N ≈ 1.7e9`. Any write-up should lead with the width
-  branch, which bites at ordinary sample sizes, and state the coverage branch as
-  a completeness result with its environment-dependent threshold made explicit.
-  Presenting it the other way round would be the same cross-regime flattery the
-  regenerated pessimism table already had to correct.
-- `beta` is computed from the **exact oracle bridge**. A practitioner cannot
-  compute `N*`, because knowing `beta` means knowing the bridge. The proposition
-  says the threshold exists and how it scales, not where it is for real data.
-- 3 seeds. Adequate for the unprojected slopes (residuals ≤0.010 against a signal
-  of 0.25) and inadequate for the projected ones, as §5.4 says.
-- Two environments, one per convention: the `(2,6,4)` dimension-separated POMDP
-  and the Phase 3 toy. (H1) is dimensional and transfers; (H4) is not, and is the
-  hypothesis most likely to fail elsewhere.
-- The width rule family `xi = c/(N*mu)` covers both conventions in this repository
-  but is not the only possible calibration. A rule that made `mu` depend on the
-  *truth* rather than on the design spectrum would escape the dichotomy — and
-  would not be implementable.
-- The proposition assumes the class constraint is inactive for (i)–(iii); (iv)
-  handles the active case but is proved, not measured. The measured evidence for
-  the ball-active regime is the `M`-sweep in `norm_constraint.md` §5.
+- **The novelty claim is downgraded.** The trade-off is Tikhonov source-condition
+  theory specialised to an exact-null design. What survives as ours: the
+  placement `e_paper > 0` (§3.3) with its growing-penalty consequence, and the
+  self-calibrated width-rule pathology (§5.2). Neither is a theorem about
+  pessimism in general.
+- **The coverage branch has no confirmed empirical instance.** It is sound as
+  mathematics and its premise fails on every environment tested. Until part C is
+  run where completeness fails, it should be stated as a conditional result with
+  its premise displayed, not as an observed failure mode.
+- **The escape claim was wrong.** §6 of the original asserted that a `mu`
+  depending on the truth would escape the dichotomy and be unimplementable. By
+  Proposition 1 **no width rule escapes**. The real escapes are a prior-informed
+  centre (violating `P_Nul b_hat = 0`), non-ellipsoidal geometry, or `beta = 0` —
+  and the last is what actually holds here.
+- `beta` is computed from the exact oracle bridge; a practitioner cannot compute
+  it, and now we know they would get zero under completeness anyway.
+- 3 seeds for §5.2–§5.3, 20 for §5.4, 5 for §5.5. Two environments, one per
+  convention.
+- (iv) is proved, not measured; the measured evidence for the ball-active regime
+  is the `M`-sweep in `norm_constraint.md` §5.
 
-## 7. Files
+## 7. What round 6 changed
+
+| § | original | now |
+|---|---|---|
+| 3 | power-law dichotomy as the headline | Proposition 1 (`W >= beta*beta_g`) leads; dichotomy is a corollary |
+| 3 (iii) | "`e >= 0` ⟹ coverage sustainable at every `N`" | constant `K` restored; necessary ≠ sufficient |
+| 3 | "whatever the estimator" | scoped to exact-null designs; `e' = tau + theta*kappa - 1` for PD kernels |
+| 3 | (no anchor placement) | **new**: `e_paper > 0` for all admissible `(alpha, c2)` |
+| 5.3 | residual explanation post-hoc, untested | confirmed by exact decomposition; `A_N`-drift clause added; our proposed regression shown ill-posed |
+| 5.4 | "consistent, not verified" | rank-conditional **confirmed** to 0.001; deployed mean **refuted** |
+| 5.5 | `N*`, `K`, `beta^-4`, `m_null`, sharp floor | all withdrawn; `beta_pop = 0`, `beta(N) ~ N^(-1/2)` |
+| 6 | truth-dependent `mu` escapes | no width rule escapes |
+
+**Over-correction check.** Round 6 found none, and moved the other way: §5.4
+under-claimed a result that was right to three decimals, and §4.3 called
+untestable a test that could have been run. The honesty labels were accurate; the
+errors were in the meaning assigned to the measurements.
+
+## 8. Files
 
 | File | Role |
 |---|---|
-| `poc/run_noncontraction.py` | Verification of §4 |
-| `experiments/results_noncontraction.json` | Raw results |
-
-## 7. Files
-
-| File | Role |
-|---|---|
-| `poc/run_noncontraction.py` | Verification of §4 |
-| `experiments/results_noncontraction.json` | Raw results |
+| `poc/run_noncontraction.py` | §5.1–§5.4 |
+| `poc/run_stepc_recheck.py` | independent re-derivation of `beta` decay and `e_paper` |
+| `poc/critic_c_*.py` | round-6 attacks |
+| `docs/critic_findings_stepc.md` | the review |
+| `experiments/results_noncontraction.json`, `results_stepc_recheck.json` | raw |

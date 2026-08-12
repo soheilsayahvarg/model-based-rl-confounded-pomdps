@@ -34,8 +34,9 @@ about a research line.
 | Fix the norm-ball solver, per-block admissible `M` | **done** | Certified two-multiplier solver; `M` from the exact bridges |
 | Regret-vs-`c` on a common grid, with the plug-in baseline | **done** | Published advantage is a cross-`c` artifact; plug-in wins at every `c` |
 | Re-run under the paper's sup-norm (box) class | **done** | Box is the WEAKEST class; our "norm ball beats the repair" claim reverses |
-| (c) A proposition on non-contraction | **done** | One exponent governs both width and coverage; predictions committed before the run |
-| Re-run the projected-width slope at 20 seeds | **required** | PA rank noise; slope consistent but not verified |
+| (c) A proposition on non-contraction | **done, reviewed** | Width branch survives and locates the anchor paper; coverage branch refuted on this environment |
+| Re-run the projected-width slope at 20 seeds | **done** | Geometry confirmed to 0.001; the *deployed* estimator refuted |
+| Run part (c) coverage where completeness FAILS | **required** | The only environment that can instantiate the coverage branch |
 
 ## How (b) got unblocked
 
@@ -76,35 +77,57 @@ correction it returns 0 whenever the behavior policy is deterministic.
 Step (b) can therefore run in **both** regimes with this selector, and the regime
 restriction is dropped.
 
-## What (c) established
+## What (c) established, after review
 
-Step (b) reported that the pessimism width did not shrink across a 64× increase in
-data. Step (c) shows that was **the boundary case of a dichotomy**, not a quirk of
-one schedule. With ridge `lam = lam0*N^-kappa` and width `xi = c/(N*mu)`,
-`mu = m*N^-tau`, one exponent `e = tau + kappa - 1` governs both sides:
+The clean statement is two lines and needs no schedule. Under the structural null
+and `P_Nul b_hat = 0`, **any** confidence region that covers the truth pays
 
-- `e >= 0`: coverage is sustainable at every `N`, and the width **never contracts**
-  — flat at `e = 0`, **growing with data** for `e > 0`.
-- `e < 0`: the width contracts at `N^(e/2)`, but coverage fails beyond a finite
-  `N* = K^(1/e)`.
+```text
+W  >=  beta * beta_g          at every N,
+```
 
-No schedule gives both. The exponent that shrinks the width is the one that makes
-the region drop the truth.
+for any ridge and any width rule — the regularizer cancels. The power-law
+dichotomy we originally led with (`e = tau + kappa - 1`; contraction and coverage
+governed by one exponent with opposite signs) is a corollary of that.
 
-Predictions were written and **committed before the verification script existed**
-(commit "stated before it is tested"), because the two results that survived
-adversarial review were both derived analytically first and the withdrawn ones
-were not. Measured: width slopes match to ≤0.010 in all three cells of the global
-convention — including `+0.240` against a predicted `+0.250`, i.e. **more data
-making the bound strictly worse** — and the coverage margin degrades at `−0.4965`
-against a predicted `−0.5000`.
+**Predictions were committed before the verification script existed** (`53d71a5`,
+§1–§4 with §5 empty; the review verified that commit). Width slopes matched to
+≤0.010 in every cell, including `+0.240` against a predicted `+0.250` — **more
+data making the pessimistic bound strictly worse**.
 
-What did **not** work is reported in `docs/noncontraction.md` §5.4–§5.5: the
-projected-width slope is too noisy at 3 seeds to call, and the coverage-crossing
-test was vacuous — the grid stopped 1,600× short of the predicted threshold, so it
-could not have failed. On this environment the true bridge has only 2.9% of its
-norm in the null space, so the coverage branch is real but inoperative at any
-realistic `N`; the width branch is the one that bites.
+The one genuinely new consequence is where it puts the anchor paper. Its width
+`N2^(-alpha/(2alpha+2))` and ridge `N2^(-alpha/(alpha*c2+1))` sit inside our own
+family, and
+
+```text
+e_paper = alpha*(2*alpha + 1 - alpha*c2) / ((alpha*c2+1)*(2*alpha+2))  >  0
+```
+
+for every admissible `(alpha, c2)` — 30/30 cells, minimum 0.0217. **The paper's
+own schedule never promises a contracting region**, and the penalty it assigns a
+leaky policy grows with `N`. The dichotomy explains the paper's design; it does
+not indict it.
+
+**What round 6 refuted**, in full in `docs/noncontraction.md` §5.5 and §7:
+
+- The coverage branch's every quantitative claim on this environment. We treated
+  `beta = 0.053` as an environment constant; it decays at **−0.495**, and
+  `beta_pop = 5.4e-16` — exactly zero. `N* = 1.7e9`, `K`, the `beta^-4` scaling
+  and the `m_null` rate test are all withdrawn. The `m_null` slope we reported as
+  confirmation was algebraically forced; with the per-fit `beta` the margin slope
+  is **+0.41**, the opposite sign.
+- The novelty claim. The trade-off is Tikhonov source-condition theory
+  specialised to an exact-null design (`e' = tau + theta*kappa - 1` in general).
+- Our escape claim: **no** width rule escapes, not even a truth-dependent one.
+- The projection, as deployed: rank-conditionally its slope is right to 0.001,
+  but the mean over parallel-analysis-selected ranks **grows** at +0.236 when
+  `e > 0`, because a 5% over-selection rate re-admits a null direction whose
+  contribution is unbounded.
+
+Structurally, the coverage branch requires the anchor paper's **completeness
+assumption to fail** — `K0` invertible forces the min-norm bridge out of the
+population null. The environment where it does fail, `(2,6,4)` at `confound=1.0`,
+is the one we never ran part C on. That experiment is open.
 
 ## What (a) found, after review
 
