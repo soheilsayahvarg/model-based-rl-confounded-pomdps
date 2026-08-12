@@ -376,3 +376,322 @@ compute.
 Raw outputs: `experiments/critic_a1_mb_tiers.json`,
 `experiments/critic_a2_flat_spectrum.json`, `experiments/critic_a2b_confound.json`.
 
+
+---
+
+# Verification Round
+
+Second pass: verifying the applied corrections, not re-opening the originals.
+Same rules — every number checked by running code.
+
+## Checklist
+
+- [x] V0 — reproduce `run_rank_corrected.py` and confirm the fix is confined to Extension/
+- [x] V1 — 16/18 vs 0/18; floor sensitivity sweep; autopsy of the 2 misses
+- [x] V2 — middle tier decays at exactly N^-1 (more N points, per-seed error bars)
+- [x] V3 — "shape-capped regime => correct at every N" (construct hostile shape-capped configs)
+- [x] V4 — does (3,7,5) cf=0.6 ever converge? (push N past 512k)
+- [x] V5 — is the step-(b) plan circular?
+- [x] V6 — anything else
+
+## V1 — The floor constant and the two misses
+
+**Claim:** fixed rule correct in 16/18 (old 0/18); the 2 misses are at
+confound=0.9 "where the weakest population direction genuinely sits near the
+noise floor". Question: is 1e-9 a tuned constant?
+
+**What I ran:** `poc/critic_v1_floor.py` — the author's R3 protocol (18 cells,
+20 seeds, N=256,000, modal vs rank(P_a)) with the relative floor swept over
+1e-3..1e-15, spectra collected once and reused so the floor is the only
+variable; plus a per-seed autopsy of the miss cells that records each
+environment draw's population ratio lambda_truth/lambda_1 (the author's seed
+convention varies the environment with the seed).
+
+**Result 1 — 16/18 reproduces at 1e-9, and the floor sits on a plateau, not a
+knife edge.** Cells correct: 8 (1e-3), 14 (1e-5), 15 (1e-6), **16 (1e-7), 16
+(1e-8), 16 (1e-9)**, 15 (1e-10), 12 (1e-11), 9 (1e-12), 6 (1e-15). A ~3-decade
+plateau at 1e-7..1e-9 means the fix is not a tuned constant. But "any relative
+floor" is also false: too high clips the weakest genuine signal ratios
+(cf=0.9 environments have lambda_2/lambda_1 down to ~1e-4); too low resurrects
+the exact-zero cliff (middle-tier over clamped-zero ratios win again — the same
+disease as 1e-300, in miniature). The plateau's edges are set by identifiable
+quantities: min signal ratio above, middle-tier relative magnitude at the
+largest N below. V4 adds that the choice trades off against required N as
+N* ∝ rel^{-1/2}, so the upper plateau edge is actually the better operating
+point, not 1e-9.
+
+**Result 2 — the miss attribution is correct, and sharper than stated.** Both
+miss cells are at cf=0.9 (as claimed). Within each, the wrong seeds are
+precisely the environment draws whose population ratio is small: median
+2.6e-4 (wrong) vs 1.1e-2 (correct) at (2,6,4)a0; 9.1e-5 vs 3.2e-3 at (3,7,5)a0.
+So "genuinely weak population direction" is right — but it is a property of
+individual environment draws, not of the cf=0.9 cell as a whole: roughly half
+the draws are resolvable at N=256k and half are not, which is exactly what 55%
+stability means. Two refinements the doc should absorb: (a) the failure mode is
+UNDER-selection (modal k=1 vs truth 2, k=2 vs truth 3) — for pessimism this
+projects away real signal, a bias failure, unlike the width blow-up caused by
+over-selection; (b) one (3,7,5) seed fails the other way (picks the cliff, k=5),
+so the cf=0.9 cell mixes both failure modes.
+
+**Verdict: SURVIVES** (16/18 verified; attribution verified), with the floor's
+operating band and the under- vs over-selection asymmetry as required additions.
+
+**Fix:** report the plateau (1e-7..1e-9) instead of the bare constant; note the
+failure-mode asymmetry in §7.4; consider rel=1e-7 as the default.
+
+---
+
+## V4 — The unconverged cell converges at N ≈ 2M, and the threshold is predictable in closed form
+
+**Claim:** (3,7,5) cf=0.6 inside the estimator "has still not converged at
+N=512,000"; V4 asks whether it converges at all.
+
+**What I ran:** `poc/critic_v4_converge.py`. No shipped script produces the
+§7.4 Wa table's 128k/512k rows (R4 in `run_rank_corrected.py` only runs N=32k),
+so I rebuilt Wa = Ma Ma^T / N2 exactly as `TabularBridgeEstimator.fit` does
+(same permutation, same lam1 = 1/N1 ridge, same stage-2 columns), validated the
+replica against the real estimator at N=32k (selects [5,5], identical), then
+pushed N to 4,096,000 with 3 seeds. Also computed the population Wa spectrum in
+closed form.
+
+**Result 1 — it converges.** Selection per seed: [5,5] at 32k/128k (matches the
+author), mixed at 512k–1M ([5,5]/[3,5]/[3,3] — the transition), and **[3,3]
+unanimously at N=2M and 4M**. The "necessary but not sufficient" framing
+survives; "simply wrong in that regime" is not the case. The rule is
+data-hungry, not broken.
+
+**Result 2 — the convergence point is predictable, which upgrades the finding
+from an observation to a formula.** Population Wa (seed 0, action 0) has signal
+eigenvalues (1.72e-1, 4.59e-2, 1.89e-3); the middle tier decays as c/N with
+c ≈ 0.9 (measured: 1.77e-6 at 512k, 3.4e-7 at 2M). The rule picks the truth
+once the signal-to-middle ratio lambda_3 N / c exceeds the middle-to-floor
+ratio c / (N * rel * lambda_1), i.e.
+
+    N* = c / sqrt(lambda_3 * lambda_1 * rel)  ≈  1.6e6
+
+for rel=1e-9 — exactly between the observed flip at 512k–2M. Everything on the
+right-hand side is computable in advance from P_a and the confound level. This
+formula also exposes the rel trade-off noted in V1: N* shrinks like rel^{-1/2}
+as the floor is raised toward the smallest signal ratio.
+
+**Result 3 (reproducibility, minor but real):** the §7.4 Wa table cannot be
+regenerated from any shipped script, and its cells are single data draws — my
+seed-0 draw gives [5,5] at 512k where the table says [5,3]; at the transition N
+the cell value is draw-dependent. The table should be produced by a committed
+script with seeds shown, or the transition marked as such.
+
+**Verdict: SURVIVES — and understated.** The author had a stronger, sharper
+result available (a closed-form N* that validates against experiment) and
+published a weaker one ("has still not converged").
+
+**Fix:** add the N* formula and the 2M/4M convergence to §7.4; commit the
+script that generates the Wa table.
+
+## V2 — "Exactly N^-1" survives more N points and honest error bars
+
+**Claim:** middle tier decays at exactly N^-1 (mean −0.983, sd 0.070, n=29).
+
+**What I ran:** `poc/critic_v2_slope.py` — 5 N points {4k, 16k, 64k, 256k,
+1.024M} instead of 3, per-seed fits (n=420) alongside seed-averaged fits, and a
+3-point fit on the same data as a like-for-like control; 21 middle-tier
+directions across (2,6,4)/(3,7,5) × confound {1.0, 0.6} × both actions.
+
+**Result:** seed-averaged 5-point slope **−1.005 ± 0.039** (n=21). No curvature:
+3-point and 5-point fits agree to two decimals everywhere. Per-seed fits are
+noisier (−0.92 ± 0.66) with heavy tails for the smallest directions (single-draw
+eigenvalues near the exact floor produce garbage slopes, sd up to 2.0) — so the
+seed-averaged number is the right one to quote, and it is even closer to −1
+than the author's −0.983. One presentational trap: per-seed slope
+distributions should not be used for error bars on the rate; the averaging is
+doing necessary variance reduction on order statistics.
+
+**Verdict: SURVIVES**, tightened (−1.005 ± 0.039 with 5 N points up to 1M).
+
+---
+
+## V3 — The "shape-capped regime" claim is REFUTED as stated; the real axis is whether the middle tier is empty
+
+**Claim (the main new one):** "the rule is correct at every sample size when the
+instrument shape forces exact zeros (|O_0| < |O|), and needs very large N when
+the rank deficiency is only statistical."
+
+**Before running anything:** the criterion is already contradicted by the
+author's own §7.4 table. (2,6,4) has |O_0| = 4 < |O| = 6 — the shape forces two
+exact zeros — yet the table shows it failing at N=32k. What is special about
+(4,6,2) is not |O_0| < |O| but that rank(P_a) = min(|O|,|O_0|) = 2: there is
+NO statistically-empty tier, so the machine-zero cliff sits exactly at the
+truth.
+
+**What I ran:** `poc/critic_v3_regime.py` — 7 configurations, all with
+|O_0| < |O| (all "shape-capped" by the doc's criterion), split by the predicted
+axis: 3 controls with middle tier = 0 (rank(P_a) = cliff) and 4 hostile cases
+with middle tier > 0 (rank(P_a) < cliff), including (2,6,2) cf=1.0 — more
+shape-capped than the author's control — and (2,8,4) cf=0.6. Fixed rule,
+N ∈ {2k, 8k, 32k, 128k, 512k}, 20 seeds.
+
+**Result — clean separation along the predicted axis, not the doc's:**
+
+| type | config | truth vs cliff | N=2k | N=8k | N=32k | N=512k |
+|---|---|---|---|---|---|---|
+| control | (4,6,2) cf=1.0 | 2 = 2 | 2 (95%) | 2 (95%) | 2 (95%) | 2 (95%) |
+| control | (4,6,2) cf=0.6 | 2 = 2 | 2 (100%) | 2 (100%) | 2 (100%) | 2 (100%) |
+| control | (2,6,2) cf=0.6 | 2 = 2 | 2 (100%) | 2 (100%) | 2 (100%) | 2 (100%) |
+| HOSTILE | (2,6,2) cf=1.0 | 1 < 2 | 2 (10%) | 2 (40%) | 1 (65%) | 1 (100%) |
+| HOSTILE | (3,8,4) cf=1.0 a0 | 2 < 4 | 4 (0%) | 4 (30%) | 2 (60%) | 2 (100%) |
+| HOSTILE | (2,8,4) cf=0.6 a1 | 2 < 4 | 4 (0%) | 4 (5%) | 4 (30%) | 2 (95%) |
+| HOSTILE | (4,7,3) cf=1.0 | 2 < 3 | 3 (5%) | 3 (10%) | 3 (45%) | 2 (100%) |
+
+Every control is correct at every N including 2,000. Every hostile config —
+each one satisfying the doc's "|O_0| < |O|" criterion — fails at small N with
+the modal selection pinned at the cliff. The regime claim as stated is
+**REFUTED**; one supporting config was never a regime, and the first
+counterexample was already sitting in the author's own table.
+
+**The correct statement** (verified by all 14 cells): the rule is correct at
+every sample size iff the statistically-empty tier is empty, i.e.
+**rank(P_a) = min(|O|, |O_0|)** — the per-action population rank saturates the
+shape cap. Within the other class, difficulty is continuous and quantified by
+V4's N* formula; "shape-capped vs statistically-deficient" is not the axis,
+since both of those labels apply simultaneously to most of the failing configs.
+
+**Consequence for step (b) — this is the load-bearing part.** The README's
+instruction "run step (b) with |O_0| strictly smaller than |O|" is UNSAFE as
+written: (2,8,4) cf=0.6 satisfies it and misselects in 95–100% of seeds at the
+project's N ≤ 4,000. If step (b) had been run under that guidance in this
+configuration, the rank misselection would have manufactured exactly the
+divergence the study is looking for. The safe precondition is
+rank(P_a) = min(|O|,|O_0|), which is checkable a priori in a synthetic
+environment (three lines from E, K0, p1, pi_b).
+
+**Verdict: REFUTED as stated; SURVIVES after replacing the axis.** Fix: rewrite
+§7.4's regime paragraph and the README's step-(b) precondition in terms of
+rank(P_a) vs min(|O|,|O_0|); note explicitly that (2,6,4) was always a
+counterexample to the dimensional phrasing.
+
+## V0 — Reproduction and confinement
+
+**What I ran:** `poc/run_rank_corrected.py` unmodified; grep for the old floor
+across the tree.
+
+**Result:** Every headline number reproduces: R1 18/18 OK (signal = rank(P_a),
+exact zeros = |O| − min(|O|,|O_0|), at all three confound levels); R2 mean
+−0.983, sd 0.070, n=29; R3 old rule 0/18, fixed rule 16/18, with the two misses
+at (2,6,4) cf=0.9 action 0 and (3,7,5) cf=0.9 action 0, both 55% stability, as
+published. R4 inside the estimator at N=32k: correct only in the three (4,6,2)
+cells, wrong in the other six — consistent with §7.4's "necessary, not
+sufficient", and the sigma2 values in the wrong cells (1e-7..1e-6, the
+statistically-empty tier) concretely confirm the §8 hazard. Confinement:
+`Extension/src/estimation/bridge_estimator.py` has the relative floor;
+`Phase_3/src/estimation/bridge_estimator.py:167` still has `1e-300` — the
+graded phase is untouched, as intended.
+
+**Verdict: SURVIVES.**
+
+---
+
+## V5 — The step-(b) plan: not circular, but unsafe as written; a gap-free selector now exists and beats the eigengap
+
+**Claim:** step (b) should run "in the shape-capped regime, or with a rank
+selection that does not depend on finding a spectral gap".
+
+**Assessment of circularity.** Measuring the baseline's blow-up in a regime
+where exact zeros exist is not circular: the exact null space IS the phenomenon
+under study, and it is present in that regime by construction, not by selection
+bias. But two genuine problems remain. First, V3 shows the regime as *written*
+(|O_0| < |O|) includes configurations — (2,8,4) cf=0.6 among them — where the
+fixed rule misselects in ~all seeds at the project's N ≤ 4,000; following the
+README's instruction literally can land exactly on the misselection-manufactured
+divergence the plan is trying to avoid. The safe precondition is
+rank(P_a) = min(|O|,|O_0|). Second, an asymmetry should be stated in the paper:
+the safe regime is also precisely where the projection repair is reliable, so
+step (b) run there can validate the repair only in its easiest regime. The
+family-blow-up conclusion would be scoped to exact-tier ill-posedness; nothing
+about the repair's behavior in the statistical-tier regime follows.
+
+**The gap-free selector, built and tested:** `poc/critic_v5_parallel.py`
+implements parallel analysis (Horn 1965) adapted to the per-action
+cross-moment: B=40 permutations of O0 within the action bin give the eigenvalue
+null under independence; since the permutation preserves both marginals, the
+null itself contains the rank-1 product-of-marginals direction, so the
+estimator is rank = 1 + #{i ≥ 2 : λ_i > q95(λ_i^null)}. (A first draft that
+also tested index 1 returned 0 whenever the top direction was
+marginal-dominated — wrong semantics, kept in the script as `naive` for the
+record.) Results, modal over 20 seeds (per-seed accuracy in parens), parallel
+analysis (PA) vs the fixed eigengap (EG):
+
+| config | truth | N=8k | N=32k | N=128k |
+|---|---|---|---|---|
+| (3,7,5) cf=0.6 a0 | 3 | **PA 3 (90%)** vs EG 5 (5%) | PA 3 (65%) vs EG 5 (15%) | PA 3 (85%) vs EG 3 (75%) |
+| (2,6,4) cf=1.0 a0 | 1 | PA 1 (85%) vs EG 1 (100%) | PA 1 (100%) vs EG 1 (100%) | PA 1 (95%) vs EG 1 (100%) |
+| (2,6,4) cf=0.6 a0 | 2 | **PA 2 (75%)** vs EG 4 (15%) | PA 2 (90%) vs EG 2 (50%) | PA 2 (90%) vs EG 2 (95%) |
+| (4,6,2) cf=1.0 a0 | 2 | PA 2 (80%) vs EG 2 (95%) | PA 2 (95%) vs EG 2 (95%) | PA 2 (95%) vs EG 2 (95%) |
+
+The modal PA selection is correct in every cell at every N — including at
+N=8,000 on the cell that needs N ≈ 2,000,000 inside the estimator (V4) — and PA
+never selects the cliff. It needs no floor constant and no gap. Caveats:
+per-run accuracy is 65–100%, not 100%; B permutations cost B spectra per fit
+(trivial in the tabular setting); adapting it to the estimator's internal Wa
+requires permuting O0 before the stage-1 fit (nulling the CME dependence),
+which is straightforward but not yet implemented.
+
+**Verdict: the plan as written is UNSAFE (wrong regime criterion — V3); the
+corrected plan is sound and no longer needs the regime restriction at all.**
+Recommended step (b): use rank(P_a) as the a-priori truth (synthetic
+environment), select with parallel analysis, and run BOTH regimes; report the
+repair's behavior separately per regime.
+
+---
+
+## V6 — Everything else
+
+1. **README defect:** the row "| (c) The rank cap as a proposition | not
+   started | |" appears twice — in the Status table (line 28) and stranded
+   mid-document after the "Why (b) is still blocked" section (line 47).
+2. **N-budget inconsistency:** §10 says "N up to 256,000" while §7.4's table
+   and the README discuss N = 512,000 runs.
+3. **Provenance gap:** no shipped script generates the §7.4 Wa table's
+   128k/512k rows (R4 only runs N=32k), and V4 shows its transition-region
+   cells are single-draw noise ([5,3] vs my [5,5] at 512k, seed 0).
+4. **Withdrawn numbers now unreproducible:** the estimator was fixed in place,
+   so `run_rank_diagnostic.py` now silently produces eigengap ranks that
+   disagree with the committed `results_rank_diagnostic.json` (old rule), with
+   no code path that reproduces the archived output. Add a `rule="legacy"`
+   switch or a provenance note in the JSON.
+5. **No over-correction found.** Both withdrawals (C3, the §8 impossibility)
+   were warranted; §7.4's replacement of §7.3's "partly by luck" is also right
+   for the real toy — (2,3,2) with the toy's stochastic policy has
+   rank(P_a) = 2 = min(|O|,|O_0|), i.e. it sits in the genuinely-safe class
+   identified in V3. What is wrong is only the dimensional phrasing of that
+   class (per V3).
+6. Cosmetic: R1's match criterion accepts `n_zero >= pred_zero` (should be
+   equality); R2's slope helper takes abs() of eigenvalues, which can turn a
+   negative machine-noise eigenvalue into a finite log — harmless here because
+   the exact floor filters first, but a trap if reused.
+
+---
+
+## Verification Round — summary
+
+| item | verdict | one line |
+|---|---|---|
+| V0 reproduction | **SURVIVES** | All numbers reproduce; fix confined to Extension/. |
+| V1 floor + misses | **SURVIVES** | 16/18 verified; 1e-7..1e-9 plateau, not a knife edge; misses = weak-λ environment draws; failure mode is UNDER-selection. |
+| V2 N^-1 | **SURVIVES, tightened** | −1.005 ± 0.039 with 5 N points to 1M; no curvature. |
+| V3 regime claim | **REFUTED as stated** | 4/4 hostile shape-capped configs fail at small N; correct axis is rank(P_a) = min(|O|,|O_0|); (2,6,4) already contradicted the doc's own criterion. |
+| V4 convergence | **SURVIVES, understated** | Converges to [3,3] at N=2M–4M; closed-form N* = c/√(λ_r·λ_1·rel) ≈ 1.6e6 matches observation. |
+| V5 step-(b) plan | **UNSAFE as written; fixed** | Not circular, but the regime criterion is V3-wrong and the safe regime favors the repair; parallel analysis selects correctly in all regimes at N=8k and removes the restriction. |
+| V6 misc | — | README dup row; N-budget mismatch; §7.4 table unreproducible; legacy rule unreproducible; no over-correction found. |
+
+**Bottom line:** the two accepted corrections were applied correctly, and every
+quantitative claim built on them reproduces or tightens. The new interpretive
+layer contains one real error with consequences — the "shape-capped regime"
+criterion — which, if followed as written in step (b), can reintroduce exactly
+the artifact the correction was meant to remove. The fix is one substitution
+(rank(P_a) = min(|O|,|O_0|) in place of |O_0| < |O|) plus, preferably, dropping
+the regime restriction in favor of the parallel-analysis selector.
+
+**Critic scripts this round:** `poc/critic_v1_floor.py`,
+`poc/critic_v2_slope.py`, `poc/critic_v3_regime.py`,
+`poc/critic_v4_converge.py`, `poc/critic_v5_parallel.py`.
+Raw outputs: `experiments/critic_v1_floor.json`,
+`experiments/critic_v3_regime.json`, `experiments/critic_v5_parallel.json`.

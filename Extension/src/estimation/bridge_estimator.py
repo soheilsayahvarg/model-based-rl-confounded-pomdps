@@ -101,7 +101,11 @@ class TabularBridgeEstimator:
 
     def __init__(self, n_obs, n_act, n_o0, n_r, T,
                  lambda1=None, lambda2=None, split_frac=0.7,
-                 mode="auto", dual_cap=3000, seed=0):
+                 mode="auto", dual_cap=3000, seed=0, rank_rule="fixed"):
+        # rank_rule: "fixed" (relative eigenvalue floor) or "legacy" (the
+        # original absolute 1e-300 floor, retained only to reproduce the
+        # withdrawn results -- it selects float sign noise, see _stage2_solve).
+        self.rank_rule = rank_rule
         self.n_obs, self.n_act, self.n_o0, self.n_r = n_obs, n_act, n_o0, n_r
         self.T = T
         self.lambda1, self.lambda2 = lambda1, lambda2
@@ -174,12 +178,19 @@ class TabularBridgeEstimator:
                 # Floor relative to the largest eigenvalue instead. Anything below
                 # it is numerically zero, so consecutive zeros give ratio ~1 and
                 # cannot win the argmax; the largest genuine gap does.
-                floor = max(desc[0], 0.0) * 1e-9
-                if floor <= 0.0:                                 # degenerate: all ~0
-                    k_a = 1
+                if self.rank_rule == "legacy":
+                    # Kept so the withdrawn results remain reproducible. Do not
+                    # use for new work -- see the comment above.
+                    ratios = desc[:-1] / np.maximum(desc[1:], 1e-300)
+                    k_a = int(np.argmax(ratios)) + 1
                 else:
-                    ratios = np.maximum(desc[:-1], floor) / np.maximum(desc[1:], floor)
-                    k_a = int(np.argmax(ratios)) + 1             # eigengap rank rule
+                    floor = max(desc[0], 0.0) * 1e-9
+                    if floor <= 0.0:                             # degenerate: all ~0
+                        k_a = 1
+                    else:
+                        ratios = (np.maximum(desc[:-1], floor)
+                                  / np.maximum(desc[1:], floor))
+                        k_a = int(np.argmax(ratios)) + 1         # eigengap rank rule
             sigma2_per_a.append(float(desc[k_a - 1]))            # smallest KEPT eig
             signal_basis.append(evec[:, ::-1][:, :k_a].copy())
         sigma2_signal = float(min(sigma2_per_a))

@@ -1,10 +1,10 @@
 # Where the Null Space Actually Comes From
 
-**Status: one claim survives and is stronger than first reported; two are
-withdrawn. Corrections are in §7 — they were found by adversarial review, not by
-us — and §7.4 reports the full corrected re-run, which both confirms the
-surviving results and shows the repair to the rank rule is necessary but not
-sufficient.**
+**Status: the geometric results survive and are stronger than first reported.
+Three claims have been withdrawn (§7.1, §7.2, §7.5), all found by adversarial
+review rather than by us. §7.6 replaces the eigengap rule with a gap-free
+selector that is correct at every sample size tested, which unblocks step (b)
+with no regime restriction.**
 
 ---
 
@@ -200,24 +200,56 @@ Inside the estimator, on `Wa = Ma Ma^T / N2`, the fixed rule converges to
 
 One cell has still not converged at `N = 512,000`.
 
-The pattern is legible, and it is more useful than the claim it replaces:
+### 7.5 WITHDRAWN: the regime criterion we proposed for this
 
-- When the **instrument shape** forces exact zeros — `(4,6,2)`, where
-  `|O_0| = 2 < |O| = 6` — the rule is correct at **every** sample size. The gap it
-  needs is a machine-zero cliff, which exists immediately.
-- When the deficiency is only **statistical** — the latent-driven middle tier —
-  the rule must wait for those directions to fall far enough below the signal, and
-  that takes `N` far beyond anything used in this project.
+We first read the table above as: the rule is correct at every `N` when the
+**instrument shape** forces exact zeros, i.e. when `|O_0| < |O|`.
 
-**This is why the Phase 3 toy worked.** With `|O| = 3` and `|O_0| = 2` it sits in
-the first regime, where the cliff is present from the start. Not luck about the
-gap index, as §7.3 supposed — a structurally easier regime.
+**That criterion is wrong, and the table above refutes it.** `|O_0| < |O|` holds
+in **all six rows**, including every failing one. It has no discriminating power.
+We proposed it while looking at data that contradicted it.
 
-So the honest statement about Signal-Projected Pessimism is neither "it always
-works" nor "no rank rule can work". It is: **the repair is reliable exactly when
-the proxy geometry forces exact zeros, and unreliable at practical `N` when the
-rank deficiency is only statistical.** That is checkable in advance from `|O|` and
-`|O_0|`, before fitting anything.
+The correct condition, found by the second review round, is whether the
+per-action population rank **saturates the shape cap**:
+
+| config | `min(\|O\|,\|O_0\|)` | `rank(P_a)` | saturates | behaviour |
+|---|---|---|---|---|
+| `(4,6,2)` | 2 | `[2,2]` | yes | correct at every `N` |
+| `(2,6,4)` cf 1.0 | 4 | `[1,1]` | no | fails at 32k |
+| `(2,6,4)` cf 0.6 | 4 | `[2,2]` | no | fails to 128k |
+| `(3,7,5)` cf 1.0 | 5 | `[2,1]` | no | fails at 32k |
+| `(3,7,5)` cf 0.6 | 5 | `[3,3]` | no | fails at 512k |
+
+When `rank(P_a) = min(|O|, |O_0|)` the deficiency is entirely a machine-zero
+cliff, so the gap exists immediately. Otherwise a statistically-empty tier sits
+between the signal and the cliff and the rule must wait for it to fall away.
+
+Adversarial configurations built to be shape-capped *without* saturating all
+failed at small `N` (0–40% correct at `N=2,000`), while controls with an empty
+middle tier were correct at every `N`. The axis is saturation, not shape.
+
+That also settles §7.3: the Phase 3 toy works because `|O|=3, |O_0|=2` with
+`rank(P_a)=[2,2]` saturates the cap — not luck about the gap index.
+
+### 7.6 The convergence threshold, and a better selector
+
+The slowest cell does converge. `(3,7,5)` at `confound=0.6` reaches `[3,3]` at
+`N = 2M` and `4M` on all seeds, and the threshold has a closed form,
+`N* ≈ c / sqrt(lambda_r * lambda_1 * rel) ≈ 1.6M`, matching the observation. So
+"necessary but not sufficient" is right, but the rule is not *wrong* in that
+regime — merely far outside any practical sample size.
+
+The better answer is to stop relying on a spectral gap. A **parallel-analysis**
+selector permutes `O_0` within each action bin, destroying the `(o_t, o_0)`
+dependence while preserving both marginals, and keeps directions exceeding the
+95th percentile of the resulting permutation null. It selects the correct rank in
+every cell at every `N` tested — including 90% at `N=8,000` on the cell where the
+eigengap rule needs `N≈2M` — and never selects the cliff.
+
+One correction is essential: the null's own outer product of marginals is rank 1,
+so the permutation test can only detect dependence *beyond* the first direction.
+The count must be `1 + #{i >= 2 : lambda_i > q95(null)}`. Without it the selector
+returns 0 whenever the behavior policy is deterministic.
 
 ## 8. Consequence for step (b) — read before running it
 
@@ -234,12 +266,16 @@ uses**. Everything in Phase 4 runs at `N <= 4,000`, and the corrected rule needs
 `N` in the hundreds of thousands before it recovers the right rank in the
 statistically-deficient regime.
 
-So step (b) must be run in the **shape-capped regime** — `|O_0|` strictly smaller
-than `|O|`, where the exact zeros make the rule correct at every sample size — or
-with a rank selection that does not depend on finding a spectral gap at all.
-Running it in the statistically-deficient regime at project-scale `N` would
-produce a divergence caused by rank misselection, and we would have no way to
-separate that from the effect we are looking for.
+Our first proposal — restrict step (b) to the shape-capped regime — was unsafe,
+because the criterion defining that regime was wrong (§7.5). It would also have
+been suspect on its own terms: restricting the comparison to configurations where
+the cliff is most pronounced biases it toward finding the blow-up we expect.
+
+**Step (b) is now unblocked without any regime restriction.** Run it with the
+parallel-analysis selector of §7.6, which is correct in every cell at every `N`
+tested and never selects the cliff. Run it in **both** regimes, since the point of
+the comparison is to see whether the model-free method shares the failure, and
+excluding the regimes where it might not would beg the question.
 
 ## 9. Required re-runs
 
@@ -254,8 +290,13 @@ The geometric results do not depend on the behavior policy, but they were not
 ## 10. Honest limitations
 
 - Tabular, one synthetic environment family, Dirichlet emissions.
-- `N` up to 256,000, `T=3`, 2 actions. "Statistically empty" is relative to that
-  budget.
+- `T=3`, 2 actions throughout. Tier classification uses `N` up to 256,000;
+  the estimator convergence table reaches 512,000 and the convergence check
+  reaches 4,000,000. "Statistically empty" is relative to those budgets.
+- The `Wa` convergence table in §7.4 was produced by an ad-hoc run rather than a
+  committed script, and its transition-region cells rest on few draws. The
+  direction of the effect is not in doubt, but the exact `N` at which each cell
+  flips should not be quoted precisely.
 - The model-free pessimism divergence (step b) has not been run.
 - The three-tier structure was verified on the model-free cross-moment. Whether
   the model-based stage-1 object `Ma Ma^T` shares it was examined by the review

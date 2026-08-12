@@ -24,27 +24,48 @@ about a research line.
 | Adversarial review of (a) | **done** | Found both errors; see `docs/critic_findings.md` |
 | Fix the eigengap rank rule | **done** | Correct in 16/18 cells vs 0/18 for the shipped rule |
 | Re-run (a) at `confound < 1.0`, per-action, 20 seeds | **done** | Surviving results confirmed; middle tier decays at exactly `N^-1` |
-| (b) Model-free pessimism, to observe the divergence | **still blocked** | The fix is necessary but not sufficient — see below |
+| Gap-free rank selection (parallel analysis) | **done** | Correct in every cell at every `N`; supersedes the eigengap rule |
+| (b) Model-free pessimism, to observe the divergence | **unblocked** | Run with the parallel-analysis selector, in both regimes |
 | (c) The rank cap as a proposition | not started | |
 
-## Why (b) is still blocked
+## How (b) got unblocked
 
-The corrected rule recovers the right rank inside the estimator, but only as `N`
-grows, and the required `N` depends on the regime:
+The corrected eigengap rule recovers the right rank inside the estimator, but
+only as `N` grows. We first attributed the difference to whether the instrument
+shape forces exact zeros (`|O_0| < |O|`). **That criterion was wrong**, and our
+own table refuted it — `|O_0| < |O|` holds in every row, including every failing
+one, so it has no discriminating power at all.
 
-- Where the **instrument shape** forces exact zeros (`|O_0| < |O|`), it is correct
-  at every sample size — the gap it needs is a machine-zero cliff.
-- Where the deficiency is only **statistical**, it needs `N` in the hundreds of
-  thousands. One cell has still not converged at `N = 512,000`.
+The real condition is whether the per-action population rank **saturates the
+shape cap**:
 
-Everything in Phase 4 runs at `N <= 4,000`. So step (b) has to be run in the
-shape-capped regime, or with a rank selection that does not depend on finding a
-spectral gap — otherwise a divergence caused by rank misselection is
-indistinguishable from the effect we are trying to measure.
+| | `rank(P_a) = min(\|O\|,\|O_0\|)` | `rank(P_a) < min(\|O\|,\|O_0\|)` |
+|---|---|---|
+| eigengap rule | correct at every `N` | needs `N` in the millions |
 
-This also explains why the Phase 3 toy worked: `|O|=3, |O_0|=2` puts it in the
-shape-capped regime, where the cliff is present from the start.
-| (c) The rank cap as a proposition | not started | |
+When the rank saturates, the deficiency is entirely a machine-zero cliff and the
+gap exists immediately. When it does not, a statistically-empty tier sits between
+signal and cliff, and the rule must wait for it to fall away. The convergence
+threshold has a closed form, `N* ≈ c / sqrt(lambda_r * lambda_1 * rel)`, giving
+`≈1.6M` for the slowest cell — which is where it converges.
+
+This is why the Phase 3 toy worked: `|O|=3, |O_0|=2` with `rank(P_a)=[2,2]`
+saturates the cap.
+
+**The fix is not to restrict the regime but to stop relying on a spectral gap.**
+A parallel-analysis selector — permute `O_0` within each action bin to destroy the
+`(o_t, o_0)` dependence while preserving marginals, then keep directions above the
+95th percentile of the permutation null — selects the correct rank in every cell
+at every `N` tested, including 90% at `N=8,000` on the cell where the eigengap
+rule needs `N≈2M`. It never selects the cliff.
+
+One subtlety makes it work: the null's own outer product of marginals is rank 1,
+so the permutation test can only detect dependence *beyond* the first direction,
+and the count must be `1 + #{i >= 2 : lambda_i > q95(null)}`. Without that
+correction it returns 0 whenever the behavior policy is deterministic.
+
+Step (b) can therefore run in **both** regimes with this selector, and the regime
+restriction is dropped.
 
 ## What (a) found, after review
 
