@@ -36,7 +36,7 @@ about a research line.
 | Re-run under the paper's sup-norm (box) class | **done** | Box is the WEAKEST class; our "norm ball beats the repair" claim reverses |
 | (c) A proposition on non-contraction | **done, reviewed** | Width branch survives and locates the anchor paper; coverage branch refuted on this environment |
 | Re-run the projected-width slope at 20 seeds | **done** | Geometry confirmed to 0.001; the *deployed* estimator refuted |
-| Run part (c) coverage where completeness FAILS | **required** | The only environment that can instantiate the coverage branch |
+| Run part (c) coverage where completeness FAILS | **done** | Coverage branch confirmed; complete-design control clean at 40/40 |
 
 ## How (b) got unblocked
 
@@ -127,7 +127,37 @@ not indict it.
 Structurally, the coverage branch requires the anchor paper's **completeness
 assumption to fail** — `K0` invertible forces the min-norm bridge out of the
 population null. The environment where it does fail, `(2,6,4)` at `confound=1.0`,
-is the one we never ran part C on. That experiment is open.
+is the one we never ran part C on. **That experiment has now been run** — see
+`docs/completeness_and_h4.md`.
+
+## Completeness is the switch (the step after (c))
+
+Round 6's attribution — that `beta_pop = 0` on the toy is caused by the anchor
+paper's completeness assumption — is confirmed as **population algebra, 50/50
+cells**: `beta_pop <= 1.5e-15` wherever per-action completeness holds, and 57–77%
+of the bridge norm wherever it fails. Sharp, with no intermediate cells.
+
+Two routes to failure, and only one is worth building on. `confound = 1.0` is a
+knife-edge, restored at 0.9. `|O_0| < |S|` is **dimensional**, holds at every
+confounding level, and is checkable before fitting — composing with step (a) into
+two pre-fit questions: does the design have an exact null, and does the truth have
+mass in it.
+
+Running the coverage test there gives step (c)'s coverage branch its first
+confirmed instance, with the control it never had:
+
+| | `beta_emp` slope | coverage over 512x in `N` |
+|---|---|---|
+| **incomplete** (4,6,2) | **−0.001** (constant) | crossings at all four `c`, monotone loss |
+| **complete control** (2,6,4) | **−0.660** (→ 0) | **3/3 at every `N` and `c`**, 40/40 cells |
+
+The crossing scales as `c^2` (+2.158 measured vs +2.000). The absolute `N*`
+predictions were **wrong** and are corrected post-hoc in §5.4 — two errors in our
+own prediction, disclosed there.
+
+Scope, unchanged from round 6: `|O_0| < |S|` **violates the paper's Assumption
+3.3**. This is a robustness result about a regime the paper excludes, not a defect
+in it.
 
 ## What (a) found, after review
 

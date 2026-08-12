@@ -125,7 +125,130 @@ than `beta_pop`. The last is the important control and must be run: `(2,6,4)` at
 
 ## 5. Measurements
 
-*(added after §1–§4 were committed)*
+`poc/run_coverage_incomplete.py`, 3 seeds, `N` from 1,000 to 512,000 (512× range),
+`kappa = 0.5`. `T = 1`: the stage-1 reward block is built from `(O_0,O_1,A_1,R_1)`
+alone, asserted rather than assumed — `max|dH| = 0.00e+00`, `max|db_hat| = 0.00e+00`
+against `T = 3`.
+
+### 5.1 The decisive contrast: `beta` is a constant only where completeness fails
+
+| case | `beta_emp` at `N=1,000` | at `N=512,000` | log-log slope |
+|---|---|---|---|
+| **treatment** (4,6,2), cf 0.0, incomplete | 1.6829 | 1.6649 | **−0.001** |
+| **control** (2,6,4), cf 0.6, complete | 0.2699 | 0.0039 | **−0.660** |
+
+This is the population algebra of §3 showing up in sampled data with no ambiguity.
+In the incomplete design `beta` is a genuine constant; in the complete one it
+decays to zero, exactly as it did on the Phase 3 toy where we mistook it for an
+environment property.
+
+And the constant is the *right* constant. The block spans both actions, so its
+`beta` should be the quadrature sum of the per-action population values:
+
+```text
+sqrt(1.2108^2 + 1.1428^2) = 1.66494      measured beta_emp = 1.66494
+```
+
+Agreement to five digits. The empirical null converges to the population null, and
+`beta_pop` predicts what the fit finds.
+
+### 5.2 Coverage — crossings in the treatment, none in the control
+
+Fraction of seeds retaining coverage:
+
+| `N` | c=0.03 | c=0.1 | c=0.2 | c=0.3 | | control, all `c` |
+|---|---|---|---|---|---|---|
+| 1,000 | 2/3 | 3/3 | 3/3 | 3/3 | | 3/3 |
+| 8,000 | 0/3 | 3/3 | 3/3 | 3/3 | | 3/3 |
+| 16,000 | 0/3 | 1/3 | 3/3 | 3/3 | | 3/3 |
+| 64,000 | 0/3 | 0/3 | 3/3 | 3/3 | | 3/3 |
+| 128,000 | 0/3 | 0/3 | 0/3 | 3/3 | | 3/3 |
+| 512,000 | 0/3 | 0/3 | 0/3 | 0/3 | | 3/3 |
+
+> **The coverage branch of step (c) now has a confirmed empirical instance.** In a
+> structurally incomplete design the confidence region loses the truth as `N`
+> grows, at every width constant tested, and the loss is monotone in `N` — more
+> data strictly destroys coverage.
+
+**The control is what makes this a test.** `(2,6,4)` at `confound = 0.6` has
+`beta_pop = 0` and retains 3/3 coverage at every `N` and every `c` — 40 cells, no
+failures, across the same 512× range. Step (c) had no such control, which is why
+its coverage claim was worthless even before the `beta` error was found.
+
+The control also behaves as predicted *in form*: with `beta = 0` the coverage
+condition reduces to `c/sigma2 >= C`, which contains no `N`, so coverage must be
+all-or-nothing in `N` rather than crossing. It is.
+
+### 5.3 The `c^2` signature
+
+`N* ∝ c^2` is the falsifiable part, and it is free of `sigma2` and `beta`, which
+cancel out of the scaling:
+
+```text
+d log N* / d log c   measured +2.158   predicted +2.000
+```
+
+The `N` grid steps by factors of 2, so a crossing is located only to within a
+factor of 2; the residual 0.158 is inside that quantization.
+
+### 5.4 DISCLOSED DEFECT: the absolute `N*` predictions in §4 were wrong
+
+The predictions in §4 were committed before this run, and **two of them were built
+on my own errors**, both found only by checking why the measured crossings sat
+*above* a bound that should have been an upper bound:
+
+1. **Wrong `beta`.** §4 used the single-action `beta_pop = 1.211`. The block spans
+   both actions, so the right value is the quadrature sum `1.665` (§5.1).
+2. **Wrong `sigma2`.** §4's `sigma2_pop` was computed under a different
+   normalization from the one `TabularBridgeEstimator` uses for
+   `sigma2_signal` — the estimator carries the behaviour-policy factor inside the
+   stage-1 profile, my population version normalized it away. They differ by
+   **2.02×**, and `N* ∝ sigma2^-2`, so this alone moves `N*` by 4×.
+
+With both corrected, every prediction falls inside the interval the grid brackets:
+
+| `c` | §4 published `N*` | corrected `N*` | measured bracket | inside |
+|---|---|---|---|---|
+| 0.03 | 1,647 | 1,878 | (1,000, 2,000) | **yes** |
+| 0.10 | 18,304 | 20,862 | (8,000, 32,000) | **yes** |
+| 0.20 | 73,216 | 83,448 | (64,000, 128,000) | **yes** |
+| 0.30 | 164,737 | 187,757 | (128,000, 256,000) | **yes** |
+
+**The correction is post-hoc and is labelled as such.** Four-for-four bracketing
+after fixing two constants against the data is weaker evidence than it looks, and
+it is exactly the move round 6 caught in the `c`-floor. What was genuinely a
+priori, and confirmed, is everything that does not depend on those two constants:
+that crossings exist in the incomplete design, that they are absent in the
+complete control, that `beta` is flat in one and decays in the other, and that the
+crossing scales as `c^2`.
+
+### 5.5 Summary
+
+| claim | a priori? | status |
+|---|---|---|
+| `beta_pop > 0` iff per-action completeness fails | yes, §3 | **confirmed**, 50/50 cells |
+| `beta_emp` constant where incomplete, → 0 where complete | yes | **confirmed**, −0.001 vs −0.660 |
+| `beta_emp` = quadrature of per-action `beta_pop` | yes | **confirmed** to 5 digits |
+| coverage crossings exist in the incomplete design | yes | **confirmed**, all 4 `c` |
+| no crossing in the complete control | yes | **confirmed**, 40/40 cells |
+| crossing scales as `c^2` | yes | **confirmed**, +2.158 vs +2.000 |
+| absolute `N*` values of §4 | yes | **wrong**; corrected post-hoc (§5.4) |
+
+## 5b. What this does and does not establish
+
+**Does.** The coverage horn of the step (c) dichotomy is real and observable, and
+the condition for it is dimensional and checkable before fitting: `|O_0| < |S|`.
+Where it holds, more data strictly destroys coverage of the confidence region.
+
+**Does not.** This is a robustness result about a regime the anchor paper
+*excludes by assumption*. `|O_0| < |S|` violates Assumption 3.3, and D.16(a)
+separately assumes the truth out of the null. Nothing here is a defect in the
+paper. The honest claim is: **the construction's guarantee degrades with sample
+size precisely when its completeness premise fails, and that premise is checkable
+from dimensions alone** — which is useful to a practitioner and is not in the
+paper, but is not a contradiction of it.
+
+Still one environment family, 3 seeds, `T = 1`, tabular.
 
 ## 6. Files
 
