@@ -1,0 +1,85 @@
+{
+  "comparison": [
+    {
+      "c": 0.1,
+      "method": "vanilla",
+      "modal_selection": "uniform",
+      "regret": 0.51271296,
+      "vlow_selected": -1.8115177593906566,
+      "contains_truth": "yes*"
+    },
+    {
+      "c": 0.1,
+      "method": "norm-ball",
+      "modal_selection": "uniform",
+      "regret": 0.51271296,
+      "vlow_selected": -0.5834371408240103,
+      "contains_truth": "yes"
+    },
+    {
+      "c": 0.1,
+      "method": "projected",
+      "modal_selection": "soft",
+      "regret": 0.3419007999999999,
+      "vlow_selected": -0.24939194817066235,
+      "contains_truth": "NO"
+    },
+    {
+      "c": 0.5,
+      "method": "vanilla",
+      "modal_selection": "uniform",
+      "regret": 0.51271296,
+      "vlow_selected": -20.37483372107064,
+      "contains_truth": "yes*"
+    },
+    {
+      "c": 0.5,
+      "method": "norm-ball",
+      "modal_selection": "uniform",
+      "regret": 0.51271296,
+      "vlow_selected": -3.5509924152204952,
+      "contains_truth": "yes"
+    },
+    {
+      "c": 0.5,
+      "method": "projected",
+      "modal_selection": "uniform",
+      "regret": 0.51271296,
+      "vlow_selected": -6.031834947911681,
+      "contains_truth": "NO"
+    },
+    {
+      "c": 1.0,
+      "method": "vanilla",
+      "modal_selection": "uniform",
+      "regret": 0.51271296,
+      "vlow_selected": -52.779115213145396,
+      "contains_truth": "yes*"
+    },
+    {
+      "c": 1.0,
+      "method": "norm-ball",
+      "modal_selection": "uniform",
+      "regret": 0.51271296,
+      "vlow_selected": -6.427700047265923,
+      "contains_truth": "yes"
+    },
+    {
+      "c": 1.0,
+      "method": "projected",
+      "modal_selection": "uniform",
+      "regret": 0.39277962666666677,
+      "vlow_selected": -13.722148053432528,
+      "contains_truth": "NO"
+    }
+  ],
+  "v_true": {
+    "greedy_lo": 2.01771296,
+    "greedy_hi": 0.99339296,
+    "always_0": 1.8647999999999996,
+    "always_1": 1.6944,
+    "uniform": 1.505,
+    "soft": 1.76121824
+  },
+  "optimal": "greedy_lo"
+}
