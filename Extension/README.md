@@ -30,8 +30,9 @@ about a research line.
 | Re-run the leakage table at 20 seeds | **required** | PA rank carries ±1 noise at `N=4,000` |
 | Check the omitted bridge-class bound `M_R` | **done** | Omission real (excursion 14x the a priori bound); divergence survives it |
 | Same check on the model-based ellipsoid | **done** | Same verdict; and the norm ball beats our own repair at `c=1` |
-| Compare the repair against the norm-constrained baseline | **done** | Repair loses its main justification; `0.000` regret does not reproduce |
-| Re-run selection regret across several candidate sets | **required** | The published claim is candidate-set dependent |
+| Compare the repair against the norm-constrained baseline | **done, reviewed** | Magnitudes invalid (solver + class-shape defects); D1/D2 survive |
+| Fix the norm-ball solver and use the paper's sup-norm class | **required** | Bisection is up to 56% suboptimal; `M_R` is a box, not an `L2` ball |
+| Regret-vs-`c` curve on a common grid, with the plug-in baseline | **required** | Plug-in beats every pessimistic variant in 99-100% of 200 random candidate sets |
 | (c) A proposition on non-contraction | next | Now covers both the ball-active and ball-inactive regimes |
 
 ## How (b) got unblocked

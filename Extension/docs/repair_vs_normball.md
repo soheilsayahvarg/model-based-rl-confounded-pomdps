@@ -48,20 +48,46 @@ since the paper requires `M_R >= ||b_true||`.
 | 1.0 | norm-ball | uniform | 0.5127 | **−6.43** | **yes** |
 | 1.0 | projected | uniform | **0.3928** | −13.72 | **no** |
 
-## 4. The headline claim does not reproduce
+## 4. WITHDRAWN — "the headline claim does not reproduce" was a misdiagnosis
 
-**No method achieves zero regret on this candidate set.** The best any of them
-manages is `0.342`, and all three usually select `uniform`, whose true value is
-`1.505` against an optimal `2.018`.
+We wrote that Phase 3's `0.000` selection regret fails to reproduce and blamed
+candidate-set dependence. **That diagnosis is wrong**, and the review caught it
+before the claim reached a correction to the phase write-ups.
 
-Phase 3's `0.000` was measured on its own candidate set. It is not wrong there,
-but it **does not generalise**: swap the candidates and the same method on the
-same environment selects a policy that is 25% below optimal. A result that
-survives only for one choice of candidates is a property of the candidates, not of
-the method, and we have been presenting it as the latter.
+Phase 3's frozen pipeline reproduces every published number, including `−1778.9`
+and `V_low = 1.35` with **zero regret at `c = 0.03`**. And at that same operating
+point (`c = 0.03`, `N = 20,000`) the **new candidate set above also gives zero
+regret**. The table in §3 was run at `c >= 0.1` and `N = 5,000`. We compared a
+different operating point and reported the difference as a failure to reproduce.
 
-This is the most consequential finding here, and it is independent of the norm
-ball entirely.
+Had we written the correction we were about to write, we would have replaced a
+misleading claim with a false one.
+
+### What is actually wrong with the published claim
+
+Two things, both sharper than candidate-set dependence:
+
+**1. The Phase 4 paper compares across different `c`.** Vanilla is quoted at
+`c = 0.1` and projected at `c = 0.03`. At equal `c` the contrast largely
+disappears from both sides. A like-for-like regret-versus-`c` curve is the fix.
+
+**2. The plug-in baseline beats all three pessimistic methods.** Our own frozen
+output already contains this in its `sub_plug` column: the plug-in has `0.000`
+regret everywhere. Across **200 random candidate sets** it is better than or equal
+to every pessimistic variant in **99–100%** of cases — mean regret `0.0017`
+against `0.38–0.46`.
+
+So the published `0.000` is not evidence that pessimism ranks well. It is the
+**plug-in's ranking surviving untouched inside widths so large they carry zero
+coverage** — as our own coverage column shows. The honest scoping is: "the
+projection preserves the plug-in ordering at sub-coverage widths", which is a
+much weaker statement than the one currently made.
+
+### The correction the phase write-ups actually need
+
+- A regret-versus-`c` curve on a **common grid**, not cross-`c` quotes.
+- The **plug-in baseline reported alongside**, since it dominates.
+- `0.000` scoped to "preserves the plug-in ordering at sub-coverage widths".
 
 ## 5. What the norm ball changes
 

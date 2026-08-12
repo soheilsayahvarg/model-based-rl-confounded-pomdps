@@ -999,3 +999,383 @@ quantified seed-noise caveat.
 
 **Critic scripts this round:** `poc/critic_b_a1.py`, `poc/critic_b_a2.py`,
 `poc/critic_b_a3.py`, `poc/critic_b_a45.py`, `poc/critic_b_a7.py`.
+
+---
+
+# Published-Claims Round
+
+Fourth pass: the omitted `M_R` (D1), survival of the divergence under it (D2),
+the re-attribution of the −1755 (D3), the non-reproducing 0.000 regret (D4),
+and the norm-ball-vs-repair comparison (D5). These touch Phase 3/Phase 4
+deliverables, so the bar is higher.
+
+## Checklist
+
+- [x] A0 -- reproduce the three new drivers; locate the original 0.000-regret provenance
+- [x] A1 -- candidate-set dependence of D4: distribution over random sets; Phase 3's original set
+- [x] A2 -- verify the norm-ball bisection against a certified solver
+- [x] A3 -- admissibility and circularity of M_R = ||b_hat||
+- [x] A4 -- coordinate-descent fairness across methods
+- [x] A5 -- decompose the -1755 into width choice vs omission vs remainder
+- [x] A6 -- other missing constraints; misc
+
+## A0 — Reproduction and provenance
+
+**What I ran:** all three new drivers, unmodified; grep of Phase 3/4 for the
+published numbers.
+
+**Result:** `run_repair_vs_normball.py`, `run_mb_norm_constraint.py` and
+`run_norm_constraint.py` reproduce every number quoted in the two docs
+(−52.78 → −6.43 at c=1; the M-sweep table; regret 0.3419/0.5127 rows).
+Provenance of the published headline: Phase 3's `−1755` (3 seeds) / `−1779`
+(5 seeds) is the **c = 10** endpoint of a sweep that starts at `−1.15` at
+c = 0.1 (`phase3_progress_report.md` line 525); Phase 4's paper quotes the
+same c=10 number. Note for D3: the Extension's rescue numbers are measured at
+c ≤ 1.0, two orders of magnitude below the c that produced the headline —
+checked directly in A5. The original 0.000-regret candidate set is
+`toy_candidates()` in `Phase_3/poc/run_phase1_check.py` (4 policies:
+always_a0, always_a1, obs_dependent, uniform).
+
+**Verdict: reproduction SURVIVES.**
+
+---
+
+## A2 — The norm-ball solver is wrong in exactly the regime the rescue claims live in
+
+**Claim attacked:** the bisection in `ellipsoid_opt.linear_min` (M branch),
+which produced every constrained number in D2, D3 and D5.
+
+**What I ran:** `poc/critic_p_a2.py`. A certified QCQP solver for
+min <g,b> over {ellipsoid} ∩ {||b|| ≤ M} (nested 1-D root finds on the two
+KKT multipliers; the problem is convex so KKT suffices), validated against
+scipy trust-constr multistart to ≤1e-8 on random instances; then the shipped
+bisection measured against it, on random instances and on the actual toy
+blocks with realistic gradients. Plus a feasibility audit of the shipped
+M = mean reward-block norm.
+
+**Result 1 — the bisection is structurally wrong, not just inaccurate.** Its
+inner map takes ONE direction `(H+νI)^{-1}(-(g+2νb_hat))` and rescales it to
+the ellipsoid boundary. The true KKT family is a curve
+`(2μH+2νI)^{-1}(...)` in a second multiplier, and the construction FORCES the
+ellipsoid to be active. Whenever the optimum has the ellipsoid slack — which
+is precisely the large-ξ (c ≥ 1) regime, where the exact solution shows
+positive ellipsoid slack — the shipped answer cannot be right.
+
+**Result 2 — measured error.** Random instances (ball active): median
+relative suboptimality 0.01%, worst **55.7%**. On the real toy blocks at
+c = 10, the shipped point on the dynamics blocks violates the norm ball by
+**+2.26 with M = 1.66** — the returned "norm-constrained" bridge has norm 3.9.
+(Mechanism: along the forced-boundary ray family, ||b(ν)|| never drops below
+M, the bracket loop exhausts silently, and the bisection returns an infeasible
+point.) On reward blocks it is feasible but under-pessimistic by up to 0.29
+per block per sweep.
+
+**Result 3 — the shipped M makes one block's own CENTER infeasible.**
+M = mean(||b_hat||) over reward blocks = 1.660, but ||b_hat(bR_t3)|| = 1.760:
+the fitted bridge itself is outside the "bridge class" the code imposes on it.
+A mean across blocks is not a class bound; the ball must be per block.
+
+**Verdict: REFUTED as an implementation — every D2/D3/D5 number that had the
+ball active is unreliable in both directions** (dynamics blocks: too
+pessimistic via infeasible points; reward blocks: not pessimistic enough).
+The corrected numbers are produced in A4/A5 with the certified solver. The
+qualitative direction of D1 (the omission is real) is untouched.
+
+**Fix:** replace the bisection with the two-multiplier solve (reference
+implementation in `critic_p_a2.py`, `exact_linear_min_ball`); use per-block
+M; assert ||b_returned|| ≤ M + tol after every ball step.
+
+---
+
+## A3 — M_R = ||b_hat|| is not "the smallest defensible value"; it is inadmissible in every fit
+
+**Claim attacked:** "M_R is set to the fitted bridge norm — the smallest
+defensible admissible value, since the paper requires M_R >= ||b_true||"
+(repair_vs_normball.md §2), and the mb table's framing that M/||b_hat|| = 1 is
+"the smallest defensible row" while 0.5 "excludes the truth".
+
+**What I ran:** `poc/critic_p_a345.py` [S1] — the toy's true bridges in closed
+form (min-norm pinv solutions, residuals < 1e-10), per-block
+||b_true|| vs ||b_hat|| across 3 seeds.
+
+**Result:** ||b_hat|| < ||b_true|| in **15 of 15** block-seed pairs
+(reward blocks: 1.59–1.76 vs 1.803; dynamics blocks: 1.12–1.19 vs 1.321). The
+ridge shrinks the estimator, so the fitted norm is a downward-biased estimate
+of the true norm — the circularity worry materialises in the worst direction:
+**M = ||b_hat|| EXCLUDES THE TRUTH in every fit**, and the shipped mean-M
+(1.66) excludes the true reward bridge (1.803) with room to spare. Therefore:
+(i) the "contains truth: yes" column for the norm-ball rows in
+`repair_vs_normball.md` §3 is **false** — the norm-ball method as run has no
+more coverage guarantee than the projection it is being credited over;
+(ii) the mb table's "M/||b_hat|| = 1.0" row is inadmissible for the same
+reason the 0.5 row is — the smallest admissible multiple is ≈ 1.09–1.14;
+(iii) the soundness asymmetry argument ("equal regret is not a tie: the sound
+method wins") currently compares two UNSOUND methods.
+
+**Verdict: REFUTED as stated.** The honest comparisons are at
+M = ||b_true|| (oracle, available in the toy) or at an a priori bound; both
+were run in A4/A5. The conclusions that survive them are listed there. Fix:
+per-block M with an explicit admissibility margin (e.g. 1.25 × fitted norm,
+with the bias direction stated), plus the oracle-M row in any toy table.
+
+---
+
+## A4 — Corrected-solver comparison: the rescue survives at honest M, shrinks at loose M; the shipped numbers were wrong in both directions
+
+**Claim attacked:** D2 (divergence survives M_R), D5 (norm ball beats the
+repair), and the fairness caveat "coordinate descent applies equally to all
+three methods".
+
+**What I ran:** `poc/critic_p_a345.py` [S2] — the full multilinear coordinate
+descent with the ball step solved by the certified QCQP solver (A2), per-block
+M, at M = ||b_hat||, ||b_true||, 2×||b_true||; shipped bisection alongside;
+worst in-descent ball violation recorded. 3 seeds, the mb doc's policy,
+V_true = 1.889.
+
+| c | vanilla | ball shipped | ball exact | M=||b_true|| | M=2×||b_true|| | projected |
+|---|---|---|---|---|---|---|
+| 0.1 | −2.45 | −0.06 | −0.65 | −1.08 | −2.45 | −0.37 |
+| 1.0 | −71.68 | −5.60 | −5.90 | −7.53 | −31.44 | −20.34 |
+| 10 | −1907.62 | −7.72 | −7.11 | −9.06 | −52.24 | −373.77 |
+
+**Result 1 — D2 SURVIVES under the certified solver and an honestly admissible
+M:** V_low = −7.53 (c=1) and −9.06 (c=10) against truth 1.89 — still negative,
+still useless for ranking, exactly as the doc claims. This is the round's
+over-correction check in reverse: the omission-repair does NOT rescue the
+method, and that conclusion is robust to every solver and M fix.
+
+**Result 2 — but the rescue's magnitude is fragile in M:** at M = 2×||b_true||
+(a merely factor-2-loose class, which is optimistic for any real a priori
+bound) the constrained V_low is −31 (c=1) / −52 (c=10) — most of the "the ball
+fixes most of it" story fades. The doc's own §7 hedge ("nothing here
+establishes how far") is the operative truth and should be promoted into the
+result, not left as a limitation.
+
+**Result 3 — the fairness caveat was false.** The shipped solver's error is
+not "equal across methods": vanilla and projected use exact closed-form block
+steps; the ball steps were (a) infeasible on dynamics blocks at c=10 (norm
+violation +2.9 inside the descent) and (b) under-pessimistic on reward blocks
+at c ≤ 1 (e.g. −0.06 shipped vs −0.65 exact at c=0.1 — a 10× understatement of
+the penalty). The comparison in `repair_vs_normball.md` §3 inherits both
+directions of this error at different c, so its per-cell numbers (−0.58,
+−3.55, −6.43) are solver artifacts; corrected values differ by up to a factor
+10 at c=0.1.
+
+**Verdict: D2 SURVIVES (robustly); D5's informativeness comparison UNPROVEN as
+published** — it must be re-run with the exact solver and an admissible M
+before any "norm ball beats the repair" sentence survives; at
+M = 2×||b_true||, c=1.0, the projection (−20.3) actually beats the ball (−31.4),
+flipping D5's sign in an M-regime the doc itself calls plausible.
+
+---
+
+## A5 — The −1755 decomposition: two knobs, each "explains" ~99% — the attribution is non-additive
+
+**Claim attacked:** D3 — "most of the published magnitude is our omission, not
+the method: −52.78 → −6.43 at c=1.0."
+
+**What I ran:** `poc/critic_p_a345.py` [S3]. Reproduced the published headline
+scale at its actual c: vanilla at c=10 gives −1907 (3 seeds, this policy; the
+published −1755/−1779 is the same object at its seeds). Then each knob moved
+separately with the certified solver.
+
+**Result:** starting from V_hat ≈ 1.85 and vanilla(c=10) = −1907.6:
+
+- impose the ball alone (exact, M=||b_hat||, still c=10): −7.11 — removes
+  99.5% of the drop;
+- impose the honest ball (M=||b_true||, c=10): −9.06 — removes 99.4%;
+- change the width alone (c=0.1, no ball): −2.45 — removes 99.8%.
+
+Both knobs independently collapse the same excursion, so "most of the
+magnitude is the omission" and "most of the magnitude is the c=10 width" are
+BOTH true and neither is the unique attribution — the published −1755 needed
+the conjunction of a c=10 width AND no class bound AND (per earlier rounds)
+the eigengap-based sigma2 in the width rule. D3's sentence should be
+"the published magnitude requires the omission; with the constraint imposed
+the same sweep tops out near −9" — which is what its own numbers show once
+the solver is fixed — rather than a fractional attribution to one cause.
+Note D3's quoted figures (−52.78 → −6.43) were both computed at c=1.0, one
+tenth of the c that produced −1755, and through the broken solver; the
+corrected c=10 pair is −1907.6 → −9.06.
+
+**Verdict: OVERSTATED, direction correct.** The published divergence figures
+do overstate the paper's failure mode; the corrected accompanying numbers are
+above.
+
+---
+
+## A6 — The paper's M_R is a sup-norm bound; the class shape changes the verdict; assorted defects
+
+**What I ran/read:** Assumption 4.1 and Theorem 4.2 of the anchor paper
+extracted from the PDF (`Papers/Model-based Reinforcement Learning for
+Confounded POMDPs.pdf`, p.8–9); `poc/critic_p_a6_box.py` — the same coordinate
+descent with the bridge class implemented as the paper's literal sup-norm box,
+at its tightest realizable size (max|b_true,i| = 0.872 reward / 0.614
+dynamics), solved per block by SLSQP.
+
+**Result 1 — the docs mischaracterize M_R.** Assumption 4.1(f) states
+`sup_{b in B_R,t} ||b||_INFINITY <= M_R` — uniform boundedness of the bridge
+functions, a BOX in the tabular case. `norm_constraint.md` §7's "M_R bounds an
+RKHS norm ... the identity in the tabular delta-kernel case" is wrong as a
+reading of 4.1(f). An L2 ball remains a legitimate *choice* of class B_R
+(4.1(f) then holds with M_R = the radius), but the docs present the L2 ball at
+the fitted norm as "the paper's own constraint", when the paper's stated
+condition pins down neither the shape nor the size.
+
+**Result 2 — the class shape flips the rescue's magnitude.** Tightest
+realizable class of each shape, certified solvers, same fits (V_true = 1.889):
+
+| c | L2 ball, M=||b_true|| | sup-norm box, M=max|b_true| | box at 2× | vanilla |
+|---|---|---|---|---|
+| 1.0 | −7.53 | **−27.41** | −54.10 | −71.68 |
+| 10 | −9.06 | **−92.21** | −376.68 | −1907.62 |
+
+The box permits exactly the spread-across-coordinates excursions that the
+null space is made of, so under the paper's literal assumption the constrained
+pessimism is still catastrophically uninformative (−92 vs truth 1.9 at the
+published c). Consequences: D2 survives under every shape (the divergence is
+never rescued); D3's "the ball fixes most of it" is shape-dependent — the
+best-case class (L2 at oracle norm) caps the damage at −9, the literal-reading
+class at −92, a factor 10 apart; and D5's "norm ball beats our repair"
+REVERSES under the box shape at c=1 (projected −20.3 beats box −27.4).
+
+**Result 3 — the round's own realizability tie-in:** Assumption 4.1(d)
+(realizability: b_true in B_R,t) is VIOLATED by the shipped M = ||b_hat||
+class (A3). So the implementation did not merely "add the paper's constraint";
+it added a class that breaks the paper's own realizability assumption.
+
+**Result 4 — assorted defects.**
+- `norm_constraint.md` §7 still says "Model-free layer only. The same check
+  should be run on the model-based ellipsoid ... before this is written up" —
+  stale: §6b of the same document IS that check.
+- `Extension/src/envs/oracle_module.py` is broken as shipped
+  (`ModuleNotFoundError: simulated_env` on import) — the self-containment
+  claim in the README ("modules it needs were copied in") fails for this
+  module; my scripts inline `toy_true_bridges` as a workaround.
+- The paper's own width parameters (alpha, beta in Theorem 4.2) scale with
+  M_R and a specific N-rate; the project's c-sweep convention never uses M_R
+  in the width. That choice is documented (ellipsoid_opt: "never a claimed
+  theoretical xi") but becomes newly relevant once M_R exists in the
+  implementation: the paper couples the class size and the region width, the
+  implementation doesn't. Worth one sentence in the write-up.
+
+**Verdict:** the M_R reading is OVERSTATED as "the paper's own constraint,
+implemented correctly" — what was implemented is one admissible class choice
+among several, at an inadmissible size (A3), through a broken solver (A2).
+The defensible statement, now verified across shapes and sizes: **no bounded
+bridge class rescues the divergence** (D2, strengthened), and every published
+magnitude depends on the class-shape/size convention, which must be stated.
+
+
+---
+
+## A1 — D4 is misdiagnosed: the 0.000 reproduces at its operating point on BOTH candidate sets; the real problem is a cross-c comparison and a missing plug-in baseline
+
+**Claim attacked:** D4 — "the published 0.000 selection regret does not
+reproduce on a different candidate set; no method achieves zero regret, best
+is 0.342." The author flagged this as the claim with real consequences for
+Phase 3/4 deliverables.
+
+**What I ran:** `poc/critic_p_a1.py` (V_low cached for 52 policies × 3
+methods × 2 c × 3 seeds, then regret evaluated on Phase 3's original
+candidate set and on 200 random 5-candidate sets, with plain plug-in
+selection as the reference); the FROZEN `Phase_3/poc/run_phase34_check.py`
+verbatim; `poc/critic_p_a1b.py` (Extension code at Phase 3's N=20,000);
+`poc/critic_p_a1c.py` (both candidate sets × N ∈ {5k, 20k} × c ∈ {0.03, 0.1,
+1.0}).
+
+**Result 1 — the frozen pipeline reproduces every published number.** Vanilla
+degrades −1.15 → −1778.9 across c=0.1..10 (the −1779); projected V_low = 1.35
+at c=0.03 with 0.000 regret across seeds. Nothing has drifted.
+
+**Result 2 — but the frozen pipeline's own table already contradicts the
+published framing.** At every c with joint coverage 1.00, vanilla's regret is
+0.684; projected's regret is 0.274 at c=0.1 and 0.684 for c ≥ 0.3; the 0.000
+rows are exactly the rows where the sweep's own coverage columns read
+0.00–0.80 — widths so small the region does not cover the truth, i.e. where
+pessimism is vacuous. And the frozen output's `sub_plug` column is 0.000 in
+every row: plain plug-in selection achieves the headline number at every
+setting, with no pessimism at all.
+
+**Result 3 — the candidate-set diagnosis is wrong.** At the paper's operating
+point (c=0.03, N=20,000), the Extension's own NEW candidate set also gives
+**0.000 regret for every method** (`critic_p_a1c.py`):
+
+| set | N | c=0.03 | c=0.1 | c=1.0 |
+|---|---|---|---|---|
+| phase3-original | 20k | 0 / 0 / 0 | 0.68 / 0.41 / 0 | 0.68 / 0.68 / 0 |
+| extension-new | 20k | 0 / 0 / 0 | 0.26 / 0 / 0 | 0.51 / 0.51 / 0 |
+| (vanilla / projected / plug-in) | | | | |
+
+The comparison in `repair_vs_normball.md` ran c ∈ {0.1, 0.5, 1.0} at N=5,000 —
+outside the zero-regret corner on ANY candidate set. "Swap the candidates and
+the method selects a policy 25% below optimal" is an operating-point effect
+mislabeled as candidate-set fragility. D4's proposed correction to Phase 3/4
+("scope the 0.000 to its candidate set") would have been the wrong correction.
+
+**Result 4 — the distributional statement, which is the defensible one.** Over
+200 random candidate sets at c ≥ 0.1 (N=5k, 3 seeds): mean regret 0.38–0.46
+for all three pessimistic methods, P(regret = 0) ≤ 8%, no dominance between
+projected and norm-ball (wins/ties/losses ≈ symmetric) — while plug-in
+selection has mean regret **0.0017**, zero in 90% of sets, and beats or ties
+every pessimistic method in 99–100% of sets.
+
+**What actually needs correcting in the deliverables (sharper than D4):**
+the Phase 4 paper's §exp-pess contrasts vanilla at c=0.1 (regret 0.68) with
+Signal-Projected at c=0.03 (regret 0.000) — a cross-c comparison. At matched
+c the contrast vanishes in both directions (both 0.000 at 0.03; both 0.68 at
+≥0.3, with projected's 0.27 at 0.1 the only cell where it genuinely wins).
+And the 0.000 itself is the plug-in ranking passing through a vacuous width —
+a baseline the write-ups never report. The paper's "honest limit" paragraph
+already discloses zero coverage for the projection; what it does not disclose
+is that the zero-regret figure needs no pessimism and no projection.
+
+**Verdict: D4 REFUTED as diagnosed; the underlying worry CONFIRMED in a
+stronger form.** Required fixes: report regret-vs-c curves for all methods on
+a matched grid with the plug-in baseline included; scope the 0.000 claim to
+"preserved plug-in ranking at sub-coverage widths"; keep the candidate-set
+distribution (Result 4) as the generalization evidence.
+
+---
+
+## Published-Claims Round — summary
+
+| claim | verdict | one line |
+|---|---|---|
+| D1 (M_R omitted, excursions real) | **SURVIVES** | Reproduced; unconstrained minimisers exceed any bounded class. |
+| D2 (divergence survives M_R) | **SURVIVES, strengthened** | Holds under the certified solver, at oracle M, and under BOTH class shapes: best case −9.06, literal sup-norm case −92 at c=10, vs truth 1.89 (A4, A6). |
+| D3 (most of −1755 was the omission) | **OVERSTATED** | Non-additive: the ball removes ~99.5% of the c=10 magnitude, but the width knob alone removes ~99.8% of it too; and the rescue magnitude is class-shape dependent by a factor 10 (A5, A6). |
+| D4 (0.000 does not reproduce on a new candidate set) | **REFUTED as diagnosed** | It reproduces at the published operating point on both sets; the failure is cross-c comparison + vacuous-width coverage + a plug-in baseline that achieves 0.000 everywhere and is never reported (A1). |
+| D5 (norm ball beats the repair, while containing the truth) | **REFUTED as published** | Computed with a solver that returns infeasible/suboptimal points (A2), at an M that excludes the truth in 15/15 fits so the "contains truth" column is false (A3), and the sign flips under the paper's literal class shape or a factor-2 M (A6, A4). |
+
+**Solver/implementation defects found this round:** (1) the KKT bisection in
+`ellipsoid_opt.linear_min` is structurally wrong — up to 56% suboptimal, and
+returns ball-violating points (norm +2.9 over M) at c=10; (2) M = mean of
+reward-block norms puts bR_t3's own center outside the ball; (3)
+M = ||b_hat|| is inadmissible in every fit (ridge shrinkage:
+||b_hat|| < ||b_true|| in 15/15); (4) `norm_constraint.md` misstates
+Assumption 4.1(f) — M_R bounds the sup-norm, not an RKHS norm; (5)
+`Extension/src/envs/oracle_module.py` does not import (missing
+`simulated_env`); (6) stale §7 limitation bullet in `norm_constraint.md`.
+
+**Over-correction check (the ground rule):** yes, this round found one. After
+three rounds of withdrawals the docs were primed to withdraw the 0.000-regret
+claim on candidate-set grounds — the wrong axis, which would have replaced a
+misleading-but-reproducible claim with a false diagnosis. The right
+correction is the operating-point/plug-in one above. Conversely, no
+over-correction in D1/D2: the omission is real and the divergence genuinely
+survives it — that conclusion got STRONGER under every fix applied here.
+
+**What the Phase 3/4 deliverables actually need:** (i) relabel "vanilla" as
+"the paper's method with the bridge-class constraint removed" (D1 stands);
+(ii) accompany −1755/−1779 with the class-constrained value AND the class
+convention (shape, size, solver) — honest range −9 to −92 at c=10; (iii)
+replace the 0.000-regret sentence with the matched-grid curves plus plug-in
+baseline; (iv) any norm-ball-vs-projection comparison must use the exact
+solver, per-block admissible M, and state that at no tested operating point
+does either beat plain plug-in selection on regret.
+
+**Critic scripts this round:** `poc/critic_p_a1.py`, `poc/critic_p_a1b.py`,
+`poc/critic_p_a1c.py`, `poc/critic_p_a2.py` (incl. the certified
+`exact_linear_min_ball`), `poc/critic_p_a345.py`, `poc/critic_p_a6_box.py`.
+Raw outputs: `experiments/critic_p_a1.json`, `experiments/critic_p_a345.json`.

@@ -1,7 +1,47 @@
 # We Did Drop a Constraint — And It Does Not Rescue the Method
 
-**Status: complete. The omission is real and material. The divergence survives it.
-A sharper problem appears in its place.**
+**Status: the finding survives; the MAGNITUDES in this document do not. Three
+defects in our own implementation were found in review — see §0. The qualitative
+conclusions (§1, §4, §5) hold and one of them is now stronger; every specific
+number below must be regenerated with the corrected solver.**
+
+---
+
+## 0. Defects in this document's numbers
+
+**0.1 The norm-ball solver is wrong.** `linear_min`'s bisection scales a single
+fixed direction out to the *ellipsoid* boundary, but the KKT solution family is a
+two-parameter curve, and in the large-`xi` regime — `c = 1..10`, exactly where all
+the rescue numbers live — the ellipsoid should not be active at all. Measured up
+to **56% suboptimal**, and on dynamics blocks at `c = 10` it returns points
+violating the ball by `+2.9`. Confirmed here: the solver forces the ellipsoid
+quadratic form to equal `xi` in every instance tested, which is the bug.
+
+**0.2 The averaged `M` is incoherent.** The driver sets `M` to the mean of
+`||b_hat||` across reward blocks and applies it to all of them. Confirmed here on
+the toy: `bR_t3` has `||b_hat|| = 1.760` against `M = 1.660`, so **that block's own
+centre lies outside the ball** and its constrained problem is not the one we meant
+to pose.
+
+**0.3 "The smallest admissible `M`" is not admissible.** We set `M = ||b_hat||`
+arguing that `M_R >= ||b_true||`. But ridge *shrinks* the estimate: in **15 of 15**
+block/seed pairs `||b_hat|| < ||b_true||`. So `M = ||b_hat||` **excludes the
+truth**, and the "contains truth: yes" column in `repair_vs_normball.md` §3 was
+false — that comparison pitted two unsound methods against each other.
+
+**0.4 `M_R` is a sup-norm, not an `L2`/RKHS norm** (Assumption 4.1(f) of the
+anchor paper). We imposed the wrong geometry. With the paper's literal box class
+at its tightest realizable size, the rescue nearly vanishes: `−92` at `c = 10`
+against the `−9` an `L2` ball gives. **Every magnitude here is a function of the
+class shape we chose**, and the §6b conclusion that the norm ball beats our repair
+reverses under the paper's actual class.
+
+**What survives all four.** The omission is real (§3). The divergence is not
+rescued by any bounded class (§4, §6b) — and with the corrected solver and an
+honest `M` this came out *stronger*, `−9.06` at `c = 10` against a true value of
+`1.89`. What does not survive is the claim in §6b that the paper's constraint
+beats our repair, and the decomposition in §5 of how much of `−1755` is
+attributable to the omission (see §5 note).
 
 ---
 
