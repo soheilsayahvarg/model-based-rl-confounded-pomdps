@@ -140,11 +140,11 @@ the pessimism layer.
 - One environment, one candidate set, 3 seeds. The candidate-set question is
   **not** settled here: the review's 200-random-set sweep is the evidence on that,
   and it found the plug-in ahead in 99–100% of sets.
-- `M_R` is imposed as an `L2` ball. The paper's Assumption 4.1(f) is a **sup-norm**
-  bound, so the literal class is a box. Under the box the rescue is far weaker
-  (the review measured `−92` at `c = 10` against `−9` for `L2`), which means the
-  §5 magnitudes are a function of the class *shape* we chose. **The box version
-  has not been run here and should be before publication.**
+- Both classes are now run: the `L2` ball and the paper's literal sup-norm box
+  (§2, §5). The box is the weaker of the two, so magnitudes remain a function of
+  class shape and should always be reported with the class stated. The tightest
+  realizable radii used here are oracle-derived; a practitioner without the true
+  bridge would pick something looser, which weakens the class further.
 - Coordinate descent gives an upper bound on the exact inner minimum for all
   pessimistic variants equally.
 
