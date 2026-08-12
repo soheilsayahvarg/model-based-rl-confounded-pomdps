@@ -134,6 +134,46 @@ def sample_trajectories(params, N, rng, policy=None, policy_type="latent"):
     return dict(O0=O0, O=O, A=A, R=R, S=S)
 
 
+def dp_value(params, pi_obs, T=None):
+    """Exact V(pi) by dynamic programming, for an observation-based policy.
+
+    pi_obs : (n_o, n_a) stationary policy over observations.
+
+    The latent chain is what actually evolves, so the recursion runs on states;
+    the policy enters through the emission, since the agent picks its action from
+    the observation it happens to see:
+
+        Q_t(s,a) = pR[s,a] + sum_s' P[a][s,s'] V_{t+1}(s')
+        V_t(s)   = sum_o E[s,o] sum_a pi(a|o) Q_t(s,a)
+
+    This is ground truth: no estimation, no sampling. It is the reference every
+    pessimistic lower bound must stay below.
+    """
+    E, P, pR, p1 = params["E"], params["P"], params["pR"], params["p1"]
+    n_s, n_a = params["n_s"], params["n_a"]
+    T = T or params["T"]
+    V_next = np.zeros(n_s)
+    for _ in range(T):
+        Q = pR + np.einsum("asz,z->sa", P, V_next)      # (n_s, n_a)
+        eff = E @ pi_obs                                # (n_s, n_a): p(a|s)
+        V_next = np.einsum("sa,sa->s", eff, Q)
+    return float(p1 @ V_next)
+
+
+def candidate_policies(n_o, n_a, seed=0):
+    """A small set of observation-based candidate policies to rank."""
+    rng = np.random.default_rng(seed)
+    pols = {}
+    for a in range(n_a):
+        pi = np.zeros((n_o, n_a))
+        pi[:, a] = 1.0
+        pols[f"always_{a}"] = pi
+    pols["uniform"] = np.full((n_o, n_a), 1.0 / n_a)
+    pi = rng.dirichlet(np.ones(n_a) * 1.5, size=n_o)
+    pols["mixed"] = pi
+    return pols
+
+
 def population_cross_moment(params, a=None):
     """The exact population limit of the model-free cross-moment, p(o_t, o_0).
 
