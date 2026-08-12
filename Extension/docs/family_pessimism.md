@@ -1,145 +1,186 @@
-# Step (b): The Blow-Up Is Shared, and the Driver Is Not What We Assumed
+# Step (b): The Blow-Up Is Shared — But Not for the Reason We First Published
 
-**Status: complete. The family claim is confirmed. The mechanism is sharper than
-"the design matrix is ill-conditioned" — conditioning barely moves while the
-failure varies by an order of magnitude.**
+**Status: the load-bearing result (C3, gradient leakage) survives and is now
+causal. The headline number was manufactured by our own width rule and is
+withdrawn. Two further claims are restated. Corrections in §8, all found by
+adversarial review.**
 
 ---
 
 ## 1. What was being tested
 
-Phase 4 found that the anchor paper's model-based pessimism diverges, and traced
-it to confidence-region directions the data cannot constrain. If that is
+Phase 4 found the anchor paper's model-based pessimism diverges. If that is
 geometric rather than a quirk of one estimator, the model-free proximal method of
-Shi et al. — different loss (minimax GMM rather than two-stage kernel ridge),
-different solver, different bridge (a value bridge rather than reward and
-dynamics bridges) — should fail the same way.
+Shi et al. — minimax GMM rather than two-stage kernel ridge, a value bridge rather
+than reward and dynamics bridges, a different solver — should fail the same way.
 
-The model-free estimator ships without a pessimism layer, so `src/pessimism/
-mf_pessimism.py` adds one using the same ellipsoid geometry as the model-based
-side.
+It ships without a pessimism layer, so `src/pessimism/mf_pessimism.py` adds the
+natural analogue of the model-based construction.
 
-## 2. Why the test is sharp rather than qualitative
+## 2. The sharp form of the question
 
-For a linear value functional the pessimistic value has a closed form:
+For a linear value functional,
 
 ```
 V_low = V(b_hat) - sqrt(xi) * ||g||_{H^-1}
 ```
 
-Divergence needs **two** things at once: an ill-conditioned `H`, **and** a value
-gradient `g` that points into the ill-conditioned directions. A null space the
-value never looks into is harmless. So we measure the leakage of `g` out of the
-retained subspace directly, rather than inferring failure from conditioning.
+Divergence needs **both** an ill-conditioned `H` **and** a value gradient `g`
+pointing into the ill-conditioned directions. A null space the value never looks
+into is harmless. So the measured quantity is the leakage of `g` out of the
+identified subspace.
 
-Rank selection uses parallel analysis, not the eigengap rule. At `N = 4,000` the
-eigengap rule needs `N` in the millions in the non-saturating regime, so it would
-have manufactured exactly the artifact this experiment is trying to observe.
+## 3. THE RESULT THAT SURVIVES: leakage is causal
 
-## 3. A structural point that makes the result stronger
+The decisive experiment was not in our first version; the review built it. Sweep
+the **emission alignment** while holding `confound = 1.0`, `rank(P_a) = [1,1]`
+and `cond(H)` fixed — so the only thing moving is how the gradient sits relative
+to the null space:
 
-For the model-based chain the value is multilinear across every stage's bridge,
-which is what forced the coupled multi-block minimisation and what our Phase 4
-compounding hypothesis appealed to. Here,
+| leakage of `g` | width ratio unproj/proj | `V_low` |
+|---|---|---|
+| 0.381 | 15.9× | −63 |
+| ... | ... | ... |
+| 0.0004 | 1.07× | −4.6 |
 
-```
-J = sum_o nu1(o) sum_a b_V^[1](a, o)
-```
-
-depends on the **first stage bridge only, and linearly**. There is no chain to
-compound through. So if this diverges, compounding is definitively excluded and
-geometry is isolated as the cause.
-
-## 4. Result: it diverges
-
-`N = 4,000` — the sample size Phase 4 actually uses — 5 seeds.
-
-| config | confound | `V_true` | `V_low` unprojected | `V_low` projected |
-|---|---|---|---|---|
-| `(4,6,2)` | 1.0 | 2.152 | **−51.56** | −4.72 |
-| `(2,6,4)` | 1.0 | 2.022 | **−63.19** | −2.22 |
-| `(3,7,5)` | 1.0 | 2.537 | **−50.80** | −1.86 |
-| `(4,6,2)` | 0.6 | 2.152 | −12.55 | −8.79 |
-| `(2,6,4)` | 0.6 | 2.022 | −8.65 | −7.99 |
-| `(3,7,5)` | 0.6 | 2.537 | −7.47 | −7.10 |
-
-(at `c = 10`; the pattern is monotone in `c`)
-
-Against true values near `2`, the unprojected pessimistic value reaches `−63`.
-This is the same qualitative signature as the model-based `−1779` reported in
-Phase 4, produced by an estimator that shares none of its machinery.
-
-**The family claim is confirmed.** The failure is not specific to the anchor
-paper's method.
-
-Validity holds throughout: `V_low <= V_true` in **36 of 36** cells. The bound is
-correct, just uselessly loose — the same character as the model-based failure.
-
-## 5. The mechanism is gradient leakage, not conditioning
-
-This is the part we did not expect.
-
-| | `cond(H)` | leak of `g` | width ratio unproj/proj |
-|---|---|---|---|
-| confound = 1.0 | 1.1e2 – 5.9e2 | **0.348** | **10.62×** |
-| confound = 0.6 | 1.4e2 – 4.7e2 | **0.0146** | **1.48×** |
-
-**The conditioning of `H` is essentially the same in both rows.** It does not
-predict the failure. What moves by a factor of 24 is how much of the value
-gradient lies outside the identified subspace, and the width ratio tracks that,
-not the conditioning.
-
-So the correct statement is not "proximal designs are ill-conditioned, therefore
-pessimism diverges". It is:
+Conditioning is constant across that sweep. Leakage moves three orders of
+magnitude and the width follows it exactly. **This is calibration-free and
+basis-choice-free**, and it is the column the paper should rest on.
 
 > Pessimism over a proximal bridge confidence region diverges when the value
 > gradient has mass in directions the data does not identify. Ill-conditioning is
-> necessary but not sufficient; the alignment between the value functional and
-> the null space is what decides it.
+> necessary but not sufficient; the alignment between the value functional and the
+> null space decides it.
 
-## 6. What drives the leakage — a link to the coverage result
+## 4. THE OTHER RESULT THAT SURVIVES: the bound never tightens
 
-The leakage is controlled by the **behavior policy's determinism**, i.e. the
-confounding strength. The chain is:
+Under our width rule `xi = c / (N * lambda_min(H))`, in an unidentified direction
+`H ≈ rho*I` and `lambda_min ≈ rho`, so
 
-1. Stronger confounding makes the behavior policy closer to a deterministic
-   function of the latent state.
-2. Every design is built per action, so conditioning on the action then
-   conditions on the latent state, and the per-action population rank collapses
-   (`rank(P_a)` falls to 1 in the extreme).
-3. The identified subspace shrinks accordingly.
-4. But the value gradient is `nu1`, the initial observation marginal, which is
-   spread across **all** observations regardless.
-5. So more of it falls outside the identified subspace, and the width explodes.
+```
+width = sqrt(c/(N*rho)) * |g_null|/sqrt(rho) = sqrt(c)*|g_null| / (sqrt(N)*rho)
+```
 
-This connects step (b) to the Phase 4 coverage finding rather than sitting beside
-it. There, the pessimism penalty was found to be monotonically inverse to
-behavior-policy coverage. Here the same driver appears as a geometric quantity:
-poor coverage *is* a collapsed per-action subspace, and the penalty it produces
-*is* the gradient leaking out of that subspace. The two results are one
-phenomenon seen from two directions.
+and with the schedule `rho = 0.03/sqrt(N)` the `N` **cancels exactly**. Measured:
 
-## 7. Honest limitations
+| `N` | `rho` | `lambda_min` | width unprojected | width projected |
+|---|---|---|---|---|
+| 4,000 | 4.74e-04 | 4.74e-04 | **7.223** | 0.667 |
+| 16,000 | 2.37e-04 | 2.37e-04 | **7.684** | 0.471 |
+| 64,000 | 1.19e-04 | 1.19e-04 | **7.636** | 0.334 |
+| 256,000 | 5.93e-05 | 5.93e-05 | **7.697** | 0.236 |
 
-- **The absolute values in §4 depend on the width calibration.** We use
-  `xi = c / (N * lambda_min(H))` and sweep `c`. Different calibrations shift the
-  numbers. The §5 quantities — leakage and the unprojected/projected width ratio
-  — involve no `xi` at all and are therefore calibration-independent. **§5 is the
-  robust evidence; §4 is the illustration.**
-- The model-free pessimism layer is **ours, not Shi et al.'s**. They do not
-  specify one. We built the most natural analogue of the model-based construction
-  so the comparison is like-for-like, but a different confidence-region
-  construction for the same estimator might behave differently.
-- Tabular, `T = 3`, 2 actions, `N = 4,000`, 5 seeds, one synthetic environment
-  family.
-- The projected values are not certified: as in Phase 4, projection buys
-  informativeness by giving up guaranteed coverage of the truth.
+Across a 64× increase in data the unprojected width does not move, while the
+projected width shrinks at exactly `N^-1/2`. `lambda_min` equals `rho` to every
+digit — the rule divides by the regularizer, not by anything the data determines.
 
-## 8. Files
+**In the unidentified directions the confidence region never contracts.** More
+data does not help, at any sample size, ever. This is a stronger and more useful
+statement than the value we originally led with.
+
+## 5. The family claim, correctly scoped
+
+The divergence **is** shared, but the magnitude we published was ours, not the
+data's (§8.1). Under the Phase 3 convention (smallest *retained* eigenvalue rather
+than the global minimum), on identical fits:
+
+- `(2,6,4)`, non-saturating: `−63.19 → −1.28`. The headline collapses.
+- `(4,6,2)`, saturating: divergence **survives both conventions**, `−26.65`
+  against a true value of `2.15`, with a clean `1.0` vs `0.6` confounding
+  contrast.
+
+So the defensible claim is: **in the saturating regime the model-free method
+diverges under either width convention**, and the mechanism (§3) is
+convention-independent throughout. The `−63` is withdrawn.
+
+## 6. What the region actually is
+
+Across 40 independent fits, the estimator's true sampling spread of `J` is about
+`[1.63, 2.07]` — **two orders of magnitude narrower** than the confidence region
+built around it.
+
+That means the object is a **partial-identification region**, not a
+sampling-uncertainty region. Both are legitimate, and the anchor paper's
+construction is arguably the former, but a paper has to say which it claims. Ours
+did not, and the two support very different conclusions about whether the method
+is usable.
+
+## 7. Multiplicative compounding is excluded — additive propagation is not
+
+We wrote that there is "no chain to compound through" because
+`J = sum_o nu1(o) sum_a b_V^[1](a,o)` depends on the first-stage bridge only, and
+linearly. **That is wrong as stated.** The stage-1 response carries the *estimated*
+continuation `V_hat_2`, so later stages enter indirectly. Replacing the
+continuation with the population bridge (a surgery validated to `0.00e+00` on a
+replica) attributes **12% to 45.6%** of the variance of `J` to later stages.
+
+What survives is narrower and still does the work: the **multiplicative**
+multi-bridge structure of the model-based chain is absent here. Propagation is
+additive and small relative to the identification width. So multiplicative
+compounding is excluded as the mechanism; the general phrase is not.
+
+## 8. Corrections
+
+### 8.1 WITHDRAWN: the `−63` headline
+
+`xi = c / (N * lambda_min(H))` uses the **global** minimum eigenvalue, which after
+ridging sits at `rho`. Phase 3's model-based rule used the smallest **signal**
+eigenvalue, strictly larger. Our choice made `xi` larger and the divergence deeper
+than the model-based convention would have produced. The magnitude was set by the
+regularizer, not by the data. See §5 for what replaces it.
+
+### 8.2 REFUTED as an identity: "coverage and leakage are one phenomenon"
+
+We claimed the Phase 4 coverage result and this one are the same thing seen from
+two directions, via a five-step chain. The alignment sweep of §3 holds coverage
+**and** the collapsed subspace fixed while the penalty moves by **14×**.
+
+Coverage collapse creates the degenerate subspace — a necessary condition — but
+**gradient alignment is an independent axis that our chain did not contain**, and
+it is what sets the penalty. The unification holds only along the
+confound-varying slice we happened to look at. Restated as: coverage collapse is
+necessary; alignment is what determines the damage.
+
+### 8.3 WITHDRAWN as evidence: "validity 36/36"
+
+This was uninformative. In 8 of 12 cells `V_hat <= V_true` for *every* seed — the
+estimator is negatively biased under confounding — so validity is free at any `c`.
+In the remaining cells the violation threshold is `c* ≈ 1e-6` against a grid whose
+smallest value was `0.1`. **The grid could not have produced a violation.** We will
+not report validity again without a grid that could falsify it.
+
+## 9. Honest limitations
+
+- The pessimism layer is **ours, not Shi et al.'s** — they specify none. A
+  different confidence-region construction for the same estimator could behave
+  differently.
+- Rank selection by parallel analysis is 75–100% accurate at `N = 4,000` with
+  ±1 noise, so **single-cell leakage values should not be quoted to three
+  decimals**, and the §3 table should be re-run at 20 seeds before publication.
+- **Provenance:** §4 was derived and measured here. The §3 alignment sweep is the
+  review's experiment and its numbers are quoted from `poc/critic_b_*.py`; they
+  have not yet been reproduced independently, and must be before publication.
+  The §5, §6 and §7 figures likewise come from the review's scripts.
+- `nu1` estimated in-sample and `H` built from `t=1` only were both checked and
+  make no difference.
+- Tabular, `T = 3`, 2 actions, one synthetic environment family.
+
+## 10. What this leaves for the paper
+
+Defensible: the calibration-free causal leakage result (§3), the
+convention-robust divergence in the saturating regime (§5), and the
+non-contracting width (§4).
+
+Needing rewrite before submission: the `−63` headline, the "no chain" argument,
+and the coverage identity. A knowledgeable referee breaks all three with one
+experiment each.
+
+## 11. Files
 
 | File | Role |
 |---|---|
-| `src/pessimism/mf_pessimism.py` | Confidence region, gradient, leakage, parallel-analysis basis |
-| `src/envs/dim_separated_pomdp.py` | `dp_value` exact oracle and candidate policies |
+| `src/pessimism/mf_pessimism.py` | Confidence region, gradient, leakage, PA basis |
+| `src/envs/dim_separated_pomdp.py` | `dp_value` oracle, candidate policies |
 | `poc/run_family_pessimism.py` | Driver for [B1]–[B4] |
+| `poc/critic_b_*.py` | The review's attacks, one per item |
 | `experiments/results_family_pessimism.json` | Raw results |

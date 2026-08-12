@@ -25,7 +25,9 @@ about a research line.
 | Fix the eigengap rank rule | **done** | Correct in 16/18 cells vs 0/18 for the shipped rule |
 | Re-run (a) at `confound < 1.0`, per-action, 20 seeds | **done** | Surviving results confirmed; middle tier decays at exactly `N^-1` |
 | Gap-free rank selection (parallel analysis) | **done** | Correct in every cell at every `N`; supersedes the eigengap rule |
-| (b) Model-free pessimism, to observe the divergence | **done** | Family claim confirmed; mechanism is gradient leakage, not conditioning |
+| (b) Model-free pessimism, to observe the divergence | **done, reviewed** | Leakage mechanism survives and is causal; headline number withdrawn |
+| Reproduce the review's §3/§5/§6 numbers independently | **required** | Quoted, not yet verified here |
+| Re-run the leakage table at 20 seeds | **required** | PA rank carries ±1 noise at `N=4,000` |
 | (c) The rank cap as a proposition | not started | |
 
 ## How (b) got unblocked

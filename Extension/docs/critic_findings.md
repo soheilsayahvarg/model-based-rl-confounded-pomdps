@@ -695,3 +695,307 @@ the regime restriction in favor of the parallel-analysis selector.
 `poc/critic_v4_converge.py`, `poc/critic_v5_parallel.py`.
 Raw outputs: `experiments/critic_v1_floor.json`,
 `experiments/critic_v3_regime.json`, `experiments/critic_v5_parallel.json`.
+
+---
+
+# Step (b) Round
+
+Third pass: the family-pessimism experiment (`docs/family_pessimism.md`). Claims
+C1 (shared blow-up), C2 (compounding excluded), C3 (gradient leakage, not
+conditioning), C4 (unification with the Phase 4 coverage result). The
+parallel-analysis selector I contributed last round is now load-bearing and gets
+attacked like everything else.
+
+## Checklist
+
+- [x] A0 -- reproduce `run_family_pessimism.py`
+- [x] A1 -- the pessimism layer is ours: xi convention (a) and ellipsoid shape (b)
+- [x] A2 -- is leakage causal, or confounded with rank(P_a)?
+- [x] A3 -- does later-stage uncertainty enter through the response? (C2)
+- [x] A4 -- t=1-only H; nu1 estimated from the same sample
+- [x] A5 -- is 36/36 validity informative or trivial?
+- [x] A6 -- can any link of C4's five-step chain be tested directly?
+- [x] A7 -- anything else, incl. the parallel-analysis selector in its new role
+
+## A0 -- Reproduction
+
+**What I ran:** `poc/run_family_pessimism.py` unmodified.
+
+**Result:** every number in `docs/family_pessimism.md` reproduces: -63.19 at
+(2,6,4) cf=1.0 c=10; the section-5 means (leak 0.348 vs 0.0146, ratio 10.62x vs
+1.48x, cond(H) 1.1e2-5.9e2); validity 36/36. Two details visible in the raw
+table that the doc's means hide, picked up later: (i) V_hat is BELOW V_true in
+22 of 24 policy cells (the estimator is biased downward under confounding) --
+relevant to A5; (ii) leakage varies 4x WITHIN confound=1.0 across actions
+(0.157 vs 0.627 at (3,7,5)) -- relevant to A2's causality question.
+
+**Verdict: reproduction SURVIVES.**
+
+---
+
+## A1 — The calibration did manufacture the headline numbers; the geometry survives without them
+
+**Claim attacked:** C1 — "V_low reaches −63 against V_true ~ 2; the same
+qualitative signature as the model-based −1779."
+
+**What I ran:** `poc/critic_b_a1.py`. (a) B4 recomputed on identical fits under
+three xi conventions: shipped (`c/(N·λ_min(H))`), Phase-3 (`c/(N·σ2)` with σ2 =
+smallest RETAINED eigenvalue of H under the PA rank), and a convention-free
+reference (`c/N`). (b) 40 independent fits at (2,6,4) cf=1.0 to measure the
+estimator's ACTUAL sampling spread along H's eigendirections, against the
+region's width.
+
+**Result (a) — the flagship number is a calibration artifact.** At c=10,
+policy always_0, identical fits:
+
+| config | cf | shipped V_low | Phase-3 convention | c/N reference |
+|---|---|---|---|---|
+| (2,6,4) | 1.0 | **−63.19** | **−1.28** | 0.46 |
+| (3,7,5) | 1.0 | −50.80 | −2.35 | 1.11 |
+| (4,6,2) | 1.0 | −51.56 | **−26.65** | 0.57 |
+| (4,6,2) | 0.6 | −12.55 | −2.81 | 1.68 |
+| (2,6,4) | 0.6 | −8.65 | +0.12 | 1.77 |
+| (3,7,5) | 0.6 | −7.47 | −1.12 | 2.17 |
+
+Under the model-based side's own convention, the (2,6,4) headline collapses
+from −63 to −1.3: the shipped rule divides xi by λ_min(H) ≈ ρ (the ridge), so
+the divergence magnitude was set by the regularizer, not the data. **However**,
+the blow-up survives the convention change in the saturating config (4,6,2):
+−26.65 vs truth 2.15, an order of magnitude, with a clean 1.0-vs-0.6 contrast
+(−26.65 vs −2.81). So C1 is not dead — it is mislocated. The honest family
+claim lives in the exact-cliff regime (where the smallest retained eigenvalue
+is itself tiny), not in the statistical regime the headline row came from.
+
+**Result (b) — the region measures identification width, not sampling
+uncertainty.** Over 40 independent fits: std(J) = 0.11, |bias| = 0.17 — a
+sampling-based interval is ≈ [1.63, 2.07], against a shipped penalty of ~65.
+Along H's null eigendirections the stage-1 bridge moves with std ≈ 0.35 while
+the region's half-width there is ≈ 90–110: the ellipsoid is ~300× wider than
+the estimator's actual variability in exactly the directions that produce the
+blow-up. Additional structure: for the deterministic target policy always_0,
+the action-1 response is identically zero (`pi_e(1|o) = 0`), so the action-1
+bridge is 0 by construction with zero sampling variance — yet contributes half
+the penalty. And the unprojected null-direction width is
+√(ξ/ρ) = √c/(√N·ρ) = √c/0.03 — **constant in N**: the bound never tightens
+with data, which is the sharpest statement of the failure and is nowhere in
+the doc.
+
+**On (b)'s "right object" question:** H = design + ρI is the loss level set —
+the same construction as the model-based side (T2 + λ2·I), so like-for-like
+holds. But a loss level set is a *partial-identification* region: any bridge
+inside it fits the moments equally well. Its width in null directions is set
+by ρ, a free parameter. The defensible reading of both Phase 4 and step (b) is
+therefore "identification-region pessimism cannot shrink in unidentified
+directions", not "the estimator is wildly variable". A sampling-covariance
+(sandwich/bootstrap) region would be ~two orders of magnitude tighter and
+would NOT diverge — but it would also silently ignore the identification gap,
+which is the phenomenon under study. The doc should say which uncertainty it
+means; at present §4 reads as if it were sampling uncertainty.
+
+**Verdict on C1: OVERSTATED.** The family-level failure is real but its
+correct statement is: (i) the identification-region width in unidentified
+directions is Ω(1) in N under any calibration (the √c/0.03 constant); (ii)
+under the model-based side's own convention the divergence survives only where
+the smallest retained eigenvalue is small (the saturating config). The −63
+headline and the "−63 vs −1779" comparison should be replaced by the
+convention-matched table above.
+
+**Fix:** re-run B4 under the σ2 convention as the primary table; move the
+shipped-convention numbers to an appendix with the ρ-dependence stated; add
+the width-is-constant-in-N observation, which is stronger than any single
+number.
+
+---
+
+## A2 (+A6) — Leakage is CAUSAL at fixed rank; C3 survives and is strengthened; C4's identity claim breaks
+
+**Claim attacked:** C3 — leakage, not conditioning, drives the failure. The
+worry: leakage and rank(P_a) both move with `confound`, so C3 could be a
+passenger.
+
+**What I ran:** `poc/critic_b_a2.py`. Emission-alignment sweep at FIXED
+confound=1.0, (2,6,4): E's second row interpolated toward the first
+(E_β = [E0, norm((1−β)E0 + βE1)], full row rank for all β > 0), so rank(P_a)
+stays [1,1], coverage/policy/K0/rewards stay fixed, and only the alignment
+between nu1 and the identified direction moves. Plus a p1-skew variant.
+
+**Result — width tracks leakage at fixed everything-else:**
+
+| β | rank(P_a) | cond(H) | leak | width ratio | V_low (c=10) |
+|---|---|---|---|---|---|
+| 1.00 | [1,1] | 4.8e2 | 0.381 | 15.9 | −63.2 |
+| 0.50 | [1,1] | 4.1e2 | 0.108 | 4.1 | −33.5 |
+| 0.25 | [1,1] | 4.3e2 | 0.024 | 2.7 | −15.8 |
+| 0.10 | [1,1] | 4.5e2 | 0.003 | 1.4 | −7.0 |
+| 0.02 | [1,1] | 4.7e2 | 0.0004 | 1.07 | −4.6 |
+
+Conditioning flat, rank fixed, coverage fixed — leakage falls 1000× and the
+width ratio falls to 1. The p1-skew variant shows the same per action
+(leak 0.83 vs 0.03 for the two actions at p1 = (0.85, 0.15), fixed confound).
+Leakage is causal. **C3 SURVIVES** — and this sweep is the experiment the doc
+needed and did not run.
+
+**But the same result kills C4 as an identity (A6).** C4 says "poor coverage
+IS a collapsed per-action subspace, and the penalty IS the gradient leaking
+out" — a five-step chain asserted, not measured. Steps 1–3 (confound →
+determinism → rank collapse) were established last round (V3). Steps 4–5 fail
+as an identity: along the β sweep, coverage and the collapsed subspace are
+CONSTANT while the penalty moves by an order of magnitude; alignment between
+the value functional and the subspace is an independent axis set by the
+emission geometry and initial distribution. Coverage collapse is *necessary*
+for a large penalty; it does not *produce* it. The Phase 4 coverage-penalty
+monotonicity is one slice through a two-axis phenomenon.
+
+**Verdict: C3 SURVIVES (now with causal evidence); C4 REFUTED as an identity,
+salvageable as "coverage sets the subspace; alignment decides the penalty".**
+
+**Fix:** fold the β sweep into the doc as the causal test of C3; restate §6's
+chain with the alignment axis explicit; drop "the two results are one
+phenomenon seen from two directions" or qualify it to the confound-driven
+slice.
+
+---
+
+## A3 — There IS a chain to compound through; C2's "definitively excluded" is false
+
+**Claim attacked:** C2 — "the model-free value depends on the first-stage
+bridge only and linearly... there is no chain to compound through. So if this
+diverges, compounding is definitively excluded."
+
+**What I ran:** `poc/critic_b_a3.py`. The stage-1 response is
+y = (r_1 + V̂_2(o_2))·π_e(a_1|o_1), where V̂_2 is the FITTED stage-2 bridge —
+which used the fitted stage-3 bridge. I computed the population bridge (the
+estimator run on expected counts at the same N-ridge, all stages) and, on the
+same 20 datasets, fitted stage 1 twice: with the shipped estimated
+continuation, and with the population continuation (later-stage error
+surgically removed). A verbatim replica of the per-action solve reproduces
+`bV_hat[0]` to 0.00e+00 before being trusted.
+
+**Result — later-stage estimation error propagates into J:**
+
+| config | cf | std(J) shipped | std of later-stage contribution | share of Var(J) |
+|---|---|---|---|---|
+| (2,6,4) | 1.0 | 0.072 | 0.025 | 12.2% |
+| (2,6,4) | 0.6 | 0.064 | 0.043 | **45.6%** |
+| (4,6,2) | 1.0 | 0.050 | 0.018 | 13.4% |
+
+Nearly half of J's sampling variance at cf=0.6 comes from stages 2–3 flowing
+through the response. What IS true: the dependence is additive-linear (the
+response enters linearly), not the multiplicative bridge-product structure of
+the model-based chain; and the propagation is small relative to the
+identification width that drives C1 (0.04 vs a penalty of 65), so C1's
+direction is safe — the stage-1-only ellipsoid UNDERSTATES uncertainty, it
+does not inflate it.
+
+**Verdict: C2 REFUTED as stated.** "Depends on the first-stage bridge only" is
+false as a statement about the ESTIMATE, true only conditionally on the fitted
+continuation. The defensible claim: the multiplicative compounding structure
+of the model-based chain is absent, so the divergence cannot be attributed to
+error compounding across bridge products; uncertainty still propagates
+additively through the estimated continuation (12–46% of Var(J)) and the
+stage-1-only confidence region ignores it.
+
+**Fix:** rewrite §3 and the C2 sentence with "multiplicative compounding" in
+place of "any chain"; note the stage-1-only region understates total
+uncertainty and quantify with the population-continuation experiment (script
+provided).
+
+---
+
+## A4 — Same-sample nu1 and t=1-only H: immaterial
+
+**What I ran:** `poc/critic_b_a45.py` part 1 — every B1 cell recomputed with
+the exact population nu1 = p1 @ E in place of the same-sample empirical
+estimate.
+
+**Result:** leakage and width move in the third decimal everywhere (e.g.
+0.3813 → 0.3827, 14.171 → 14.153). The same-sample nu1 is a non-issue at
+N=4,000. The t=1-only choice of H is correct for the DIRECT dependence (J
+touches only the stage-1 bridge); the indirect later-stage channel it misses
+is exactly the one quantified in A3 and should be cited there rather than
+fixed here.
+
+**Verdict: SURVIVES.**
+
+---
+
+## A5 — 36/36 validity is structurally guaranteed, not evidence
+
+**Claim attacked:** "Validity holds throughout: V_low <= V_true in 36 of 36
+cells."
+
+**What I ran:** `poc/critic_b_a45.py` part 2 — per-seed margins (validity in
+the driver is checked on seed MEANS), and for each cell the critical c* below
+which the unprojected bound could first violate.
+
+**Result:** in 8 of 12 (config, confound, policy) cells, V_hat <= V_true in
+every single seed — the estimator is biased downward under confounding, so
+validity holds there for ANY c >= 0 before a penalty is even subtracted. In
+the remaining 4 cells the worst per-seed overshoot yields critical c* between
+4.5e-07 and 8.0e-05 — five orders of magnitude below the smallest c on the
+grid (0.1). The grid was structurally incapable of producing a violation;
+per-seed violations are 0/180 for the same reason. "36/36" is a consequence of
+(penalty >> estimation error), not a test of calibration.
+
+**Verdict: OVERSTATED as reported.** The doc already says the bound is
+"uselessly loose", but still presents 36/36 as a checked property. Fix: report
+min c* (~1e-6) alongside, which states precisely how far from informative the
+check is — or drop the validity column.
+
+---
+
+## A7 — The parallel-analysis selector survives its audit in the load-bearing role
+
+**What I ran:** `poc/critic_b_a7.py` — (1) principal angles between the PA
+basis (eigenvectors of the UNWEIGHTED cross-moment) and the top-k eigenbasis
+of H (the WEIGHTED design that defines the widths), with leakage and projected
+width recomputed in H's own basis; (2) selected-rank distributions over 20
+seeds per cell at the experiment's actual N=4,000; (3) percentile sensitivity.
+
+**Result 1 — the geometry mismatch I suspected is immaterial.** Max principal
+angle is <= 4 degrees in 11 of 12 cells; the one outlier (50.7 degrees,
+(4,6,2) cf=0.6 action 1 — a rotation inside a near-degenerate eigenvalue pair)
+changes leakage by 0.0002 and the projected width by 0.018. Every C3 number is
+basis-robust.
+
+**Result 2 — rank selection at N=4,000 is right 75–100% of the time, with ±1
+errors in both directions.** Notable cells: (4,6,2) cf=1.0 action 0 picks k=1
+in 4/20 seeds (under-selection inflates measured leakage by counting a real
+signal direction as leaked); (3,7,5) cf=0.6 action 0 picks k=4 in 5/20
+(over-selection deflates it). With 5 seeds per cell in the driver, the doc's
+leakage means carry this selection noise. It does not threaten the 24×
+contrast (the misclassification effects are second-order against it) but
+single-cell leakage values should not be quoted to three decimals.
+
+**Result 3 — q=95 vs q=99 identical; q=90 slightly looser.** Not a tuned knob.
+
+**Verdict: SURVIVES**, with the caveat that per-cell leakage numbers inherit
+±1 rank-selection noise at this N and seed count. Fix: 20 seeds in B1, and
+report leakage alongside the modal-k-conditioned value.
+
+---
+
+## Step (b) Round — summary
+
+| claim | verdict | one line |
+|---|---|---|
+| C1 (shared blow-up, −63 vs −1779) | **OVERSTATED** | The −63 is manufactured by dividing xi by the ridge; under the model-based side's own σ2 convention it becomes −1.3. What survives: a genuine convention-robust blow-up in the saturating config (−26.7 vs truth 2.15), and the width in unidentified directions is √c/0.03 — constant in N — under the shipped rule. The family claim is real but lives elsewhere than the headline (A1). |
+| C2 (compounding definitively excluded) | **REFUTED as stated** | The stage-1 response carries the fitted continuation: later stages contribute 12–46% of Var(J). True core: the MULTIPLICATIVE product structure is absent; propagation is additive and small vs the identification width (A3). |
+| C3 (leakage, not conditioning) | **SURVIVES — strengthened** | Causal now: at fixed confound, rank, coverage and conditioning, an emission-alignment sweep moves leakage 1000× and the width ratio 15.9 → 1.07 tracks it (A2). Calibration-free, basis-robust (A7). |
+| C4 (unification with Phase 4 coverage) | **REFUTED as identity; salvageable** | Coverage constant along the A2 sweep while the penalty moves 14×: coverage collapse sets the subspace (necessary), alignment decides the penalty. "One phenomenon seen from two directions" overclaims (A2/A6). |
+| 36/36 validity | **OVERSTATED** | Structurally guaranteed: 8/12 cells valid before any penalty; elsewhere c* ≈ 1e-6 vs grid min 0.1 (A5). |
+| nu1 / t=1-only H | SURVIVES | Third-decimal effects (A4). |
+| PA selector (mine) | SURVIVES | Basis mismatch immaterial; 75–100% rank accuracy at N=4k with ±1 noise; q-insensitive (A7). |
+
+**Bottom line for the paper:** the durable results of step (b) are (i) the
+calibration-independent geometry — leakage causally drives the width ratio,
+now with a fixed-rank causal experiment to prove it — and (ii) the
+convention-robust blow-up in the saturating regime plus the width's
+N-independence in unidentified directions. The −63 headline, the "no chain to
+compound through" argument, and the coverage-identity story should all be
+rewritten; each currently overclaims in a way an informed referee can puncture
+with one experiment. My own contribution (the PA selector) held up, with a
+quantified seed-noise caveat.
+
+**Critic scripts this round:** `poc/critic_b_a1.py`, `poc/critic_b_a2.py`,
+`poc/critic_b_a3.py`, `poc/critic_b_a45.py`, `poc/critic_b_a7.py`.
