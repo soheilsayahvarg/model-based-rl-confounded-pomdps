@@ -56,6 +56,63 @@ right shape; the multiplier c is swept with coverage curves (never a claimed
 import numpy as np
 
 
+def _inner(H, b_hat, g, xi, nu):
+    """Exact min of <g,b> + nu*||b||^2 over the ellipsoid, by a root find in mu."""
+    from scipy.optimize import brentq
+    n = H.shape[0]
+    if nu > 0:
+        b_u = -g / (2.0 * nu)
+        d0 = b_u - b_hat
+        if float(d0 @ H @ d0) <= xi:
+            return b_u                          # ellipsoid inactive
+    v = g + 2.0 * nu * b_hat
+
+    def delta(mu):
+        return np.linalg.solve(2.0 * mu * H + 2.0 * nu * np.eye(n), -v)
+
+    def h(mu):
+        d = delta(mu)
+        return float(d @ H @ d) - xi
+
+    lo, hi = 1e-14, 1.0
+    for _ in range(400):
+        if h(hi) < 0:
+            break
+        hi *= 2.0
+    mu = brentq(h, lo, hi, maxiter=500, xtol=1e-15, rtol=1e-14)
+    return b_hat + delta(mu)
+
+
+def _exact_linear_min_ball(H, b_hat, g, xi, M):
+    """Exact min of <g,b> over conf(xi) INTERSECT {||b|| <= M}.
+
+    Replaces an earlier bisection that scaled a single fixed direction out to the
+    ELLIPSOID boundary. The KKT family is a two-parameter curve, and in the
+    large-xi regime the ellipsoid is not active at all, so that shortcut returned
+    points up to 56% suboptimal and occasionally outside the ball. Here the ball
+    multiplier nu is found by a root find, with the ellipsoid handled exactly
+    inside _inner for each nu.
+    """
+    from scipy.optimize import brentq
+    b0 = _inner(H, b_hat, g, xi, 0.0)
+    if np.linalg.norm(b0) <= M + 1e-12:
+        return b0, "ball inactive"
+    b_min_norm = _inner(H, b_hat, np.zeros_like(g), xi, 1.0)
+    if np.linalg.norm(b_min_norm) > M + 1e-9:
+        return None, "EMPTY intersection"
+
+    def norm_at(nu):
+        return np.linalg.norm(_inner(H, b_hat, g, xi, nu)) - M
+
+    lo, hi = 0.0, 1.0
+    for _ in range(400):
+        if norm_at(hi) < 0:
+            break
+        hi *= 2.0
+    nu = brentq(norm_at, lo, hi, maxiter=500, xtol=1e-15, rtol=1e-14)
+    return _inner(H, b_hat, g, xi, nu), "both active"
+
+
 class BlockEllipsoid:
     """One bridge block's confidence-region geometry (flat coefficient coords).
 
@@ -144,32 +201,12 @@ class BlockEllipsoid:
         scalar bisection lands on the active-ball solution.
         """
         if M is not None and not projected:
-            b_un, pen_un = self._linear_min_plain(g, xi)
-            if np.linalg.norm(b_un) <= M:
-                return b_un, pen_un                      # ball inactive
-
-            def b_of(nu):
-                # min <g,b> + nu||b||^2 s.t. (b-b_hat)'H(b-b_hat) <= xi
-                A = self.H + nu * np.eye(self.H.shape[0])
-                # ellipsoid active: take the descent direction, scale to boundary
-                d = np.linalg.solve(A, -(g + 2.0 * nu * self.b_hat))
-                q = float(d @ self.H @ d)
-                if q <= 0:
-                    return self.b_hat.copy()
-                return self.b_hat + d * np.sqrt(xi / q)
-
-            lo, hi = 0.0, 1.0
-            for _ in range(200):                          # bracket
-                if np.linalg.norm(b_of(hi)) <= M:
-                    break
-                hi *= 2.0
-            for _ in range(200):                          # bisect
-                mid = 0.5 * (lo + hi)
-                if np.linalg.norm(b_of(mid)) > M:
-                    lo = mid
-                else:
-                    hi = mid
-            b = b_of(hi)
+            b, status = _exact_linear_min_ball(self.H, self.b_hat, g, xi, M)
+            if b is None:                      # ball and ellipsoid do not meet
+                raise ValueError(
+                    f"{self.label}: conf(xi) and the class ball are disjoint "
+                    f"(||b_hat||={np.linalg.norm(self.b_hat):.3f} > M={M:.3f}). "
+                    f"M must be per-block and at least ||b_true||.")
             return b, float(g @ self.b_hat - g @ b)
 
         return self._linear_min_plain(g, xi, projected)
@@ -216,6 +253,19 @@ class BlockEllipsoid:
         return c / (self.N2 * max(self.sigma2, 1e-12))
 
 
+def _block_M(M, i):
+    """M may be None, a scalar shared by all blocks, or one value per block.
+
+    Per-block is the correct form: a single averaged M put some blocks' own
+    centres outside their own ball, which is not the constraint the paper poses.
+    """
+    if M is None:
+        return None
+    if np.isscalar(M):
+        return float(M)
+    return float(M[i])
+
+
 def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
                       max_sweeps=30, tol=1e-11, n_restarts=3, rng=None,
                       projected=False, M_R=None, M_D=None):
@@ -244,13 +294,13 @@ def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
             # reward blocks: V is jointly linear in them, gradients depend only on bD
             _, gR, _ = value_and_grads(bR, bD)
             for t in range(T):
-                bR[t], _ = blocks_R[t].linear_min(gR[t], xis_R[t], projected,
-                                                  M=M_R)
+                bR[t], _ = blocks_R[t].linear_min(
+                    gR[t], xis_R[t], projected, M=_block_M(M_R, t))
             # dynamic blocks: gradients depend on the other blocks -> refresh each
             for j in range(T - 1):
                 _, _, gD = value_and_grads(bR, bD)
-                bD[j], _ = blocks_D[j].linear_min(gD[j], xis_D[j], projected,
-                                                  M=M_D)
+                bD[j], _ = blocks_D[j].linear_min(
+                    gD[j], xis_D[j], projected, M=_block_M(M_D, j))
             V_now = value_and_grads(bR, bD)[0]
             if V_prev - V_now < tol:
                 V_prev = V_now

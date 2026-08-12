@@ -33,8 +33,16 @@ Mathematical conventions follow the anchor paper (Hong-Qi-Xu ICML 2024):
 import itertools
 import numpy as np
 
-from simulated_env import (N_X, N_U, N_A, N_LIVE, S_AUG, N_OBS,
-                           TERM_NEG, TERM_POS, OBS_NEG, OBS_POS)
+# simulated_env is the 720-observation benchmark and needs the third-party
+# gumbel-max-scm clone. The toy-scale oracles below do not, so the import is made
+# optional here: without it the big-env helpers are unavailable but
+# toy_true_bridges / dp_value_toy still work.
+try:
+    from simulated_env import (N_X, N_U, N_A, N_LIVE, S_AUG, N_OBS,
+                               TERM_NEG, TERM_POS, OBS_NEG, OBS_POS)
+    _HAS_BIG_ENV = True
+except ModuleNotFoundError:
+    _HAS_BIG_ENV = False
 import toy_pomdp as toy
 
 
