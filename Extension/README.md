@@ -29,7 +29,7 @@ about a research line.
 | Reproduce the review's §3/§5/§6 numbers independently | **required** | Quoted, not yet verified here |
 | Re-run the leakage table at 20 seeds | **required** | PA rank carries ±1 noise at `N=4,000` |
 | Check the omitted bridge-class bound `M_R` | **done** | Omission real (excursion 14x the a priori bound); divergence survives it |
-| Same check on the model-based ellipsoid | **required** | `M_R` is the paper's own symbol there |
+| Same check on the model-based ellipsoid | **done** | Same verdict; and the norm ball beats our own repair at `c=1` |
 | (c) A proposition on non-contraction | next | Now covers both the ball-active and ball-inactive regimes |
 
 ## How (b) got unblocked

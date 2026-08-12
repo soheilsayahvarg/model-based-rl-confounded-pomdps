@@ -127,9 +127,54 @@ class BlockEllipsoid:
         y = np.linalg.solve(self.L, g)
         return float(np.sqrt(y @ y))
 
-    def linear_min(self, g, xi, projected=False):
+    def linear_min(self, g, xi, projected=False, M=None):
         """argmin/min of <g, b> over conf(xi) (optionally restricted to the
-        identified signal subspace). Returns (b_min, penalty)."""
+        identified signal subspace). Returns (b_min, penalty).
+
+        M adds the bridge-class norm ball ||b||_2 <= M, which the anchor paper
+        carries as M_R through Theorem 4.2 and which this implementation
+        originally omitted. Without it the minimiser is free to run off along
+        unidentified directions; the paper's feasible set is the INTERSECTION of
+        the confidence region and the bridge class.
+
+        The intersection of an ellipsoid and a ball with a linear objective has
+        no one-line closed form, so it is solved by bisection on the ball's KKT
+        multiplier: for each nu, minimising <g,b> + nu*||b||^2 over the ellipsoid
+        alone IS closed-form, and ||b(nu)|| decreases monotonically in nu, so a
+        scalar bisection lands on the active-ball solution.
+        """
+        if M is not None and not projected:
+            b_un, pen_un = self._linear_min_plain(g, xi)
+            if np.linalg.norm(b_un) <= M:
+                return b_un, pen_un                      # ball inactive
+
+            def b_of(nu):
+                # min <g,b> + nu||b||^2 s.t. (b-b_hat)'H(b-b_hat) <= xi
+                A = self.H + nu * np.eye(self.H.shape[0])
+                # ellipsoid active: take the descent direction, scale to boundary
+                d = np.linalg.solve(A, -(g + 2.0 * nu * self.b_hat))
+                q = float(d @ self.H @ d)
+                if q <= 0:
+                    return self.b_hat.copy()
+                return self.b_hat + d * np.sqrt(xi / q)
+
+            lo, hi = 0.0, 1.0
+            for _ in range(200):                          # bracket
+                if np.linalg.norm(b_of(hi)) <= M:
+                    break
+                hi *= 2.0
+            for _ in range(200):                          # bisect
+                mid = 0.5 * (lo + hi)
+                if np.linalg.norm(b_of(mid)) > M:
+                    lo = mid
+                else:
+                    hi = mid
+            b = b_of(hi)
+            return b, float(g @ self.b_hat - g @ b)
+
+        return self._linear_min_plain(g, xi, projected)
+
+    def _linear_min_plain(self, g, xi, projected=False):
         if projected:
             gs = self.U.T @ g
             y = np.linalg.solve(self.L_sub, gs)
@@ -173,7 +218,7 @@ class BlockEllipsoid:
 
 def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
                       max_sweeps=30, tol=1e-11, n_restarts=3, rng=None,
-                      projected=False):
+                      projected=False, M_R=None, M_D=None):
     """min over conf_R x conf_D of the multilinear plug-in value, by blockwise
     closed-form coordinate descent with multi-restart.
 
@@ -199,11 +244,13 @@ def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
             # reward blocks: V is jointly linear in them, gradients depend only on bD
             _, gR, _ = value_and_grads(bR, bD)
             for t in range(T):
-                bR[t], _ = blocks_R[t].linear_min(gR[t], xis_R[t], projected)
+                bR[t], _ = blocks_R[t].linear_min(gR[t], xis_R[t], projected,
+                                                  M=M_R)
             # dynamic blocks: gradients depend on the other blocks -> refresh each
             for j in range(T - 1):
                 _, _, gD = value_and_grads(bR, bD)
-                bD[j], _ = blocks_D[j].linear_min(gD[j], xis_D[j], projected)
+                bD[j], _ = blocks_D[j].linear_min(gD[j], xis_D[j], projected,
+                                                  M=M_D)
             V_now = value_and_grads(bR, bD)[0]
             if V_prev - V_now < tol:
                 V_prev = V_now
