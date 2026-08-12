@@ -1,11 +1,12 @@
 # Where the Null Space Actually Comes From
 
-**Status: first result complete. The hypothesis we set out to confirm was refuted,
-and replaced by a sharper one that we can predict exactly.**
+**Status: one claim survives and is stronger than first reported; two are
+withdrawn. Corrections are in §7, and they were found by adversarial review, not
+by us.**
 
 ---
 
-## 1. What we expected
+## 1. What we set out to show
 
 The Phase 4 paper diagnosed the anchor paper's pessimism blow-up as a structural
 null space, attributed to `|O| > |S|` — the bridge is a function on the
@@ -15,153 +16,193 @@ observation space, but every moment restriction factors through the latent state
 p(o_t, o_0 | a) = sum_s p(o_t | s) p(o_0 | s) p(s | a)
 ```
 
-The plan was to show this is a **family-level** property: any proximal method
-whose bridge lives on observations inherits it, model-based or model-free. If so,
-"the anchor paper's Eq. 17 is broken" becomes "pessimism over proximal bridge
-confidence regions is structurally ill-posed", which is a much larger claim.
+The goal was to show this is a **family-level** property, so that "the anchor
+paper's Eq. 17 is broken" becomes "pessimism over proximal bridge confidence
+regions is structurally ill-posed."
 
-## 2. Why the existing environment could not test it
+## 2. Why a new environment was needed
 
-The Phase 3 toy fixes `|S| = 2`, `|O| = 3`, `|O_0| = 2`. Three different
-explanations — capped by the latent dimension, capped by the instrument
-dimension, capped by their minimum — all predict rank 2 there. **Any conclusion
-about the mechanism drawn from that environment is unidentified.**
+The Phase 3 toy fixes `|S| = 2`, `|O| = 3`, `|O_0| = 2`. Capped-by-latent,
+capped-by-instrument and capped-by-their-minimum all predict rank 2 there, so
+the environment cannot identify the mechanism. `src/envs/dim_separated_pomdp.py`
+varies the three dimensions independently.
 
-`src/envs/dim_separated_pomdp.py` varies the three dimensions independently while
-holding the confounding channel, reward structure and horizon fixed. With
-`|S|=2, |O_0|=4` the latent explanation predicts 2 and the instrument explanation
-predicts 4; with `|S|=4, |O_0|=2` the predictions swap. A single mechanism has to
-fit both.
-
-## 3. The population limit says one thing
-
-`population_cross_moment` computes `E^T diag(p1) K0` in closed form. Its rank is
-`min(|S|, |O|, |O_0|)` in all four configurations tested — exactly as the
-factorization argument requires.
-
-So in the **population**, the latent bottleneck does cap the rank.
-
-## 4. The finite-sample design says something else
-
-Fitting a log-log slope of each eigenvalue against `N` separates a direction that
-converges to a nonzero limit (slope ≈ 0) from one that is sampling noise around
-zero (slope ≈ −1). This is scale-free, so it does not depend on a rank threshold.
-
-`|S|=2, |O|=6, |O_0|=4` — population rank 2, shape cap 4:
-
-| index | N=4,000 | N=256,000 | slope | tier |
-|---|---|---|---|---|
-| 0 | 8.075e-02 | 8.166e-02 | 0.00 | signal |
-| 1 | 7.058e-06 | 2.343e-07 | −0.80 | statistically empty |
-| 2 | 2.206e-06 | 3.218e-08 | −0.93 | statistically empty |
-| 3 | 2.942e-07 | 3.029e-09 | −1.09 | statistically empty |
-| 4 | 1.635e-19 | 5.848e-20 | — | exact zero |
-| 5 | −1.855e-18 | −9.332e-20 | — | exact zero |
-
-The spectrum has **three tiers, not two**, and the boundary between the bottom
-two is where the mechanism lives.
-
-## 5. The finding
-
-**The exact null space is set by the instrument's shape, not by the latent state.**
+## 3. What survives — the exact null space is set by the instrument's shape
 
 ```
-dim(exact null space) = |O| - min(|O|, |O_0|)
+dim(exact null space) >= |O| - min(|O|, |O_0|)
 ```
 
-Confirmed exactly in 3 of 3 configurations: `(2,6,4) -> 2`, `(3,7,5) -> 2`,
-`(4,6,2) -> 4`. This is linear algebra, not asymptotics — the cross-moment has
-only `|O_0|` columns, so it cannot span more than `|O_0|` directions at **any**
-sample size, for any `|S|`.
+Confirmed in every configuration: `(2,6,4) -> 2`, `(3,7,5) -> 2`, `(4,6,2) -> 4`.
+This is linear algebra rather than asymptotics — the cross-moment has only
+`|O_0|` columns, so it cannot span more than `|O_0|` directions at **any** sample
+size, for any `|S|`.
 
-**The latent bottleneck produces a softer failure.** Directions between the shape
-cap and the signal decay at `N^-0.8` to `N^-1.1` — consistent with `N^-1`, the
-sampling rate of a squared mean. They are statistically empty rather than
-structurally empty. A confidence region built on them is not infinitely wide; it
-is finitely but uselessly wide, and it shrinks too slowly to matter.
+The relation is an **inequality**, not an equality. If the sample does not
+realize every instrument value the empirical null space is larger. Our first
+draft wrote this as an equality "at any sample size", which is wrong in the rare
+degenerate case.
 
-So the original hypothesis is **refuted in its strong form**. The two effects are
-real but distinct, and only the first is exact.
+## 4. What survives, and is stronger than we first reported — three tiers
 
-## 6. A second finding we did not go looking for
+Fitting a log-log slope of each eigenvalue against `N` separates a direction
+converging to a nonzero limit (slope ≈ 0) from sampling noise around zero
+(slope ≈ −1). The spectrum has **three tiers**: signal, statistically empty
+(decaying), and exact zero.
 
-Population rank overstates usable rank:
+We reported the middle tier as decaying at `N^-0.8`, hedged as "consistent with
+`N^-1`". With 20 seeds instead of 3 the rate is **exactly `-1`**. The `-0.80` was
+seed noise, and the hedge was unnecessary: the prediction is cleaner than the
+measurement we published.
 
-| config | population rank | directions above the sampling floor |
-|---|---|---|
-| `|S|=2, |O|=6, |O_0|=4` | 2 | **1** |
-| `|S|=3, |O|=7, |O_0|=5` | 3 | **2** |
-| `|S|=4, |O|=6, |O_0|=2` | 2 | 2 |
+## 5. Two failure modes, and only one is exact
 
-In the first two, a direction that genuinely exists in the population never rises
-above sampling noise at `N` up to 256,000. The latent directions are individually
-weak, and counting them is not the same as being able to use them.
+- The **instrument shape gap** produces machine-zero directions. Structural,
+  present at every `N`, detectable from the dimensions before fitting anything.
+- The **latent bottleneck** produces directions decaying at `N^-1`:
+  statistically empty rather than structurally empty. A confidence region built
+  on them is not infinitely wide, but finitely and uselessly wide.
 
-## 7. What this costs us — a problem in our own repair
+## 6. What the family-level claim now rests on
 
-Signal-Projected Pessimism selects its subspace with an **eigengap rank rule**:
-take the largest ratio between consecutive eigenvalues. That rule assumes a wall.
-Section 4 shows there is no wall in general — there is a smooth decay across three
-tiers.
+The geometric argument holds for any proximal method with a bridge on
+observations and an instrument on a coarser proxy, model-based or model-free,
+because it depends only on the shape of the cross-moment. We have **not** yet run
+the model-free pessimism to observe an actual divergence. Until step (b) is done
+the claim rests on shared geometry, not on a shared blow-up.
 
-Running it on the separated dimensions, the rule selects:
+---
 
-| config | eigengap rank per action | signal directions actually present |
-|---|---|---|
-| `|S|=2, |O|=6, |O_0|=4` | `[5, 5]` | 1 |
-| `|S|=4, |O|=6, |O_0|=2` | `[4, 4]` | 2 |
-| `|S|=3, |O|=7, |O_0|=5` | `[5, 5]` | 2 |
-| `|S|=2, |O|=3, |O_0|=2` (Phase 3 toy) | `[2, 2]` | 2 |
+## 7. Corrections
 
-It is correct **only** in the Phase 3 toy — the one configuration where the tiers
-collapse because `|S| = |O_0|`. Everywhere else it overshoots, admitting
-statistically empty directions into the "signal" subspace.
+Both were produced by an independent adversarial review that attacked these
+claims by running code. Both were then reproduced independently before being
+accepted here.
 
-The estimator's own source comment asserts the design has "rank-`|S|` SIGNAL".
-That is true of the population matrix and false of the empirical one, and the
-distinction was invisible in the environment where the rule was validated.
+### 7.1 WITHDRAWN: "population rank overstates usable rank"
 
-This does not retract the Phase 4 results: in that environment the rule selected
-the right subspace, and the reported pessimism numbers stand. What it retracts is
-the **generality** of the rule.
+We reported that at `|S|=2, |O|=6, |O_0|=4` the population rank is 2 but only one
+direction rises above the sampling floor, and presented this as a property of
+proximal estimation.
 
-## 8. Where this leaves the larger claim
+**It is an artifact of our own environment.** `default_params` uses
+`confound=1.0`, which makes the behavior policy rows exactly one-hot:
 
-The family-level argument survives in modified form, and is now sharper:
+```
+pi_b = [[1, 0],
+        [0, 1]]
+```
 
-- The **exact** ill-posedness is a property of the proxy geometry (`|O|` vs
-  `|O_0|`), so it applies to any proximal method with a bridge on observations and
-  an instrument on a coarser proxy — model-based or model-free. It is checkable
-  from the dimensions alone, before fitting anything.
-- The **latent** bottleneck adds a second, softer layer that no rank rule can
-  cleanly separate, because it decays continuously.
-- Therefore a subspace-projection repair cannot be made general by a better
-  eigengap rule. The boundary it needs does not exist as a gap.
+The behavior policy is then a deterministic function of the latent state. Every
+design matrix is built **per action**, so conditioning on the action *conditions
+on the latent state*. The relevant population object is not the unconditional
+cross-moment we computed but
 
-That last point is a stronger negative result than the one we started with, and it
-implicates our own repair rather than only the anchor paper's method.
+```
+P_a = E^T diag(p1 * pi_b[:, a]) K0
+```
 
-## 9. Honest limitations
+whose rank is the number of latent states that can select action `a`:
 
-- **Tabular, one environment family.** The dimension-separated POMDP is
-  synthetic; the emission and negative-control matrices are Dirichlet draws with a
-  diagonal boost. Other spectra may distribute the weak directions differently.
-- **The model-free design here is the stage-1 cross-moment**, extracted to mirror
-  `MinimaxValueBridgeOPE`'s per-action solve. We have **not yet** run the full
-  model-free pessimism to observe a divergence — that is step (b), and until it is
-  done the family claim rests on shared geometry rather than a shared blow-up.
-- **`N` up to 256,000, 3 seeds, `T=3`, 2 actions.** The "statistically empty"
-  label is relative to that budget; a direction invisible at 256,000 samples is
-  not proven absent.
-- The slope classifier uses a −0.5 divider and a `1e-12` relative floor. Both are
-  visible in the raw table above so a reader can apply their own.
+| config | unconditional rank (what we reported) | per-action rank (correct) | signal directions observed |
+|---|---|---|---|
+| `\|S\|=2, \|O\|=6, \|O_0\|=4` | 2 | **[1, 1]** | 1 |
+| `\|S\|=3, \|O\|=7, \|O_0\|=5` | 3 | **[2, 1]** | 2 |
+| `\|S\|=4, \|O\|=6, \|O_0\|=2` | 2 | **[2, 2]** | 2 |
 
-## 10. Files
+The observed counts match the per-action rank exactly. The direction we described
+as "buried below the sampling floor" has population value **exactly zero** in the
+per-action population. Nothing was buried; it was absent.
+
+Causal confirmation: at `confound=0.6` and `0.9` the same direction reappears as
+clean signal (slope `-0.02`) at the same `N`, while at `1.0` it decays
+(slope `-0.73`). The behavior policy, not the estimator, was producing the effect.
+
+Two further consequences:
+
+- Averaging the spectrum over actions hid an asymmetry. In `(3,7,5)` the
+  per-action ranks are `[2, 1]`, not a single number.
+- The grid row labelled "Phase 3 toy dims" matches the toy's *dimensions* but not
+  its behavior policy, which is stochastic (`0.75/0.25`). It is not the Phase 3
+  toy and should not have been labelled as such.
+
+### 7.2 WITHDRAWN: "no eigengap rule can work"
+
+We claimed the smooth three-tier decay means the boundary a projection repair
+needs "does not exist as a gap", and that no better eigengap rule could fix it.
+
+**The wall exists. The implementation was broken.** In
+`bridge_estimator.py:169`:
+
+```python
+ratios = desc[:-1] / np.maximum(desc[1:], 1e-300)
+```
+
+Trailing eigenvalues of a positive-semidefinite matrix are machine noise around
+zero and are frequently **negative**. `np.maximum(negative, 1e-300)` returns
+`1e-300`, so every negative entry yields a ratio of order `1e282`, and `argmax`
+selects float sign noise rather than the real gap. The ranks we reported
+(`[5,5]`, `[4,4]`) are not the rule's judgement — they are an artifact, and they
+are not stable across seeds.
+
+Replacing the floor with one relative to the largest eigenvalue
+(`1e-9 * lam_max`) makes the rule recover the correct rank in all tested cases.
+
+So §8 of the first draft is wrong: a subspace-projection repair is **not**
+impossible in general. The correct statement is narrower and still useful — the
+rule as shipped is numerically unsound outside the configuration it was validated
+on.
+
+### 7.3 What this does NOT change
+
+The Phase 4 pessimism numbers stand. In the real Phase 3 toy the per-action ranks
+are `[2, 2]` and both directions carry genuine signal, so the eigengap rule
+selected the right subspace there. Note it did so partly by luck: with only one
+trailing eigenvalue, the buggy ratio happens to point at the same index as the
+true gap.
+
+---
+
+## 8. Consequence for step (b) — read before running it
+
+`sigma2_signal` (`bridge_estimator.py:169`) is the smallest *kept* eigenvalue and
+it drives the pessimism widths downstream. Under the current rule it can land on
+a statistically empty direction, whose magnitude falls at `N^-1`. Width scales as
+`xi = c / (N_2 * sigma2)`, so a `sigma2` that decays like `1/N` makes the width
+**stop shrinking** with data.
+
+If step (b) is run before this is fixed, a model-free "family blow-up" would be
+manufactured by the bug rather than observed. **Fix the rank rule first, then run
+the comparison.** Otherwise the headline result of this extension would be an
+artifact — the same error, in the same place, that §7.1 just corrected.
+
+## 9. Required re-runs
+
+Everything in §3–§5 was measured under `confound=1.0` and per-action averaging.
+The geometric results do not depend on the behavior policy, but they were not
+*shown* to be independent of it. Before any of this is used in a paper:
+
+- re-run all tables at `confound in {0.6, 0.9, 1.0}`,
+- report per-action rather than averaging across actions,
+- use `P_a = E^T diag(p1 * pi_b[:, a]) K0` as the population benchmark.
+
+## 10. Honest limitations
+
+- Tabular, one synthetic environment family, Dirichlet emissions.
+- `N` up to 256,000, `T=3`, 2 actions. "Statistically empty" is relative to that
+  budget.
+- The model-free pessimism divergence (step b) has not been run.
+- The three-tier structure was verified on the model-free cross-moment. Whether
+  the model-based stage-1 object `Ma Ma^T` shares it was examined by the review
+  and should be read there rather than assumed here.
+
+## 11. Files
 
 | File | Role |
 |---|---|
-| `src/envs/dim_separated_pomdp.py` | Environment with independent `|S|`, `|O|`, `|O_0|` |
-| `poc/run_rank_diagnostic.py` | Population check, model-free and model-based rank sweep |
+| `src/envs/dim_separated_pomdp.py` | Environment with independent `\|S\|`, `\|O\|`, `\|O_0\|` |
+| `poc/run_rank_diagnostic.py` | Population and empirical rank sweep |
 | `poc/run_rank_verify.py` | Hard-vs-soft discrimination by log-log slope |
-| `experiments/results_rank_diagnostic.json` | Raw results |
-| `experiments/results_rank_verify.json` | Raw results |
+| `poc/critic_*.py` | Adversarial review scripts, one per attack |
+| `docs/critic_findings.md` | The full review that produced §7 |
+| `experiments/results_rank_*.json` | Raw results |

@@ -20,24 +20,38 @@ about a research line.
 
 | Step | State | Outcome |
 |---|---|---|
-| (a) Rank structure of the design matrices | **done** | Original hypothesis refuted; replaced by an exact prediction that holds 3/3 |
-| (b) Model-free pessimism, to observe the divergence directly | not started | |
+| (a) Rank structure of the design matrices | **done** | One claim survives and is stronger than first reported; two withdrawn |
+| Adversarial review of (a) | **done** | Found both errors; see `docs/critic_findings.md` |
+| Fix the eigengap rank rule | **required before (b)** | Numerical bug at `bridge_estimator.py:169` |
+| Re-run (a) at `confound < 1.0`, per-action | **required** | See `docs/rank_structure.md` §9 |
+| (b) Model-free pessimism, to observe the divergence | blocked on the fix | |
 | (c) The rank cap as a proposition | not started | |
 
-## What (a) found
+## What (a) found, after review
 
-The exact null space is set by the **instrument's shape**, not by the latent
-state: `dim = |O| - min(|O|, |O_0|)`, confirmed exactly in every configuration.
-The latent bottleneck produces a *separate, softer* effect — directions decaying
-at `N^-1`, statistically rather than structurally empty.
+**Survives.** The exact null space is set by the **instrument's shape**, not the
+latent state: `dim >= |O| - min(|O|, |O_0|)`. It is linear algebra, holds at every
+sample size, and is detectable from the dimensions before fitting anything. The
+three-tier spectrum is real, and the middle tier's decay rate is exactly `N^-1` —
+cleaner than the `N^-0.8` we first published, which was 3-seed noise.
 
-The consequence lands on our own repair. Signal-Projected Pessimism picks its
-subspace with an eigengap rank rule, which assumes a wall in the spectrum. There
-are three tiers with smooth decay, so the rule is correct only in the Phase 3 toy
-— the one configuration where `|S| = |O_0|` collapses them. That is a limitation
-on the repair's generality, not on the Phase 4 numbers, which stand.
+**Withdrawn.** Two claims did not survive adversarial review:
 
-Full writeup with the tables: `docs/rank_structure.md`.
+1. *"Population rank overstates usable rank."* An artifact of our own environment.
+   `confound=1.0` makes the behavior policy a deterministic function of the latent
+   state, and since every design is built per action, conditioning on the action
+   conditions on the latent state. The direction we called "buried below the
+   sampling floor" is exactly zero in the per-action population.
+2. *"No eigengap rule can work."* The wall exists; the implementation was broken.
+   A `1e-300` floor turns machine-negative eigenvalues into `~1e282` ratios, so
+   `argmax` selects float sign noise. With a relative floor the rule recovers the
+   correct rank.
+
+The Phase 4 numbers stand — in the real Phase 3 toy the rule selected the right
+subspace, though partly by luck.
+
+Full writeup and corrections: `docs/rank_structure.md` §7. The review that found
+them: `docs/critic_findings.md`.
 
 ## Running
 
