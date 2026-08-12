@@ -22,9 +22,28 @@ about a research line.
 |---|---|---|
 | (a) Rank structure of the design matrices | **done** | One claim survives and is stronger than first reported; two withdrawn |
 | Adversarial review of (a) | **done** | Found both errors; see `docs/critic_findings.md` |
-| Fix the eigengap rank rule | **required before (b)** | Numerical bug at `bridge_estimator.py:169` |
-| Re-run (a) at `confound < 1.0`, per-action | **required** | See `docs/rank_structure.md` §9 |
-| (b) Model-free pessimism, to observe the divergence | blocked on the fix | |
+| Fix the eigengap rank rule | **done** | Correct in 16/18 cells vs 0/18 for the shipped rule |
+| Re-run (a) at `confound < 1.0`, per-action, 20 seeds | **done** | Surviving results confirmed; middle tier decays at exactly `N^-1` |
+| (b) Model-free pessimism, to observe the divergence | **still blocked** | The fix is necessary but not sufficient — see below |
+| (c) The rank cap as a proposition | not started | |
+
+## Why (b) is still blocked
+
+The corrected rule recovers the right rank inside the estimator, but only as `N`
+grows, and the required `N` depends on the regime:
+
+- Where the **instrument shape** forces exact zeros (`|O_0| < |O|`), it is correct
+  at every sample size — the gap it needs is a machine-zero cliff.
+- Where the deficiency is only **statistical**, it needs `N` in the hundreds of
+  thousands. One cell has still not converged at `N = 512,000`.
+
+Everything in Phase 4 runs at `N <= 4,000`. So step (b) has to be run in the
+shape-capped regime, or with a rank selection that does not depend on finding a
+spectral gap — otherwise a divergence caused by rank misselection is
+indistinguishable from the effect we are trying to measure.
+
+This also explains why the Phase 3 toy worked: `|O|=3, |O_0|=2` puts it in the
+shape-capped regime, where the cliff is present from the start.
 | (c) The rank cap as a proposition | not started | |
 
 ## What (a) found, after review

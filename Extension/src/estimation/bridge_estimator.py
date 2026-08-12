@@ -164,8 +164,22 @@ class TabularBridgeEstimator:
             if desc.size < 2:                                    # guard empty ratios
                 k_a = desc.size                                  # (audit A-low: crash guard)
             else:
-                ratios = desc[:-1] / np.maximum(desc[1:], 1e-300)
-                k_a = int(np.argmax(ratios)) + 1                 # eigengap rank rule
+                # The original rule divided by max(desc[1:], 1e-300). Trailing
+                # eigenvalues of a PSD matrix are machine noise around zero and
+                # are frequently NEGATIVE, so that floor turned each of them into
+                # a ratio of order 1e282 and argmax selected float sign noise
+                # rather than the real spectral gap. The selected ranks were not
+                # the rule's judgement and did not repeat across seeds.
+                #
+                # Floor relative to the largest eigenvalue instead. Anything below
+                # it is numerically zero, so consecutive zeros give ratio ~1 and
+                # cannot win the argmax; the largest genuine gap does.
+                floor = max(desc[0], 0.0) * 1e-9
+                if floor <= 0.0:                                 # degenerate: all ~0
+                    k_a = 1
+                else:
+                    ratios = np.maximum(desc[:-1], floor) / np.maximum(desc[1:], floor)
+                    k_a = int(np.argmax(ratios)) + 1             # eigengap rank rule
             sigma2_per_a.append(float(desc[k_a - 1]))            # smallest KEPT eig
             signal_basis.append(evec[:, ::-1][:, :k_a].copy())
         sigma2_signal = float(min(sigma2_per_a))

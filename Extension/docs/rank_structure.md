@@ -1,8 +1,10 @@
 # Where the Null Space Actually Comes From
 
 **Status: one claim survives and is stronger than first reported; two are
-withdrawn. Corrections are in §7, and they were found by adversarial review, not
-by us.**
+withdrawn. Corrections are in §7 — they were found by adversarial review, not by
+us — and §7.4 reports the full corrected re-run, which both confirms the
+surviving results and shows the repair to the rank rule is necessary but not
+sufficient.**
 
 ---
 
@@ -163,6 +165,60 @@ true gap.
 
 ---
 
+## 7.4 The corrected re-run
+
+`poc/run_rank_corrected.py` re-runs everything with the review's corrections
+applied: `P_a` as the population benchmark, `confound` swept over
+`{1.0, 0.9, 0.6}`, per-action reporting with no averaging, and 20 seeds.
+
+**The middle tier decays at exactly `N^-1`.** Mean slope **`-0.983`**,
+sd `0.070`, over 29 directions. The `-0.80` we published was 3-seed noise, and
+the hedge around it was unnecessary.
+
+**Signal counts match `rank(P_a)` per action, per confound level**, and the exact
+zeros match `|O| - min(|O|, |O_0|)` throughout — so §3 and §4 survive the
+correction rather than depending on the `confound=1.0` corner.
+
+**The old eigengap rule is correct in 0 of 18 cells. The fixed rule is correct in
+16 of 18**, on identical spectra. The two misses are both at `confound=0.9` with
+55% seed stability, where the weakest population direction genuinely sits near
+the noise floor.
+
+### But the fix is necessary, not sufficient
+
+Inside the estimator, on `Wa = Ma Ma^T / N2`, the fixed rule converges to
+`rank(P_a)` **only as `N` grows**, and the required `N` is large:
+
+| config | confound | truth | N=32k | N=128k | N=512k |
+|---|---|---|---|---|---|
+| `(2,6,4)` | 1.0 | `[1,1]` | `[4,4]` | `[1,1]` | `[1,1]` |
+| `(2,6,4)` | 0.6 | `[2,2]` | `[4,4]` | `[4,4]` | `[2,2]` |
+| `(3,7,5)` | 1.0 | `[2,1]` | `[5,5]` | `[2,1]` | `[2,1]` |
+| `(3,7,5)` | 0.6 | `[3,3]` | `[5,5]` | `[5,5]` | **`[5,3]`** |
+| `(4,6,2)` | 1.0 | `[2,2]` | `[2,2]` | `[2,2]` | `[2,2]` |
+| `(4,6,2)` | 0.6 | `[2,2]` | `[2,2]` | `[2,2]` | `[2,2]` |
+
+One cell has still not converged at `N = 512,000`.
+
+The pattern is legible, and it is more useful than the claim it replaces:
+
+- When the **instrument shape** forces exact zeros — `(4,6,2)`, where
+  `|O_0| = 2 < |O| = 6` — the rule is correct at **every** sample size. The gap it
+  needs is a machine-zero cliff, which exists immediately.
+- When the deficiency is only **statistical** — the latent-driven middle tier —
+  the rule must wait for those directions to fall far enough below the signal, and
+  that takes `N` far beyond anything used in this project.
+
+**This is why the Phase 3 toy worked.** With `|O| = 3` and `|O_0| = 2` it sits in
+the first regime, where the cliff is present from the start. Not luck about the
+gap index, as §7.3 supposed — a structurally easier regime.
+
+So the honest statement about Signal-Projected Pessimism is neither "it always
+works" nor "no rank rule can work". It is: **the repair is reliable exactly when
+the proxy geometry forces exact zeros, and unreliable at practical `N` when the
+rank deficiency is only statistical.** That is checkable in advance from `|O|` and
+`|O_0|`, before fitting anything.
+
 ## 8. Consequence for step (b) — read before running it
 
 `sigma2_signal` (`bridge_estimator.py:169`) is the smallest *kept* eigenvalue and
@@ -172,9 +228,18 @@ a statistically empty direction, whose magnitude falls at `N^-1`. Width scales a
 **stop shrinking** with data.
 
 If step (b) is run before this is fixed, a model-free "family blow-up" would be
-manufactured by the bug rather than observed. **Fix the rank rule first, then run
-the comparison.** Otherwise the headline result of this extension would be an
-artifact — the same error, in the same place, that §7.1 just corrected.
+manufactured by the bug rather than observed. The rule is now fixed (§7.4), but
+§7.4 also shows the fix is **not sufficient at the sample sizes this project
+uses**. Everything in Phase 4 runs at `N <= 4,000`, and the corrected rule needs
+`N` in the hundreds of thousands before it recovers the right rank in the
+statistically-deficient regime.
+
+So step (b) must be run in the **shape-capped regime** — `|O_0|` strictly smaller
+than `|O|`, where the exact zeros make the rule correct at every sample size — or
+with a rank selection that does not depend on finding a spectral gap at all.
+Running it in the statistically-deficient regime at project-scale `N` would
+produce a divergence caused by rank misselection, and we would have no way to
+separate that from the effect we are looking for.
 
 ## 9. Required re-runs
 
