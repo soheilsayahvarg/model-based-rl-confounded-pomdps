@@ -1,0 +1,284 @@
+{
+  "population": [
+    {
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4,
+      "pop_rank": 2,
+      "predicted": 2,
+      "note": "latent < instrument",
+      "ok": true
+    },
+    {
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2,
+      "pop_rank": 2,
+      "predicted": 2,
+      "note": "instrument < latent",
+      "ok": true
+    },
+    {
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5,
+      "pop_rank": 3,
+      "predicted": 3,
+      "note": "both above latent",
+      "ok": true
+    },
+    {
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2,
+      "pop_rank": 2,
+      "predicted": 2,
+      "note": "Phase 3 toy dims (degenerate: |S|=|O_0|)",
+      "ok": true
+    }
+  ],
+  "model_free": [
+    {
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4,
+      "r_star": 2,
+      "N": 2000,
+      "lam_last_signal": 0.0019016564053775387,
+      "lam_first_null": 0.0007531099916844175,
+      "ratio": 2.783962729710851,
+      "num_rank": 3.8333333333333335,
+      "note": "latent < instrument"
+    },
+    {
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4,
+      "r_star": 2,
+      "N": 8000,
+      "lam_last_signal": 0.0008108325572424424,
+      "lam_first_null": 7.827538229857018e-05,
+      "ratio": 5.54048780781965,
+      "num_rank": 4.0,
+      "note": "latent < instrument"
+    },
+    {
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4,
+      "r_star": 2,
+      "N": 32000,
+      "lam_last_signal": 0.00014655399957987886,
+      "lam_first_null": 4.691721224800928e-05,
+      "ratio": 2.914400919175848,
+      "num_rank": 4.0,
+      "note": "latent < instrument"
+    },
+    {
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 2000,
+      "lam_last_signal": 0.03462472190862494,
+      "lam_first_null": 7.141339676733021e-17,
+      "ratio": 785378196385298.2,
+      "num_rank": 2.0,
+      "note": "instrument < latent"
+    },
+    {
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 8000,
+      "lam_last_signal": 0.03478325482938357,
+      "lam_first_null": 6.366053928014804e-17,
+      "ratio": 1077936136874936.0,
+      "num_rank": 2.0,
+      "note": "instrument < latent"
+    },
+    {
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 32000,
+      "lam_last_signal": 0.0349189984152949,
+      "lam_first_null": 3.524077600162036e-17,
+      "ratio": 2842535577554699.5,
+      "num_rank": 2.0,
+      "note": "instrument < latent"
+    },
+    {
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5,
+      "r_star": 3,
+      "N": 2000,
+      "lam_last_signal": 0.001199088269609921,
+      "lam_first_null": 0.00041863105755566557,
+      "ratio": 4.19169764597298,
+      "num_rank": 4.833333333333333,
+      "note": "both above latent"
+    },
+    {
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5,
+      "r_star": 3,
+      "N": 8000,
+      "lam_last_signal": 0.0004132172447679643,
+      "lam_first_null": 0.000158841321589313,
+      "ratio": 2.0951844071055765,
+      "num_rank": 5.0,
+      "note": "both above latent"
+    },
+    {
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5,
+      "r_star": 3,
+      "N": 32000,
+      "lam_last_signal": 0.00013061944929230023,
+      "lam_first_null": 5.0890137909506096e-05,
+      "ratio": 2.49059834930413,
+      "num_rank": 5.0,
+      "note": "both above latent"
+    },
+    {
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 2000,
+      "lam_last_signal": 0.000749318238392364,
+      "lam_first_null": -3.5327392940422956e-18,
+      "ratio": 7.911057343896683e+295,
+      "num_rank": 2.0,
+      "note": "Phase 3 toy dims (degenerate: |S|=|O_0|)"
+    },
+    {
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 8000,
+      "lam_last_signal": 0.00012441648047835933,
+      "lam_first_null": -1.5049512806123028e-17,
+      "ratio": 2.926160631207108e+295,
+      "num_rank": 2.0,
+      "note": "Phase 3 toy dims (degenerate: |S|=|O_0|)"
+    },
+    {
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 32000,
+      "lam_last_signal": 3.7966165621697545e-05,
+      "lam_first_null": -2.3677623838983594e-18,
+      "ratio": 2.1497168558812035e+295,
+      "num_rank": 2.0,
+      "note": "Phase 3 toy dims (degenerate: |S|=|O_0|)"
+    }
+  ],
+  "model_based": [
+    {
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4,
+      "r_star": 2,
+      "N": 2000,
+      "ranks": [
+        5,
+        4
+      ],
+      "matches": false
+    },
+    {
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4,
+      "r_star": 2,
+      "N": 8000,
+      "ranks": [
+        5,
+        5
+      ],
+      "matches": false
+    },
+    {
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 2000,
+      "ranks": [
+        4,
+        4
+      ],
+      "matches": false
+    },
+    {
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 8000,
+      "ranks": [
+        4,
+        4
+      ],
+      "matches": false
+    },
+    {
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5,
+      "r_star": 3,
+      "N": 2000,
+      "ranks": [
+        6,
+        5
+      ],
+      "matches": false
+    },
+    {
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5,
+      "r_star": 3,
+      "N": 8000,
+      "ranks": [
+        5,
+        5
+      ],
+      "matches": false
+    },
+    {
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 2000,
+      "ranks": [
+        2,
+        2
+      ],
+      "matches": true
+    },
+    {
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2,
+      "r_star": 2,
+      "N": 8000,
+      "ranks": [
+        2,
+        2
+      ],
+      "matches": true
+    }
+  ]
+}
