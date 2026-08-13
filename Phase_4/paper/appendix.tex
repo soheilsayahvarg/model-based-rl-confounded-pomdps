@@ -352,3 +352,63 @@ resolved it.
 The rank-deficiency issue of \cref{app:cont} belongs to the same category, with
 the additional wrinkle that it was invisible even from the downstream recovery
 metrics.
+
+\section{Correction: the Pessimism Numbers on a Common Grid}
+\label{app:pess-correction}
+
+Three defects in our own implementation and two in our reporting were found after
+the results of \cref{sec:exp-pess} were first written up. All are corrected here.
+
+\paragraph{The omitted class bound.} \citet{hong2024} minimise over
+$\mathrm{conf}(\alpha) \cap \mathcal{B}_{R,t}$, and the uniform bound $M_R$ on
+that class carries through their Theorem~4.2. Our implementation minimised over
+the confidence region alone. This is an error on our side, not in the theory, and
+it inflates every pessimistic magnitude we reported.
+
+\paragraph{The class is a box, not a ball.} Assumption 4.1(f) bounds the class in
+\emph{sup}-norm. We first imposed an $\ell_2$ ball; the paper's literal class is
+the box. In this $36$-dimensional coefficient space the tightest box containing
+the true bridge admits $\ell_2$ norms up to $5.2$ against the true bridge's
+$1.803$, so the box is the \emph{weakest} of the three classes --- which reverses
+a claim we had drawn from the ball alone.
+
+\paragraph{Cross-$c$ reporting.} \cref{sec:exp-pess} quoted vanilla at $c{=}0.1$
+against the projection at $c{=}0.03$. On a common grid the contrast disappears.
+
+Toy POMDP, $T{=}3$, $N{=}20{,}000$, $3$ seeds, $V_{\mathrm{true}} = 2.0177$.
+Selection regret on the left, $V_{\mathrm{low}}$ on the right:
+
+\begin{center}
+\begin{tabular}{lcccccccc}
+\toprule
+& \multicolumn{4}{c}{Selection regret} & \multicolumn{4}{c}{$V_{\mathrm{low}}$} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+$c$ & $0.03$ & $0.10$ & $0.30$ & $1.00$ & $0.03$ & $0.10$ & $0.30$ & $1.00$ \\
+\midrule
+Plug-in             & \textbf{0.000} & \textbf{0.000} & \textbf{0.000} & \textbf{0.000} & $2.052$ & $2.052$ & $2.052$ & $2.052$ \\
+Vanilla             & $0.000$ & $0.257$ & $0.513$ & $0.513$ & $1.272$ & $0.123$ & $-3.235$ & $-20.983$ \\
+$\ell_2$ ball       & $0.000$ & $0.257$ & $0.513$ & $0.513$ & $1.278$ & $0.469$ & $-0.806$ & $-3.026$ \\
+Box (paper's class) & $0.000$ & $0.257$ & $0.427$ & $0.427$ & $1.275$ & $0.155$ & $-2.729$ & $-10.812$ \\
+Signal-projected    & $0.000$ & \textbf{0.000} & $0.257$ & $0.513$ & $1.338$ & $0.813$ & $-0.298$ & $-4.015$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{What this changes.} At $c{=}0.03$ --- the operating point at which
+\cref{sec:exp-pess} reported the projection's $0.000$ --- \emph{every} method
+including vanilla achieves $0.000$, so the published advantage is an artifact of
+comparing across region sizes. The projection does have a real advantage in the
+middle of the grid: at $c{=}0.1$ it alone among the pessimistic variants still
+selects the optimal policy, and at $c{=}0.3$ its regret is half the others'.
+
+\paragraph{What this does not change.} The ranking failure of vanilla pessimism
+at larger $c$ survives the class correction, and the null-space mechanism of
+\cref{sec:method-pess} is untouched. Identification, estimation and de-biasing
+results do not involve the pessimism layer.
+
+\paragraph{The baseline dominates.} The confounding-aware plug-in achieves
+$0.000$ regret at every width tested and is never beaten by any pessimistic
+variant. On this environment the pessimism layer costs selection accuracy and
+returns nothing. We report this alongside the projection's $0.000$, because a
+pessimistic method that does not beat its own plug-in has not earned its
+complexity here.

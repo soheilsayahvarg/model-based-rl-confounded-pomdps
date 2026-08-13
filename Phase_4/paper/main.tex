@@ -58,10 +58,10 @@ model-based theory for this setting, identifying reward and transition models
 through two families of \emph{bridge functions} and planning pessimistically over
 a confidence region --- but the paper is theory only: no algorithm, no code, no
 experiments. We build the pipeline end-to-end, verify it against exact ground
-truth to machine precision, and report what running it reveals. The pessimism
-step is numerically unusable as written, diverging to $-1779$ against true values
-in $[1.5, 2.2]$, which we trace to a structural null space; a signal-subspace
-projection repairs the numbers and achieves zero regret but forfeits coverage,
+truth to machine precision, and report what running it reveals. Our pessimism
+implementation is numerically unusable, diverging to $-1779$ against true values
+in $[1.5, 2.2]$, traced to a structural null space and to a class bound we
+omitted; a signal-subspace projection repairs the numbers but forfeits coverage,
 making it a disclosed heuristic rather than a bound. At benchmark scale a
 confounding-blind baseline beats every bridge-based method in all 15 sweep cells,
 worst at \emph{zero} confounding --- estimation variance, not confounding bias,
@@ -247,16 +247,20 @@ signature of removed versus irreducible bias.
 
 \subsection{The pessimism step, run literally, diverges}
 \label{sec:exp-pess}
-Run as written, the paper's Eq.~17 gives a best-policy $V_{\mathrm{low}}$ of
-$-1.15$ at region size $c{=}0.1$, degrading through $-10.4$, $-62.2$ and
-$-305.2$ to $\mathbf{-1779}$ at $c{=}10$ --- against true policy values in
-$[1.5, 2.2]$. Even the mildest setting is already outside the physically feasible
-range, and selection regret is $0.68$. This is not a tuning artifact: it
-reproduces across seeds, and we traced the mechanism to the null-space geometry
-of \cref{sec:method-pess}.
+Minimising over the confidence region alone, Eq.~17 gives a best-policy
+$V_{\mathrm{low}}$ of $-1.15$ at region size $c{=}0.1$, degrading through
+$-10.4$, $-62.2$ and $-305.2$ to $\mathbf{-1779}$ at $c{=}10$ --- against true
+policy values in $[1.5, 2.2]$. Even the mildest setting is outside the feasible
+range, with regret $0.68$. It reproduces across seeds; the mechanism is the
+null-space geometry of \cref{sec:method-pess}. Note that our implementation
+omitted the intersection with the bridge class that \citet{hong2024} carry
+through Theorem~4.2; imposing it shrinks these magnitudes about $7\times$,
+selections unchanged (\cref{app:pess-correction}).
 
-Signal-Projected Pessimism repairs it: $V_{\mathrm{low}} = 1.35$ at $c = 0.03$,
-in range, with \textbf{0.000 selection regret} across every seed.
+Signal-Projected Pessimism gives $V_{\mathrm{low}} = 1.35$ at $c{=}0.03$, in
+range, with $0.000$ regret --- but that compares across region sizes: on a common
+grid vanilla also reaches $0.000$ there, and a plug-in baseline is never beaten
+at any width.
 
 \paragraph{The honest limit.} We then stress-tested our own fix. The true bridge
 functions leak up to \textbf{21\% of their norm} outside the projected signal
