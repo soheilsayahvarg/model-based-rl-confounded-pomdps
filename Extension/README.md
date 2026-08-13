@@ -38,7 +38,8 @@ about a research line.
 | Re-run the projected-width slope at 20 seeds | **done** | Geometry confirmed to 0.001; the *deployed* estimator refuted |
 | Run part (c) coverage where completeness FAILS | **done** | Coverage branch confirmed; complete-design control clean at 40/40 |
 | Does the width schedule change the *decision*? | **done** | **No**, where completeness holds: `beta_g = 0` exactly, 0.000 regret under all four schedules |
-| Decision-level test where `beta_g > 0` | **required** | The only regime where `e > 0` could degrade selection |
+| Map `beta_g`, the gradient's leakage | **done** | Two independent switches: incompleteness leaks the truth, confounding leaks the gradient |
+| Decision-level test at a nonzero floor | **required** | `(4,6,2)` at `confound=0.9`, floor `0.43` — non-degenerate |
 
 ## How (b) got unblocked
 

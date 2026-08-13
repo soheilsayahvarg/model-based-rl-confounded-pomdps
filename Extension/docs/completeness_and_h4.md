@@ -234,6 +234,52 @@ crossing scales as `c^2`.
 | crossing scales as `c^2` | yes | **confirmed**, +2.158 vs +2.000 |
 | absolute `N*` values of §4 | yes | **wrong**; corrected post-hoc (§5.4) |
 
+## 5c. The other half of (H4): two conditions, not one
+
+This section post-dates §1–§5 and was forced by `regret_vs_schedule.md` §4.3,
+which found `beta_g = ||P_Nul g|| = 0` exactly on the toy — so the decision-level
+test had no mechanism to detect. The obvious follow-up was to run it in the
+incomplete design instead. **`beta_g` is zero there too, at `confound = 0`.**
+
+We had assumed `beta_g` travels with `beta`. It does not. Mapping both in the
+population (`poc/run_gradient_leakage_map.py`, no sampling):
+
+| config | | cf 0.0 | 0.3 | 0.6 | 0.9 | 0.99 | 1.0 |
+|---|---|---|---|---|---|---|---|
+| (2,6,4) complete | `beta` | 0 | 0 | 0 | 0 | 0 | 0.759 |
+| | `beta_g` | 0 | 0 | 0 | 0 | 0 | 0.758 |
+| **(4,6,2) incomplete** | `beta` | **1.211** | 1.210 | 1.206 | 1.178 | 1.177 | 1.179 |
+| | `beta_g` | 0 | **0.028** | **0.093** | **0.364** | **0.678** | 0.698 |
+| | **floor `beta*beta_g`** | 0 | **0.034** | **0.112** | **0.428** | **0.798** | 0.823 |
+| **(4,8,3) incomplete** | **floor** | 0 | **0.070** | **0.125** | **0.162** | **0.171** | 0.966 |
+
+**Why `beta_g` can vanish while `beta` does not.** The stage-1 gradient's
+observation profile is the marginal `nu1 = E^T p1`. The design is spanned by
+`E^T v_{a,x}` with `v_{a,x}[s] ∝ p1[s] * pi_b[s,a] * K0[s,x]`. If `pi_b` does not
+depend on `s`, summing over `x` returns `E^T p1` up to scale, so **`nu1` lies in
+the span and cannot leak, however incomplete the instrument is**. Confounding is
+exactly what breaks that sum.
+
+So the step (c) floor `W >= beta * beta_g` has **two independent switches**:
+
+| | makes the **truth** leak | makes the **gradient** leak |
+|---|---|---|
+| `\|O_0\| < \|S\|` (inadequate control) | **yes** | no |
+| `pi_b` depends on `S` (confounding) | no | **yes** |
+
+> **The floor bites exactly when real confounding meets an inadequate negative
+> control.** Neither alone is enough, and that is a more useful statement than
+> either the width result or the coverage result on its own — both conditions are
+> things a practitioner can assess, one from dimensions alone.
+
+**This also corrects §3.** We wrote there that route 1 (`confound = 1.0`) is a
+contrived knife-edge and route 2 (`|O_0| < |S|`) is the robust one to build on.
+That is right for `beta` and **wrong for the floor**: in a *complete* design both
+leakages are knife-edged at `confound = 1` exactly, but in an *incomplete* design
+`beta_g` is **graded** in confounding — 8 non-degenerate cells with a nonzero
+floor across the two incomplete configurations. The floor is not a knife-edge; it
+needs the conjunction.
+
 ## 5b. What this does and does not establish
 
 **Does.** The coverage horn of the step (c) dichotomy is real and observable, and
