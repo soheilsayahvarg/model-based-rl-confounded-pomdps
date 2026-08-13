@@ -1,0 +1,335 @@
+{
+  "rows": [
+    {
+      "schedule": "A  kappa=0.5",
+      "tau": 0.0,
+      "kappa": 0.5,
+      "e": -0.5,
+      "N": 2000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 0.3321174703626949,
+      "width": 0.10504933884243269,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "A  kappa=0.5",
+      "tau": 0.0,
+      "kappa": 0.5,
+      "e": -0.5,
+      "N": 8000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 0.7407534449021123,
+      "width": 0.06129317715879068,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "A  kappa=0.5",
+      "tau": 0.0,
+      "kappa": 0.5,
+      "e": -0.5,
+      "N": 32000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.2300309166857317,
+      "width": 0.03561247370886904,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "A  kappa=0.5",
+      "tau": 0.0,
+      "kappa": 0.5,
+      "e": -0.5,
+      "N": 128000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.6376870946492652,
+      "width": 0.02050932883939379,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "tau": 0.0,
+      "kappa": 1.0,
+      "e": 0.0,
+      "N": 2000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.4712777636966063,
+      "width": 0.10005767902941114,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "tau": 0.0,
+      "kappa": 1.0,
+      "e": 0.0,
+      "N": 8000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.7006920751681658,
+      "width": 0.05186138732248972,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "tau": 0.0,
+      "kappa": 1.0,
+      "e": 0.0,
+      "N": 32000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.8440945701228042,
+      "width": 0.026460403393553704,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "tau": 0.0,
+      "kappa": 1.0,
+      "e": 0.0,
+      "N": 128000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.9185956099949426,
+      "width": 0.013598794005211811,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "tau": 0.0,
+      "kappa": 1.5,
+      "e": 0.5,
+      "N": 2000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.4981311344959773,
+      "width": 0.09314640716338171,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "tau": 0.0,
+      "kappa": 1.5,
+      "e": 0.5,
+      "N": 8000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.6988418326611565,
+      "width": 0.04700546175157723,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "tau": 0.0,
+      "kappa": 1.5,
+      "e": 0.5,
+      "N": 32000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.8345043212221348,
+      "width": 0.0258261534976185,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "tau": 0.0,
+      "kappa": 1.5,
+      "e": 0.5,
+      "N": 128000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.8764298110290607,
+      "width": 0.02108682556964742,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "tau": 0.5454545454545454,
+      "kappa": 0.9090909090909091,
+      "e": 0.4545454545454546,
+      "N": 2000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.2914982484840756,
+      "width": 0.10331845359523825,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "tau": 0.5454545454545454,
+      "kappa": 0.9090909090909091,
+      "e": 0.4545454545454546,
+      "N": 8000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.460353558568182,
+      "width": 0.08480003477858396,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "tau": 0.5454545454545454,
+      "kappa": 0.9090909090909091,
+      "e": 0.4545454545454546,
+      "N": 32000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.5613542214000866,
+      "width": 0.0648693383200656,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "tau": 0.5454545454545454,
+      "kappa": 0.9090909090909091,
+      "e": 0.4545454545454546,
+      "N": 128000,
+      "regret": 0.0,
+      "modal": "greedy_lo",
+      "vlow": 1.6163376227390096,
+      "width": 0.04787324775605521,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    }
+  ],
+  "summary": [
+    {
+      "schedule": "A  kappa=0.5",
+      "e": -0.5,
+      "regret_slope": 0.0,
+      "predicted": "decreasing",
+      "width_slope": -0.39267442630252813,
+      "width_pred": -0.25
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "e": 0.0,
+      "regret_slope": 0.0,
+      "predicted": "flat",
+      "width_slope": -0.48043347832222105,
+      "width_pred": 0.0
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "e": 0.5,
+      "regret_slope": 0.0,
+      "predicted": "increasing",
+      "width_slope": -0.36467350998492226,
+      "width_pred": 0.25
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "e": 0.4545454545454546,
+      "regret_slope": 0.0,
+      "predicted": "increasing",
+      "width_slope": -0.18579736178004688,
+      "width_pred": 0.2272727272727273
+    }
+  ],
+  "v_true": {
+    "greedy_lo": 2.01771296,
+    "greedy_hi": 0.99339296,
+    "always_0": 1.8647999999999996,
+    "always_1": 1.6944,
+    "uniform": 1.505,
+    "soft": 1.76121824
+  },
+  "optimal": "greedy_lo"
+}

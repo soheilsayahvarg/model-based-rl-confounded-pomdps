@@ -139,6 +139,19 @@ grid: **`e_paper > 0` in 30/30 cells**, minimum `0.0217` at `alpha=10, c2=2`.
 This reframes the whole contribution. We are not exhibiting a flaw; we are
 locating the paper's schedule on a trade-off curve and naming the price it pays.
 
+> **Scope, added after `regret_vs_schedule.md`.** The algebra above is unaffected,
+> but the emphasis on "leaky" is load-bearing and was under-weighted here. On a
+> design satisfying the paper's completeness assumption, the value gradient has
+> **exactly zero** mass in the design null (`beta_g = 0.000e+00`, measured for
+> three policies at the exact bridges), so `||g||_{H^-1}` is signal-dominated, the
+> width shrinks under *every* schedule, and selection is unaffected: four
+> schedules including this one give `0.000` regret at every `N` tested. So
+> `e_paper > 0` is real algebra whose **decision-level consequence requires
+> `beta_g > 0`**, i.e. `C*_pi = infinity` by the paper's Lemma C.1 — outside its
+> own assumptions. Where the paper's assumptions hold, this result is
+> decision-irrelevant. The regime where it could bite is the incomplete design of
+> `completeness_and_h4.md`, and the decision-level test has not been run there.
+
 ### 3.4 Scope: this is the exact-null specialisation
 
 (H1)'s exactness is a property of the **tabular delta-kernel**, where the design

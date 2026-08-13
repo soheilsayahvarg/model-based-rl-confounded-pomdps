@@ -37,6 +37,8 @@ about a research line.
 | (c) A proposition on non-contraction | **done, reviewed** | Width branch survives and locates the anchor paper; coverage branch refuted on this environment |
 | Re-run the projected-width slope at 20 seeds | **done** | Geometry confirmed to 0.001; the *deployed* estimator refuted |
 | Run part (c) coverage where completeness FAILS | **done** | Coverage branch confirmed; complete-design control clean at 40/40 |
+| Does the width schedule change the *decision*? | **done** | **No**, where completeness holds: `beta_g = 0` exactly, 0.000 regret under all four schedules |
+| Decision-level test where `beta_g > 0` | **required** | The only regime where `e > 0` could degrade selection |
 
 ## How (b) got unblocked
 
@@ -107,6 +109,16 @@ for every admissible `(alpha, c2)` — 30/30 cells, minimum 0.0217. **The paper'
 own schedule never promises a contracting region**, and the penalty it assigns a
 leaky policy grows with `N`. The dichotomy explains the paper's design; it does
 not indict it.
+
+**But the word "leaky" is load-bearing, and we under-weighted it.** Asking whether
+the schedule changes the *decision* rather than the interval, the answer on a
+complete design is **no**: the value gradient has exactly zero mass in the design
+null (`beta_g = 0.000e+00`, three policies, at the exact bridges), so the width is
+signal-driven and shrinks under every schedule, and all four — including the
+paper's own — select the optimal policy at every `N`. Completeness kills both
+halves of (H4) at once, the truth's and the gradient's. `e_paper > 0` is real
+algebra whose practical bite needs `C*_pi = infinity`. See
+`docs/regret_vs_schedule.md`.
 
 **What round 6 refuted**, in full in `docs/noncontraction.md` §5.5 and §7:
 

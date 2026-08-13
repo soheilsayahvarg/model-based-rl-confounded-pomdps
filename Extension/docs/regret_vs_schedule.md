@@ -79,7 +79,109 @@ boundary.
 
 ## 4. Measurements
 
-*(added after §1–§3 were committed)*
+### 4.1 Run 1 was mis-designed, and §3's table contradicted §2
+
+Two defects, both mine, both found before any conclusion was drawn.
+
+**The prediction table disagreed with its own mechanism.** §2 says that when
+`e > 0` "selection is decided by which policy has the smallest
+`||g_pi||_{H^-1}`". Once selection reaches that policy it **stays there** — the
+penalty growing further changes nothing. So the mechanism implies **flat at the
+attractor**, and §3's "increasing" was inconsistent with the paragraph above it.
+Measured: regret pinned at `0.5127` (`uniform`) for schedules B, C and the paper
+row at every `N`. That is the attractor, not a ceiling — `greedy_hi` at `1.0243`
+was available and never selected.
+
+**The four schedules did not start in the same place.** Run 1 used one shared
+constant, but schedules A–C normalise by `sigma2 ≈ 0.015` and the paper row by
+`1`, giving starting widths of `0.553 / 1.045 / 1.369 / 0.665`. Three of the four
+began *already inside* the attractor, so "does regret degrade with `N`" could not
+have been observed either way. **This is the third experiment in this extension
+that could not have shown the effect it was built to test**, after the coverage
+crossing at `N = 1.7e9` and the `validity 36/36` grid. The pattern is now
+established enough to be worth naming: the failure is always the same, checking
+whether the measurement range straddles the predicted transition *before* running.
+
+Run 2 calibrates each schedule so its width at the smallest `N` is `0.12`, below
+the `~0.19` at which schedule A recovers the optimal policy, so every schedule
+starts with the *correct* selection and the sweep tests slope alone.
+
+### 4.2 The answer is no
+
+Calibrated, 5 seeds:
+
+| `N` | A (`e`=−0.50) | B (`e`=0.00) | C (`e`=+0.50) | paper (`e`=+0.455) |
+|---|---|---|---|---|
+| 2,000 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| 8,000 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| 32,000 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| 128,000 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+
+> **On this environment the width schedule does not change the decision.** Every
+> schedule, including the two with `e > 0` and the paper's own, selects the
+> optimal policy at every sample size once started below the decision boundary.
+
+And the width **shrinks in all four**, with slopes `−0.393 / −0.480 / −0.365 /
+−0.186` against `e/2` predictions of `−0.250 / 0.000 / +0.250 / +0.227`. The
+`e > 0` schedules do not grow. The measured slopes instead track `(tau-1)/2` —
+`−0.5 / −0.5 / −0.5 / −0.227` — which is the **signal-dominated** regime.
+
+### 4.3 Why, verified analytically
+
+The `N^(e/2)` law needs the null term to dominate `||g||_{H^-1}`, which needs
+`beta_g = ||P_Nul g|| > 0`. On the toy it does not. Measuring the value gradient
+against the population design null, at the exact bridges:
+
+| policy | `\|\|g\|\|` | `\|\|P_Nul g\|\|` | share |
+|---|---|---|---|
+| `greedy_lo` | 0.8865 | **0.000e+00** | 0.00% |
+| `uniform` | 0.7422 | **0.000e+00** | 0.00% |
+| `soft` | 0.7808 | **0.000e+00** | 0.00% |
+
+Exactly zero, not small. Combined with `beta_pop = 5.4e-16` from
+`completeness_and_h4.md`:
+
+> **Completeness kills both halves of (H4) at once.** Where the anchor paper's
+> Assumption 3.3 holds, neither the truth nor the value gradient has any mass in
+> the design's null space, so the width is signal-driven, shrinks with `N` under
+> every schedule, and no schedule can degrade the decision.
+
+This is the same conclusion the review reached from the paper's side — Lemma C.1
+ties population gradient leakage to `C*_pi = infinity` — arrived at here by direct
+measurement.
+
+### 4.4 What this costs us
+
+`noncontraction.md` §3.3 called `e_paper > 0` "the one genuinely new consequence",
+with the reading that the paper's penalty for a leaky policy grows with `N`. The
+algebra is unaffected and still holds for every admissible `(alpha, c2)`. **Its
+practical bite, however, is conditional on `beta_g > 0`**, which by Lemma C.1
+means `C*_pi = infinity` — outside the paper's own assumptions. Where the paper's
+assumptions hold, `e_paper > 0` is **decision-irrelevant**, and this run is the
+evidence.
+
+That is a real reduction in what the result claims, and it should be applied to
+`noncontraction.md` and to the README rather than left in this file.
+
+### 4.5 What is still open
+
+The decision-level test has **not** been run where `beta_g > 0`. The environment
+for it is the same one `completeness_and_h4.md` identified — `(4,6,2)`, incomplete
+at every confounding level — and that is the only place the `e > 0` schedules
+could degrade selection. Until it is run, "the schedule changes the decision"
+has no confirmed instance, exactly as the coverage branch had none before.
+
+### 4.6 Summary
+
+| claim | status |
+|---|---|
+| §3's "increasing regret" for `e > 0` | **refuted** — the mechanism implies an attractor, and §3 contradicted §2 |
+| width schedule changes the decision (complete design) | **refuted** — 0.0000 regret, 4 schedules × 4 `N` |
+| `beta_g = 0` under completeness | **confirmed**, exactly, 3 policies |
+| width `∝ N^(e/2)` on the toy | **does not apply** — signal-dominated, tracks `(tau-1)/2` |
+| `e_paper > 0` as algebra | unaffected |
+| `e_paper > 0` as a practical consequence | **scoped down** — needs `C*_pi = infinity` |
+| decision degradation where `beta_g > 0` | **not run** |
 
 ## 5. Files
 
