@@ -33,8 +33,8 @@ about a research line.
 | Re-run (a) at `confound < 1.0`, per-action, 20 seeds | **done** | Surviving results confirmed; middle tier decays at exactly `N^-1` |
 | Gap-free rank selection (parallel analysis) | **done** | Correct in every cell at every `N`; supersedes the eigengap rule |
 | (b) Model-free pessimism, to observe the divergence | **done, reviewed** | Leakage mechanism survives and is causal; headline number withdrawn |
-| Reproduce the review's §3/§5/§6 numbers independently | **required** | Quoted, not yet verified here |
-| Re-run the leakage table at 20 seeds | **required** | PA rank carries ±1 noise at `N=4,000` |
+| Reproduce the review's §3 independently | **done** | Exact population sweep, a different route than the review's; §5/§6 still quoted |
+| Re-run the leakage table at 20 seeds | **done, and superseded** | The empirical measure is biased low where leakage is large; use the population computation instead |
 | Check the omitted bridge-class bound `M_R` | **done** | Omission real (excursion 14x the a priori bound); divergence survives it |
 | Same check on the model-based ellipsoid | **done** | Same verdict; and the norm ball beats our own repair at `c=1` |
 | Compare the repair against the norm-constrained baseline | **done, reviewed** | Magnitudes invalid (solver + class-shape defects); D1/D2 survive |

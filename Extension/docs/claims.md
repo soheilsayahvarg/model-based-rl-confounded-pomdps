@@ -45,15 +45,16 @@ result.
 
 | claim | status | where |
 |---|---|---|
-| Gradient leakage is the causal driver, not conditioning | **scoped** | `family_pessimism.md` §3. Causal in the alignment sweep; but population leakage requires confounding (see two-switch below), and by the paper's Lemma C.1 equals `C*_pi = infinity` |
+| Gradient leakage is the causal driver, not conditioning | **holds, scoped** | `family_pessimism.md` §3 and §4b. Reproduced exactly in the population with the null space held rank-1 and `cond(H)` moving 1.58×. Scope: population leakage requires confounding, and by Lemma C.1 equals `C*_pi = infinity` |
 | The `-63` headline | **withdrawn** | our width rule used global `lambda_min` (= the ridge) where Phase 3 used the smallest *retained* eigenvalue |
 | The confidence region never contracts | **holds** | §4; and generalised by step (c) |
 | Projected width shrinks at `N^-1/2` | **corrected to `N^-1/4`** | our own published numbers gave `0.667/0.236 = 2.826` against `64^0.25 = 2.828`; caught by prediction, not re-measurement |
 | "No chain to compound through" | **refuted as stated** | later stages contribute 12–45.6% of the variance. What survives: *multiplicative* compounding is excluded, propagation is additive |
 | "Coverage and leakage are one phenomenon" | **refuted as an identity** | alignment sweep holds coverage fixed while the penalty moves 14× |
 | "Validity 36/36" | **withdrawn as evidence** | the grid could not have produced a violation |
-| §3/§5/§6 numbers reproduced independently | **open** | quoted from the review's scripts, never re-run here |
-| Leakage table at 20 seeds | **open** | PA rank carries ±1 noise at `N=4,000` |
+| §3 reproduced independently | **holds** | `family_pessimism.md` §4b, by a *different route* — exact population sweep, leakage 78×, ratio 24.7→1.014, `cond(H)` only 1.58× |
+| §5/§6 numbers reproduced independently | **open** | still quoted from the review's scripts |
+| Leakage table at 20 seeds | **superseded** | 6/8 cells agree with the population; the empirical PA measure **under-reports** where leakage is large and has a 0.02–0.03 noise floor where it is zero. More seeds do not fix a biased estimator — use the population computation |
 
 ## The bridge class
 

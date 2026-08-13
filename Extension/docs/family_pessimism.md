@@ -90,6 +90,59 @@ environment or this schedule — it is the boundary case `e = 0` of a one-parame
 dichotomy in which no ridge schedule buys contraction without losing coverage.
 See `noncontraction.md`.
 
+## 4b. §3 reproduced independently, and the leakage table at 20 seeds
+
+Both debts this document has carried since it was written are now discharged, and
+§3 was reproduced **by a different route than the review used**, which is stronger
+than re-running its script.
+
+**The alignment sweep, done in the population.** Since the gradient's profile is
+the observation marginal `nu1 = E^T p1` and the design's span is computable in
+closed form, the sweep needs no sampling and no rank selection at all. Emission
+rows are interpolated toward their mean, holding `confound = 1.0` so the
+per-action span stays rank 1 throughout:
+
+| `alpha` | span rank | `cond(H)` | `beta_g` | ratio unproj/proj |
+|---|---|---|---|---|
+| 0.00 | 1 | 4.53e+02 | **0.7578** | **24.74** |
+| 0.40 | 1 | 3.46e+02 | 0.5274 | 11.59 |
+| 0.80 | 1 | 2.93e+02 | 0.1926 | 3.50 |
+| 0.95 | 1 | 2.86e+02 | 0.0487 | 1.30 |
+| 0.99 | 1 | 2.86e+02 | **0.0098** | **1.014** |
+
+Leakage moves **78×**, the width ratio follows it monotonically from `24.7` to
+`1.014`, and `cond(H)` moves only **1.58×** across the whole sweep with the span
+rank fixed at 1 in every row.
+
+> **§3 survives independent reproduction.** The null space is held fixed and the
+> conditioning barely moves; the penalty is set by how the value gradient sits
+> relative to that null space, and by nothing else. The review measured
+> `0.381 -> 0.0004` with ratio `15.9 -> 1.07`; the constants differ because the
+> alignment knob differs, but the structure is identical and here it is exact.
+
+**The leakage table at 20 seeds, against the population truth.** The empirical
+PA-based measure agrees with the exact population value in **6 of 8 cells**. The
+two disagreements are informative rather than random:
+
+| cell | empirical (20 seeds) | population | direction |
+|---|---|---|---|
+| (2,6,4) cf 1.0, act 1 | 0.634 ± 0.104 | **0.758** | under-reports |
+| (4,6,2) cf 1.0, act 1 | 0.585 ± 0.082 | **0.698** | under-reports |
+| (2,6,4) cf 0.6, both | 0.022–0.026 | **exactly 0** | noise floor |
+
+Two lessons, and both change practice rather than just adding error bars:
+
+1. **The empirical measure is biased low exactly where leakage is large**, because
+   PA over-selects rank at `confound = 1.0` and an over-selected basis absorbs
+   part of the leak. So `family_pessimism.md`'s original PA-based §3 numbers
+   understate the effect they were used to demonstrate.
+2. **It has a noise floor of about 0.02–0.03** where the true leakage is zero.
+
+**Single-cell empirical leakage should therefore be read as ±0.05 at best, and the
+population computation preferred wherever it is available — which is everywhere,
+since it is linear algebra.** That supersedes the "re-run at 20 seeds" item: more
+seeds do not fix a biased estimator.
+
 ## 5. The family claim, correctly scoped
 
 The divergence **is** shared, but the magnitude we published was ours, not the
