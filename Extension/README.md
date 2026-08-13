@@ -137,17 +137,25 @@ law applies, the width **grows** with data under `e > 0` (+0.207 measured), and
 **selection degrades**: under the paper's own schedule regret runs
 `0.064 -> 0.098 -> 0.123` while the `e = 0` control stays flat at `0.064` to the
 digit. That is the first confirmed decision-level instance of the branch, at 3
-seeds and a modest effect size — it needs 20 seeds before the numbers are
-quotable.
+20 seeds with 95% intervals, and under the paper's own schedule the two curves
+**cross**: pessimism is better at `N = 2,000` (0.069 vs 0.164) and worse from
+`N = 32,000` on (0.123 vs 0.064). The layer helps when data is scarce, which is
+what it is for, and then actively hurts as data accumulates.
 
 The cleanest comparison the extension has produced sits in the same run. At
 `kappa = 1.5`, on identical data and identical fits, the only difference being
 whether the pessimism layer is applied:
 
 ```text
-plug-in      0.064 -> 0.022 -> 0.000 -> 0.000     (improves with data)
-pessimistic  0.064 -> 0.161 -> 0.120 -> 0.180     (degrades with data)
+                N =    2,000     8,000    32,000   128,000
+plug-in            0.0894    0.0226    0.0000    0.0000
+pessimistic        0.0952    0.1218    0.1714    0.1804
 ```
+
+20 seeds, 95% intervals. At `N = 128,000` all twenty seeds put pessimism at
+`0.1804` and all twenty put the plug-in at the optimum — zero interval on both,
+complete separation, from a start where they are statistically
+indistinguishable.
 
 So it is not that pessimism is merely worse — the layer actively destroys a
 selection the underlying estimates get right, faster the more data it is given.

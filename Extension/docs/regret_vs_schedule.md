@@ -235,7 +235,70 @@ On the toy (§4.2) the slopes tracked `(tau-1)/2` — signal-dominated, because
 (+0.207)**, measured with the real value gradient in an environment whose
 behaviour policy is not degenerate. This is the regime the toy could not provide.
 
-### 6.2 The decision degrades
+### 6.2b At 20 seeds, with the plug-in on identical fits
+
+**This supersedes the 3-seed tables in §6.2–§6.4.** The plug-in is now computed
+inside the same loop from the same `b_hat`, so the only difference between the two
+columns is whether the pessimism layer is applied. `±` is a 95% interval.
+
+**Schedule C, `e = +0.5`** — the clearest cell in the extension:
+
+| `N` | pessimistic | plug-in |
+|---|---|---|
+| 2,000 | 0.0952 ± 0.0195 | 0.0894 ± 0.0194 |
+| 8,000 | 0.1218 ± 0.0210 | 0.0226 ± 0.0138 |
+| 32,000 | 0.1714 ± 0.0177 | **0.0000 ± 0.0000** |
+| 128,000 | **0.1804 ± 0.0000** | **0.0000 ± 0.0000** |
+
+At `N = 128,000` **all 20 seeds** put pessimism at `0.1804` and **all 20 seeds**
+put the plug-in at the optimum. Zero interval on both, complete separation. They
+start statistically indistinguishable and diverge monotonically.
+
+**The paper's own schedule, `e = +0.455`** — with a crossing:
+
+| `N` | pessimistic | plug-in |
+|---|---|---|
+| 2,000 | **0.0694 ± 0.0098** | 0.1641 ± 0.0000 |
+| 8,000 | 0.0943 ± 0.0205 | 0.1641 ± 0.0000 |
+| 32,000 | 0.1225 ± 0.0000 | **0.0644 ± 0.0000** |
+| 128,000 | 0.1225 ± 0.0000 | **0.0644 ± 0.0000** |
+
+Pessimism is **better** at small `N` and **worse** at large `N`. That is the
+sharpest possible form of the claim: the layer helps when data is scarce, which is
+what it is for, and then actively hurts as data accumulates.
+
+**Slopes**, `d(regret)/d(log N)`:
+
+| schedule | `e` | pessimistic | plug-in |
+|---|---|---|---|
+| A `kappa=0.5` | −0.50 | +0.0056 | +0.0022 |
+| B `kappa=1.0` | 0.00 | −0.0127 | −0.0370 |
+| **C `kappa=1.5`** | +0.50 | **+0.0220** | **−0.0210** |
+| **paper** | +0.455 | **+0.0135** | **−0.0288** |
+
+> Under `e > 0` the two slopes have **opposite signs**, in both schedules that
+> have it. More data converges the plug-in and diverges the pessimistic selection
+> built on the same estimates.
+
+### 6.2c Two corrections the 20-seed run forces
+
+**Schedule B is not flat.** §6.2 reported `0.0644` at every `N` "to the digit" and
+called it a clean `e = 0` control. At 20 seeds it runs `0.1230 → 0.0644 → 0.0644
+→ 0.0644` — it *improves* and then plateaus. The 3-seed flatness was an artifact
+of three seeds happening to agree. The `e = 0` prediction of "no trend" is not
+supported; the measured slope is `−0.0127`.
+
+**Width magnitudes are not reproduced, only signs.** Measured
+`−0.274 / −0.127 / +0.181 / +0.100` against `e/2` of
+`−0.250 / 0.000 / +0.250 / +0.227`. Every sign is right and both `e > 0`
+schedules do grow, which is the load-bearing part. But the magnitudes are
+systematically **compressed toward** the signal-dominated value `(tau-1)/2`,
+by between 9% and 28% of the gap. That is consistent with `beta_g = 0.364` giving
+partial rather than dominant null weight — a mixture of the two regimes — but the
+mixing proportions are not constant across schedules, so this is a **post-hoc
+reading, not a prediction**, and is recorded as such.
+
+### 6.2 The decision degrades (3 seeds — superseded by §6.2b)
 
 Selection regret, optimal `always_1` at `V_true = 2.3157`:
 

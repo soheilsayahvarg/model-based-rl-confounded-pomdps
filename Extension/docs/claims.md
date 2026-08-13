@@ -106,9 +106,11 @@ result.
 |---|---|---|
 | The width schedule changes the decision, under completeness | **refuted** | `regret_vs_schedule.md` §4.2. `beta_g = 0` exactly, 0.000 regret under all four schedules |
 | `beta_g = 0` under completeness | **holds** | exactly, three policies |
-| The width schedule changes the decision where both switches are on | **holds at 3 seeds** | §6.2. `e=0` control flat to the digit; `C` and the paper row degrade |
-| Under `e > 0`, the plug-in converges while pessimism diverges on identical fits | **holds at 3 seeds** | §6.4, `kappa=1.5`: `0.064 -> 0.000` against `0.064 -> 0.180` |
-| Effect size quotable | **open** | 20-seed re-run with confidence intervals |
+| The width schedule changes the decision where both switches are on | **holds, 20 seeds** | §6.2b. At `kappa=1.5`, `N=128k`: pessimism 0.1804 and plug-in 0.0000, both with zero interval across 20 seeds |
+| Under `e > 0`, the plug-in converges while pessimism diverges on identical fits | **holds, 20 seeds** | §6.2b. Opposite-signed slopes in both `e>0` schedules; under the paper's own schedule they **cross** — pessimism better at `N=2k`, worse at `N=32k`+ |
+| Effect size quotable | **holds** | 20 seeds with 95% intervals; the `kappa=1.5` separation is complete |
+| Schedule B is a flat `e=0` control | **refuted** | 3-seed artifact; at 20 seeds it runs 0.1230 → 0.0644 and plateaus, slope −0.0127 |
+| Width slope *magnitudes* equal `e/2` | **scoped** | signs right in all four, magnitudes compressed 9–28% toward the signal-dominated value; post-hoc reading |
 | Pessimism never finds the optimum here, under any schedule | **holds** | unexplained, and separate from the schedule story |
 
 ---
