@@ -1,0 +1,312 @@
+{
+  "rows": [
+    {
+      "schedule": "A  kappa=0.5",
+      "tau": 0.0,
+      "kappa": 0.5,
+      "e": -0.5,
+      "N": 2000,
+      "regret": 0.14182069333045386,
+      "modal": "soft",
+      "vlow": -0.011679182739488592,
+      "width": 0.15747718595035187,
+      "picks": [
+        "soft",
+        "uniform",
+        "soft"
+      ]
+    },
+    {
+      "schedule": "A  kappa=0.5",
+      "tau": 0.0,
+      "kappa": 0.5,
+      "e": -0.5,
+      "N": 8000,
+      "regret": 0.08380218828208823,
+      "modal": "greedy_lo",
+      "vlow": 0.12810808170559168,
+      "width": 0.11375645435134703,
+      "picks": [
+        "soft",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "A  kappa=0.5",
+      "tau": 0.0,
+      "kappa": 0.5,
+      "e": -0.5,
+      "N": 32000,
+      "regret": 0.09767098929214339,
+      "modal": "greedy_lo",
+      "vlow": 0.29999417705835757,
+      "width": 0.09506471627389335,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "always_0"
+      ]
+    },
+    {
+      "schedule": "A  kappa=0.5",
+      "tau": 0.0,
+      "kappa": 0.5,
+      "e": -0.5,
+      "N": 128000,
+      "regret": 0.16411879671117502,
+      "modal": "always_0",
+      "vlow": 0.6122958723203,
+      "width": 0.05683853014030708,
+      "picks": [
+        "always_0",
+        "always_0",
+        "always_0"
+      ]
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "tau": 0.0,
+      "kappa": 1.0,
+      "e": 0.0,
+      "N": 2000,
+      "regret": 0.06444708558262757,
+      "modal": "greedy_lo",
+      "vlow": 0.6659382907036056,
+      "width": 0.177035615469717,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "tau": 0.0,
+      "kappa": 1.0,
+      "e": 0.0,
+      "N": 8000,
+      "regret": 0.06444708558262757,
+      "modal": "greedy_lo",
+      "vlow": 1.0845813144494836,
+      "width": 0.16422368540917243,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "tau": 0.0,
+      "kappa": 1.0,
+      "e": 0.0,
+      "N": 32000,
+      "regret": 0.06444708558262757,
+      "modal": "greedy_lo",
+      "vlow": 1.2500264348770755,
+      "width": 0.16187339335055057,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "tau": 0.0,
+      "kappa": 1.0,
+      "e": 0.0,
+      "N": 128000,
+      "regret": 0.06444708558262757,
+      "modal": "greedy_lo",
+      "vlow": 1.4353060909619302,
+      "width": 0.1191832426043672,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "tau": 0.0,
+      "kappa": 1.5,
+      "e": 0.5,
+      "N": 2000,
+      "regret": 0.06444708558262757,
+      "modal": "greedy_lo",
+      "vlow": 1.3701725117837864,
+      "width": 0.1779127896006123,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "tau": 0.0,
+      "kappa": 1.5,
+      "e": 0.5,
+      "N": 8000,
+      "regret": 0.16112899297989816,
+      "modal": "uniform",
+      "vlow": 1.1445243064951054,
+      "width": 0.2122550811800342,
+      "picks": [
+        "uniform",
+        "uniform",
+        "soft"
+      ]
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "tau": 0.0,
+      "kappa": 1.5,
+      "e": 0.5,
+      "N": 32000,
+      "regret": 0.12029152841956166,
+      "modal": "uniform",
+      "vlow": 0.8709465492547634,
+      "width": 0.3138732642017701,
+      "picks": [
+        "uniform",
+        "uniform",
+        "always_1"
+      ]
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "tau": 0.0,
+      "kappa": 1.5,
+      "e": 0.5,
+      "N": 128000,
+      "regret": 0.1804372926293425,
+      "modal": "uniform",
+      "vlow": 0.5626043697670368,
+      "width": 0.407015245745356,
+      "picks": [
+        "uniform",
+        "uniform",
+        "uniform"
+      ]
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "tau": 0.5454545454545454,
+      "kappa": 0.9090909090909091,
+      "e": 0.4545454545454546,
+      "N": 2000,
+      "regret": 0.06444708558262757,
+      "modal": "greedy_lo",
+      "vlow": 0.4251642068221361,
+      "width": 0.1688492582955254,
+      "picks": [
+        "greedy_lo",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "tau": 0.5454545454545454,
+      "kappa": 0.9090909090909091,
+      "e": 0.4545454545454546,
+      "N": 8000,
+      "regret": 0.09767098929214339,
+      "modal": "greedy_lo",
+      "vlow": 0.6220789248823472,
+      "width": 0.2066242393681422,
+      "picks": [
+        "always_0",
+        "greedy_lo",
+        "greedy_lo"
+      ]
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "tau": 0.5454545454545454,
+      "kappa": 0.9090909090909091,
+      "e": 0.4545454545454546,
+      "N": 32000,
+      "regret": 0.12251239368100952,
+      "modal": "soft",
+      "vlow": 0.6589237668279385,
+      "width": 0.23722250422858807,
+      "picks": [
+        "soft",
+        "soft",
+        "soft"
+      ]
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "tau": 0.5454545454545454,
+      "kappa": 0.9090909090909091,
+      "e": 0.4545454545454546,
+      "N": 128000,
+      "regret": 0.12251239368100952,
+      "modal": "soft",
+      "vlow": 0.5807918533435356,
+      "width": 0.2602954259413182,
+      "picks": [
+        "soft",
+        "soft",
+        "soft"
+      ]
+    }
+  ],
+  "summary": [
+    {
+      "schedule": "A  kappa=0.5",
+      "e": -0.5,
+      "regret_slope": 0.005825826997303502,
+      "width_slope": -0.23347857894054394,
+      "pred_e2": -0.25,
+      "pred_signal": -0.5
+    },
+    {
+      "schedule": "B  kappa=1.0",
+      "e": 0.0,
+      "regret_slope": 3.715096343220639e-18,
+      "width_slope": -0.08666855047422628,
+      "pred_e2": 0.0,
+      "pred_signal": -0.5
+    },
+    {
+      "schedule": "C  kappa=1.5",
+      "e": 0.5,
+      "regret_slope": 0.022154974094513138,
+      "width_slope": 0.2073060441970944,
+      "pred_e2": 0.25,
+      "pred_signal": -0.5
+    },
+    {
+      "schedule": "paper a=10,c2=1",
+      "e": 0.4545454545454546,
+      "regret_slope": 0.01435750835221053,
+      "width_slope": 0.10362368619771482,
+      "pred_e2": 0.2272727272727273,
+      "pred_signal": -0.2272727272727273
+    }
+  ],
+  "v_true": {
+    "greedy_lo": 2.2512764058839094,
+    "greedy_hi": 2.019145195750368,
+    "always_0": 2.151604694755362,
+    "always_1": 2.315723491466537,
+    "uniform": 2.1352861988371945,
+    "soft": 2.1932110977855275
+  },
+  "optimal": "always_1",
+  "beta": 1.177475622602174,
+  "beta_g": 0.3638742980477424,
+  "floor": 0.42845311564269456,
+  "confound": 0.9,
+  "config": [
+    4,
+    6,
+    2
+  ]
+}

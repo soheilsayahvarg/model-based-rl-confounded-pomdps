@@ -39,7 +39,9 @@ about a research line.
 | Run part (c) coverage where completeness FAILS | **done** | Coverage branch confirmed; complete-design control clean at 40/40 |
 | Does the width schedule change the *decision*? | **done** | **No**, where completeness holds: `beta_g = 0` exactly, 0.000 regret under all four schedules |
 | Map `beta_g`, the gradient's leakage | **done** | Two independent switches: incompleteness leaks the truth, confounding leaks the gradient |
-| Decision-level test at a nonzero floor | **required** | `(4,6,2)` at `confound=0.9`, floor `0.43` — non-degenerate |
+| Decision-level test at a nonzero floor | **done** | Width tracks `e/2` and **grows**; regret degrades under the paper's own schedule |
+| Repeat the decision sweep at 20 seeds | **required** | 3 seeds; effect real but small, not yet quotable |
+| Does the plug-in find `always_1`? | **required** | No pessimistic schedule ever does; cause unexplained |
 
 ## How (b) got unblocked
 
@@ -120,6 +122,16 @@ paper's own — select the optimal policy at every `N`. Completeness kills both
 halves of (H4) at once, the truth's and the gradient's. `e_paper > 0` is real
 algebra whose practical bite needs `C*_pi = infinity`. See
 `docs/regret_vs_schedule.md`.
+
+**Where both switches are on, it does bite.** `beta` is switched by an inadequate
+negative control (`|O_0| < |S|`) and `beta_g` by confounding, so the floor
+`W >= beta*beta_g` is nonzero exactly when the two meet — and there the `N^(e/2)`
+law applies, the width **grows** with data under `e > 0` (+0.207 measured), and
+**selection degrades**: under the paper's own schedule regret runs
+`0.064 -> 0.098 -> 0.123` while the `e = 0` control stays flat at `0.064` to the
+digit. That is the first confirmed decision-level instance of the branch, at 3
+seeds and a modest effect size — it needs 20 seeds before the numbers are
+quotable.
 
 **What round 6 refuted**, in full in `docs/noncontraction.md` §5.5 and §7:
 
