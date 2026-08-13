@@ -45,14 +45,17 @@ result.
 
 | claim | status | where |
 |---|---|---|
-| Gradient leakage is the causal driver, not conditioning | **holds, scoped** | `family_pessimism.md` §3 and §4b. Reproduced exactly in the population with the null space held rank-1 and `cond(H)` moving 1.58×. Scope: population leakage requires confounding, and by Lemma C.1 equals `C*_pi = infinity` |
+| "Gradient leakage is the causal driver, **not** conditioning" | **corrected — our own dichotomy was false** | `alignment_knob.md` §5.5. Exactly, `ratio = sqrt(1 + tan^2(theta) cond(H))`: conditioning enters as `sqrt(cond)` on equal footing with alignment. The penalty is their **product**. The dichotomy was read off a knob in which `tan(theta)` moves 119× and `sqrt(cond)` moves 1.26× |
+| Gradient leakage governs the penalty at fixed conditioning | **holds, as an identity** | `alignment_knob.md` §5.4, worst error `8.45e-15` over 17 cells of two independent knobs. Reliable everywhere, and *not a discovery* — no sweep could have refuted it |
+| The non-arithmetic content: real confounded POMDPs sit at `beta_g` = 0.46–0.76 | **holds** | so the penalty inherits essentially all of `sqrt(cond(H))`. *Why* `beta_g > 0` is the two-switch result, which is where §3's weight belongs |
 | The `-63` headline | **withdrawn** | our width rule used global `lambda_min` (= the ridge) where Phase 3 used the smallest *retained* eigenvalue |
 | The confidence region never contracts | **holds** | §4; and generalised by step (c) |
 | Projected width shrinks at `N^-1/2` | **corrected to `N^-1/4`** | our own published numbers gave `0.667/0.236 = 2.826` against `64^0.25 = 2.828`; caught by prediction, not re-measurement |
 | "No chain to compound through" | **refuted as stated** | later stages contribute 12–45.6% of the variance. What survives: *multiplicative* compounding is excluded, propagation is additive |
 | "Coverage and leakage are one phenomenon" | **refuted as an identity** | alignment sweep holds coverage fixed while the penalty moves 14× |
 | "Validity 36/36" | **withdrawn as evidence** | the grid could not have produced a violation |
-| §3 reproduced independently | **holds** | `family_pessimism.md` §4b, by a *different route* — exact population sweep, leakage 78×, ratio 24.7→1.014, `cond(H)` only 1.58× |
+| §3 reproduced independently | **holds, but the knob was degenerate** | `alignment_knob.md` §5.1–§5.2. Interpolating rows toward their mean scales row separation by `(1-alpha)` and `beta_g` tracks it at slope 0.954 — alignment and channel informativeness are one variable — and the span vector rotates 36.8°, so §4b's "the null space is FIXED" is false. Reproduced on a clean knob (prior tilt, `H` frozen algebraically, 3.09 decades of `beta_g`): the conclusion survives |
+| Step (b) §4's flat width is an independent result | **subsumed** | it is the same identity along a different axis: `cond(H) ≈ sigma/rho` gives `ratio ∝ rho^-1/2 ∝ N^1/4` under the implemented schedule; §4's own numbers give slope **0.265** against **0.25** |
 | §5/§6 numbers reproduced independently | **open** | still quoted from the review's scripts |
 | Leakage table at 20 seeds | **superseded** | 6/8 cells agree with the population; the empirical PA measure **under-reports** where leakage is large and has a 0.02–0.03 noise floor where it is zero. More seeds do not fix a biased estimator — use the population computation |
 
@@ -133,3 +136,18 @@ All four are the same failure: **not checking that the measurement range
 straddles the predicted transition before running.** The guard now in
 `run_regret_incomplete.py` — abort if the precondition fails — is the first
 structural fix rather than another individual correction.
+
+**A fifth incident, and it breaks that generalisation.** The step (b) alignment
+knob (`alignment_knob.md`) is an experiment that also could not fail, but for a
+*different* reason: its knob moved two variables at once, and the quantity it
+measured turned out to be an identity. No range check would have caught either.
+So the honest statement is not "one defect, one fix" but:
+
+| failure mode | instances | fix |
+|---|---|---|
+| the range cannot straddle the transition | 1, 2, 3, 4 | precondition guard, in place |
+| the knob confounds the treatment with something else | 5 | **none yet** — needs an explicit list of what each sweep holds fixed, verified numerically, not asserted in prose |
+| the measured relation is arithmetic | 5 | **none yet** — derive the closed form before sweeping |
+
+Two of the three modes have no structural fix. The claim that the guard is *the*
+fix was itself over-general.

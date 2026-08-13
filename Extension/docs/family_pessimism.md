@@ -48,9 +48,17 @@ magnitude and the width follows it exactly. **This is calibration-free and
 basis-choice-free**, and it is the column the paper should rest on.
 
 > Pessimism over a proximal bridge confidence region diverges when the value
-> gradient has mass in directions the data does not identify. Ill-conditioning is
-> necessary but not sufficient; the alignment between the value functional and the
-> null space decides it.
+> gradient has mass in directions the data does not identify.
+
+> **Correction (`alignment_knob.md` §5.5).** This paragraph used to continue:
+> *"Ill-conditioning is necessary but not sufficient; the alignment between the
+> value functional and the null space decides it."* **The second clause is wrong.**
+> The width ratio obeys, to machine precision,
+> `ratio = sqrt(1 + tan^2(theta) * cond(H))`, `sin(theta) = beta_g` — so
+> conditioning enters as `sqrt(cond(H))` on exactly equal footing with alignment.
+> The penalty is their **product**; neither decides it alone. The dichotomy was
+> read off a sweep in which `tan(theta)` moves 119× while `sqrt(cond(H))` moves
+> 1.26×, a 95:1 imbalance built into the knob.
 
 ## 4. THE OTHER RESULT THAT SURVIVES: the bound never tightens
 
@@ -114,11 +122,38 @@ Leakage moves **78×**, the width ratio follows it monotonically from `24.7` to
 `1.014`, and `cond(H)` moves only **1.58×** across the whole sweep with the span
 rank fixed at 1 in every row.
 
-> **§3 survives independent reproduction.** The null space is held fixed and the
-> conditioning barely moves; the penalty is set by how the value gradient sits
-> relative to that null space, and by nothing else. The review measured
-> `0.381 -> 0.0004` with ratio `15.9 -> 1.07`; the constants differ because the
-> alignment knob differs, but the structure is identical and here it is exact.
+> **This sweep is degenerate, and I found it myself before the round-8 review.**
+> See `alignment_knob.md`. Three corrections to the paragraph above:
+>
+> 1. **"The null space is held fixed" is false.** Only its *dimension* is fixed;
+>    the span vector rotates **36.8°** across the sweep.
+> 2. **The knob confounds alignment with informativeness.** Interpolating rows
+>    toward their mean scales the row separation by exactly `(1-alpha)`, and
+>    `beta_g` tracks it with log–log slope **0.954** (`R^2` = 0.998). At
+>    `alpha = 0.99` the channel carries almost no information about the latent
+>    state, so leakage falls for a reason unrelated to identification geometry.
+> 3. **"and by nothing else" is wrong** — see the correction to §3 above.
+>
+> **What replaces it.** At `confound = 1.0` the normalised stage-2 design weight
+> sits on a single latent state whatever the prior is, so `H` is *algebraically*
+> independent of `p1`. Tilting `p1(t) = (1-t) p1_0 + t delta_{s_a}` therefore moves
+> alignment with the channel, the span, and `H` all frozen:
+>
+> | `t` | row sep | `max\|dH\|` | span rot | `beta_g` | ratio |
+> |---|---|---|---|---|---|
+> | 0.000 | 0.81364 | 0.00e+00 | 0.00° | 0.7578 | 24.738 |
+> | 0.400 | 0.81364 | 5.55e-17 | 0.00° | 0.4572 | 10.984 |
+> | 0.800 | 0.81364 | 5.55e-17 | 0.00° | 0.1345 | 3.056 |
+> | 0.999 | 0.81364 | 5.55e-17 | 0.00° | 0.00061 | 1.000 |
+>
+> Same curve, **3.09 decades** of leakage, channel untouched. §3's *conclusion*
+> survives on a clean knob. But the ratio matches the closed form
+> `sqrt(1 + tan^2(theta) cond(H))` to `8.45e-15` over all 17 cells of both sweeps,
+> so **no alignment sweep could have refuted it**: it is an identity about
+> ellipsoidal regions with an exact null space, not a fact about this environment.
+> §3 is therefore more reliable and less novel than it was written to be, and the
+> non-arithmetic content is that real confounded POMDPs sit at `beta_g` of
+> **0.46–0.76** — which is the two-switch result's territory, not this one's.
 
 **The leakage table at 20 seeds, against the population truth.** The empirical
 PA-based measure agrees with the exact population value in **6 of 8 cells**. The
