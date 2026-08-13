@@ -163,6 +163,38 @@ evidence.
 That is a real reduction in what the result claims, and it should be applied to
 `noncontraction.md` and to the README rather than left in this file.
 
+### 4.5b Predictions for the run where the floor is nonzero
+
+*Committed before `poc/run_regret_incomplete.py` existed. §6 holds the result.*
+
+`completeness_and_h4.md` §5c located the regime this test needs:
+`(4,6,2)` at `confound = 0.9`, where `beta = 1.178` and `beta_g = 0.364` give a
+floor of `0.428` — and, unlike `confound = 1.0`, the behaviour policy is **not**
+degenerate. **The precondition is verified this time before running**, which is
+what the previous two attempts skipped.
+
+With `beta_g > 0` the null term is no longer absent, so the `N^(e/2)` law should
+apply where §4.2 found it did not:
+
+| schedule | `e` | predicted width slope | predicted regret vs `N` |
+|---|---|---|---|
+| A `kappa=0.5` | −0.50 | −0.25 | stays at its start |
+| B `kappa=1.0` | 0.00 | 0.00 | stays at its start |
+| C `kappa=1.5` | +0.50 | +0.25 | **degrades into the attractor** |
+| paper | +0.455 | +0.227 | **degrades into the attractor** |
+
+All schedules are calibrated to the same width at the smallest `N`, below the
+decision boundary, so every one starts with the correct selection and the sweep
+tests slope alone — the §4.1 fix, carried forward.
+
+**What refutes this.** Width slopes that again track `(tau-1)/2` rather than
+`e/2` would mean `beta_g = 0.364` is still not enough for the null term to
+dominate, and the `N^(e/2)` law has no reachable regime at all on these
+environments. Regret flat under C and the paper row *with* the width confirmed
+growing would mean the penalty grows uniformly across candidates and cancels in
+the argmax — which would make `e > 0` decision-irrelevant everywhere, not just
+under completeness, and would be the headline.
+
 ### 4.5 What is still open
 
 The decision-level test has **not** been run where `beta_g > 0`. The environment
