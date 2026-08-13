@@ -275,17 +275,53 @@ scale whose worst candidate is `0.297`, at 3 seeds. **These numbers should not b
 quoted until the run is repeated at 20 seeds** — the same debt still outstanding
 for the step (b) leakage table.
 
-### 6.4 A side finding worth its own check
+### 6.4 The plug-in control, and a reversal I nearly published
 
-The optimal policy `always_1` (`V = 2.3157`) is **never selected by any schedule
-at any `N`**, including the ones that behave well. The best any pessimistic
-variant achieves is `greedy_lo` at regret `0.0644`. So on this environment
-pessimistic selection does not find the optimum even when the width is behaving —
-which is a different failure from the schedule story and is not explained by it.
-Whether the plug-in finds it here has not been checked, and should be: if the
-plug-in does, this is another instance of the dominance already reported in
-`pessimism_regenerated.md` §4; if it does not, the candidate set or the estimator
-is the cause, not pessimism.
+The optimal policy `always_1` is **never selected by any pessimistic schedule at
+any `N`**; the best any of them reaches is `greedy_lo` at regret `0.0644`. The
+obvious question is whether the plug-in does better.
+
+**First check said no, and that was wrong.** Run at `kappa = 0.5` only, the
+plug-in picks `always_0` and sits at regret `0.164` at every `N` — worse than
+schedule B's `0.0644`. Taken at face value that reverses the plug-in dominance
+reported in `pessimism_regenerated.md` §4, a claim that had survived seven review
+rounds. It does not, and the reason is that `b_hat` depends on `lambda_2`, so
+comparing a `kappa = 0.5` plug-in against a `kappa = 1.5` pessimistic run is not a
+control. Re-run at each schedule's **own** `kappa`:
+
+| `kappa` | `N` | plug-in regret | pessimistic regret |
+|---|---|---|---|
+| 0.5 | 2,000 → 128,000 | 0.131 / 0.164 / 0.164 / 0.164 | 0.142 / 0.084 / 0.098 / 0.164 |
+| 1.0 | | 0.164 / 0.064 / 0.064 / **0.000** | 0.064 / 0.064 / 0.064 / 0.064 |
+| **1.5** | | 0.064 / 0.022 / **0.000** / **0.000** | 0.064 / 0.161 / 0.120 / 0.180 |
+| 0.909 (paper) | | 0.164 / 0.164 / 0.064 / 0.064 | 0.064 / 0.098 / 0.123 / 0.123 |
+
+**The plug-in does find the optimum**, reaching `0.000` at `kappa = 1.0` and
+`kappa = 1.5`. No pessimistic schedule ever does. Dominance survives, and now
+holds in an incomplete design as well as a complete one.
+
+**And the `kappa = 1.5` row is the sharpest single comparison in this extension.**
+Same data, same fits, same sweep — the only difference is whether the pessimism
+layer is applied on top:
+
+```text
+plug-in      0.064 -> 0.022 -> 0.000 -> 0.000     (improves with data)
+pessimistic  0.064 -> 0.161 -> 0.120 -> 0.180     (degrades with data)
+```
+
+> Under `e > 0`, more data makes the plug-in converge to the optimal policy and
+> makes the pessimistic selection built on those same estimates diverge from it.
+
+That is stronger than either §6.2 or the dominance result alone, because it
+removes every confound between them: it is not that pessimism is worse, it is that
+the pessimism layer actively destroys a selection the underlying estimates get
+right, and does so faster the more data it is given.
+
+**Recorded as a near-miss.** The one-`kappa` version of this check produced a
+clean, quotable reversal of a load-bearing claim, and it was wrong. It was caught
+only because the control was run before writing it up. That is the fourth time in
+this extension a measurement's meaning turned on a design detail rather than on
+the number itself.
 
 ### 6.5 Summary
 
@@ -299,7 +335,9 @@ is the cause, not pessimism.
 | regret stable under `e < 0` | **not confirmed** — non-monotone, ends worse |
 | paper row width magnitude | **partially** — sign right, magnitude half |
 | effect size quotable | **no** — 3 seeds, needs 20 |
-| pessimism finds the optimum at all | **no**, under any schedule; unexplained |
+| pessimism finds the optimum at all | **no**, under any schedule |
+| the plug-in finds it | **yes**, regret 0.000 at `kappa` 1.0 and 1.5 — dominance survives, now in an incomplete design too |
+| plug-in improves while pessimism degrades, same fits | **confirmed** at `kappa=1.5`: 0.064→0.000 against 0.064→0.180 |
 
 ## 5. Files
 

@@ -41,7 +41,7 @@ about a research line.
 | Map `beta_g`, the gradient's leakage | **done** | Two independent switches: incompleteness leaks the truth, confounding leaks the gradient |
 | Decision-level test at a nonzero floor | **done** | Width tracks `e/2` and **grows**; regret degrades under the paper's own schedule |
 | Repeat the decision sweep at 20 seeds | **required** | 3 seeds; effect real but small, not yet quotable |
-| Does the plug-in find `always_1`? | **required** | No pessimistic schedule ever does; cause unexplained |
+| Does the plug-in find `always_1`? | **done** | **Yes**, regret 0.000 at `kappa` 1.0/1.5; a one-`kappa` version of this check nearly produced a false reversal |
 
 ## How (b) got unblocked
 
@@ -132,6 +132,20 @@ law applies, the width **grows** with data under `e > 0` (+0.207 measured), and
 digit. That is the first confirmed decision-level instance of the branch, at 3
 seeds and a modest effect size — it needs 20 seeds before the numbers are
 quotable.
+
+The cleanest comparison the extension has produced sits in the same run. At
+`kappa = 1.5`, on identical data and identical fits, the only difference being
+whether the pessimism layer is applied:
+
+```text
+plug-in      0.064 -> 0.022 -> 0.000 -> 0.000     (improves with data)
+pessimistic  0.064 -> 0.161 -> 0.120 -> 0.180     (degrades with data)
+```
+
+So it is not that pessimism is merely worse — the layer actively destroys a
+selection the underlying estimates get right, faster the more data it is given.
+Plug-in dominance therefore survives, and now holds in an incomplete design as
+well as the complete one where it was first found.
 
 **What round 6 refuted**, in full in `docs/noncontraction.md` §5.5 and §7:
 
