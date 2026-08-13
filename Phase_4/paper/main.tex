@@ -194,7 +194,7 @@ $V(\hat b) - \sqrt{\xi}\,\lVert g_\pi \rVert_{H^{-1}}$. This is not new
 mathematics and we do not claim it as a contribution. The difficulty is the
 paper's \emph{coupled} minimization across blocks.
 
-\paragraph{Failure mode.} Run as written, the joint minimization exploits
+\paragraph{Failure mode.} Run class-free, the joint minimization exploits
 precisely the null-space directions identified above: they cost the
 confidence-region geometry almost nothing, so the optimizer walks arbitrarily far
 into them and the pessimistic value diverges (\cref{sec:exp-pess}). The
@@ -245,16 +245,16 @@ $0.104 \to 0.053 \to 0.036$ as $N$ grows from $5\mathrm{k}$ to $50\mathrm{k}$,
 while naive bias stays flat at $0.13$--$0.33$ regardless of $N$: the textbook
 signature of removed versus irreducible bias.
 
-\subsection{The pessimism step, run literally, diverges}
+\subsection{The pessimism step, run class-free, diverges}
 \label{sec:exp-pess}
 Minimising over the confidence region alone, Eq.~17 gives a best-policy
 $V_{\mathrm{low}}$ of $-1.15$ at region size $c{=}0.1$, degrading through
 $-10.4$, $-62.2$ and $-305.2$ to $\mathbf{-1779}$ at $c{=}10$ --- against true
 policy values in $[1.5, 2.2]$. Even the mildest setting is outside the feasible
-range, with regret $0.68$. It reproduces across seeds; the mechanism is the
-null-space geometry of \cref{sec:method-pess}. Note that our implementation
-omitted the intersection with the bridge class that \citet{hong2024} carry
-through Theorem~4.2; imposing it shrinks these magnitudes about $7\times$,
+range (regret $0.68$); it reproduces across seeds, and the mechanism is the
+null-space geometry of \cref{sec:method-pess}. We omitted the bridge-class
+intersection \citet{hong2024} carry through Theorem~4.2; imposing it shrinks
+these magnitudes $4$--$7\times$ (${\sim}200\times$ at $c{=}10$) with $\ell_2$
 selections unchanged (\cref{app:pess-correction}).
 
 Signal-Projected Pessimism gives $V_{\mathrm{low}} = 1.35$ at $c{=}0.03$, in
@@ -429,8 +429,8 @@ refuted the other outright. Both are recorded, with the retracted mechanism for
 
 \section{Conclusion}
 
-Running a theory-only framework end-to-end showed what the theory did not: its
-pessimism step does not run as written, the repair costs a measurable guarantee,
+Running a theory-only framework end-to-end showed what the theory did not: our
+class-free pessimism run diverges, the repair costs a measurable guarantee,
 a naive baseline dominates at scale through variance rather than bias, and
 pessimistic selection tracks coverage rather than value.
 

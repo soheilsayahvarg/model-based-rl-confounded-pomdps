@@ -365,12 +365,15 @@ that class carries through their Theorem~4.2. Our implementation minimised over
 the confidence region alone. This is an error on our side, not in the theory, and
 it inflates every pessimistic magnitude we reported.
 
-\paragraph{The class is a box, not a ball.} Assumption 4.1(f) bounds the class in
-\emph{sup}-norm. We first imposed an $\ell_2$ ball; the paper's literal class is
-the box. In this $36$-dimensional coefficient space the tightest box containing
-the true bridge admits $\ell_2$ norms up to $5.2$ against the true bridge's
-$1.803$, so the box is the \emph{weakest} of the three classes --- which reverses
-a claim we had drawn from the ball alone.
+\paragraph{The class carries two bounds, not one.} Assumption 4.1(f) bounds the
+class in \emph{sup}-norm; Assumption D.16(d) additionally norm-constrains it in
+RKHS norm, which in this tabular instantiation is the coefficient $\ell_2$ norm.
+Neither our ball nor our box alone is therefore the paper's literal class ---
+each relaxes it, and the paper's class is their intersection, at least as strong
+as the stronger of the two at every width. We report both. The box alone is the
+weakest of the three: in this $36$-dimensional coefficient space the tightest box
+containing the true bridge admits $\ell_2$ norms up to $5.2$ against the true
+bridge's $1.803$.
 
 \paragraph{Cross-$c$ reporting.} \cref{sec:exp-pess} quoted vanilla at $c{=}0.1$
 against the projection at $c{=}0.03$. On a common grid the contrast disappears.
@@ -388,7 +391,7 @@ $c$ & $0.03$ & $0.10$ & $0.30$ & $1.00$ & $0.03$ & $0.10$ & $0.30$ & $1.00$ \\
 Plug-in             & \textbf{0.000} & \textbf{0.000} & \textbf{0.000} & \textbf{0.000} & $2.052$ & $2.052$ & $2.052$ & $2.052$ \\
 Vanilla             & $0.000$ & $0.257$ & $0.513$ & $0.513$ & $1.272$ & $0.123$ & $-3.235$ & $-20.983$ \\
 $\ell_2$ ball       & $0.000$ & $0.257$ & $0.513$ & $0.513$ & $1.278$ & $0.469$ & $-0.806$ & $-3.026$ \\
-Box (paper's class) & $0.000$ & $0.257$ & $0.427$ & $0.427$ & $1.275$ & $0.155$ & $-2.729$ & $-10.812$ \\
+Box (4.1(f) only)   & $0.000$ & $0.257$ & $0.427$ & $0.427$ & $1.275$ & $0.155$ & $-2.729$ & $-10.812$ \\
 Signal-projected    & $0.000$ & \textbf{0.000} & $0.257$ & $0.513$ & $1.338$ & $0.813$ & $-0.298$ & $-4.015$ \\
 \bottomrule
 \end{tabular}
