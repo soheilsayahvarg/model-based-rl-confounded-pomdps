@@ -37,7 +37,9 @@ from run_completeness_beta import population_design_span, beta_pop_for
 N_S, N_O, N_O0, N_A, T = 4, 6, 2, 2, 3
 CONFOUND = 0.9
 N_GRID = [2000, 8000, 32000, 128000]
-SEEDS = [0, 1, 2]
+# 3 seeds gave a real but small effect that docs/regret_vs_schedule.md 6.3 refused
+# to quote. Default raised to 20; override with argv[1].
+SEEDS = list(range(int(sys.argv[1]) if len(sys.argv) > 1 else 20))
 SPLIT = 0.7
 W_TARGET = 0.12
 RESULTS = {}
@@ -154,9 +156,10 @@ def main():
     for tag, tau, kap in SCHEDULES:
         print(f"\n{'='*76}\n{tag}   e = {tau+kap-1:+.3f}   "
               f"predicted width slope {(tau+kap-1)/2:+.3f}\n{'='*76}")
-        print(f"{'N':>8}{'regret':>10}{'modal pick':>13}{'V_low':>12}{'width':>10}")
+        print(f"{'N':>8}{'pess regret':>13}{'+-95%':>9}{'plug-in':>10}{'+-95%':>9}"
+              f"{'modal pick':>13}{'width':>9}")
         for N in N_GRID:
-            picks, vlows, widths = [], [], []
+            picks, plug_picks, widths = [], [], []
             for sd in SEEDS:
                 est, d = fit_once(p, N, sd, kap)
                 bR, bD = build_blocks(est)
@@ -164,40 +167,53 @@ def main():
                 cm = C_CAL[tag]
                 xR = [xi_for(tau, b.N2, b.sigma2, cm) for b in bR]
                 xD = [xi_for(tau, b.N2, b.sigma2, cm) for b in bD]
-                vals = {}
+                bh = [b.b_hat for b in bR]
+                dh = [b.b_hat for b in bD]
+                vals, pvals = {}, {}
                 for name, pi in cands.items():
                     vg = make_vg(bR, bD, pi, p_o1)
+                    # plug-in and pessimistic share the SAME fit, so the only
+                    # difference between the two columns is the pessimism layer
+                    pvals[name] = vg(bh, dh)[0]
                     vals[name] = pessimistic_value(
                         bR, bD, xR, xD, vg,
                         rng=np.random.default_rng(sd))["V_low"]
-                pick = max(vals, key=vals.get)
-                picks.append(pick)
-                vlows.append(vals[pick])
+                picks.append(max(vals, key=vals.get))
+                plug_picks.append(max(pvals, key=pvals.get))
                 vg0 = make_vg(bR, bD, cands[best], p_o1)
-                _, g0, _ = vg0([b.b_hat for b in bR], [b.b_hat for b in bD])
-                widths.append(np.sqrt(xR[0]) * bR[0].h_inv_norm(g0[0]))
-            reg = float(np.mean([v_true[best] - v_true[q] for q in picks]))
+                widths.append(np.sqrt(xR[0]) *
+                              bR[0].h_inv_norm(vg0(bh, dh)[1][0]))
+
+            def stat(ps):
+                r = np.array([v_true[best] - v_true[q] for q in ps])
+                return float(r.mean()), float(1.96 * r.std(ddof=1) /
+                                              np.sqrt(len(r)))
+            reg, ci = stat(picks)
+            preg, pci = stat(plug_picks)
             modal = max(set(picks), key=picks.count)
-            print(f"{N:>8}{reg:>10.4f}{modal:>13}{np.mean(vlows):>12.3f}"
-                  f"{np.mean(widths):>10.4f}")
+            print(f"{N:>8}{reg:>13.4f}{ci:>9.4f}{preg:>10.4f}{pci:>9.4f}"
+                  f"{modal:>13}{np.mean(widths):>9.4f}")
             rows.append(dict(schedule=tag, tau=tau, kappa=kap, e=tau + kap - 1,
-                             N=N, regret=reg, modal=modal,
-                             vlow=float(np.mean(vlows)),
-                             width=float(np.mean(widths)), picks=picks))
+                             N=N, regret=reg, regret_ci=ci,
+                             plugin_regret=preg, plugin_ci=pci, modal=modal,
+                             width=float(np.mean(widths)), picks=picks,
+                             plug_picks=plug_picks, n_seeds=len(SEEDS)))
 
     print(f"\n{'='*76}\nTREND\n{'='*76}")
-    print(f"{'schedule':>18}{'e':>8}{'regret slope':>14}{'width slope':>13}"
-          f"{'pred e/2':>10}{'pred (tau-1)/2':>16}")
+    print(f"{'schedule':>18}{'e':>8}{'pess slope':>12}{'plugin slope':>14}"
+          f"{'width slope':>13}{'pred e/2':>10}")
     summary = []
     for tag, tau, kap in SCHEDULES:
         rs = [r for r in rows if r["schedule"] == tag]
         ns = np.log([r["N"] for r in rs])
         gr = float(np.polyfit(ns, [r["regret"] for r in rs], 1)[0])
+        gp = float(np.polyfit(ns, [r["plugin_regret"] for r in rs], 1)[0])
         gw = float(np.polyfit(ns, np.log([r["width"] for r in rs]), 1)[0])
         e = tau + kap - 1
-        print(f"{tag:>18}{e:>8.3f}{gr:>14.5f}{gw:>13.4f}{e/2:>10.3f}"
-              f"{(tau-1)/2:>16.3f}")
-        summary.append(dict(schedule=tag, e=e, regret_slope=gr, width_slope=gw,
+        print(f"{tag:>18}{e:>8.3f}{gr:>12.5f}{gp:>14.5f}{gw:>13.4f}"
+              f"{e/2:>10.3f}")
+        summary.append(dict(schedule=tag, e=e, regret_slope=gr,
+                            plugin_slope=gp, width_slope=gw,
                             pred_e2=e / 2, pred_signal=(tau - 1) / 2))
 
     RESULTS.update(rows=rows, summary=summary, v_true=v_true, optimal=best,

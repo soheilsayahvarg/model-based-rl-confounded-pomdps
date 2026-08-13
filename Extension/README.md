@@ -8,6 +8,13 @@ directories, so nothing here is bundled into a course submission.
 Like every phase directory, this one is self-contained. The modules it needs from
 `Phase_3/src/` were copied in rather than imported across the boundary.
 
+## Start here
+
+`docs/claims.md` is the ledger: one row per claim, its current status, and where
+it was established or killed. The other documents were written in sequence and
+several contain statements later work superseded — where a document and the
+ledger disagree, the ledger is current.
+
 ## Goal
 
 The Phase 4 paper diagnoses a failure mode in one paper's pessimism step. The
