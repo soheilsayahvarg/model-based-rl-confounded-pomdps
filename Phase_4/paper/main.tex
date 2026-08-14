@@ -17,6 +17,14 @@
 \do\x\do\y\do\z}
 \newcommand{\theHalgorithm}{\arabic{algorithm}}
 \usepackage[accepted]{icml2024}
+% [accepted] shows the author names, but also stamps the page-1 PMLR publication
+% notice. Author names are kept; the notice is replaced with the actual course
+% identity, taken from the project overview. icml2024.sty itself is unmodified.
+\makeatletter
+\renewcommand{\ICML@appearing}{\textit{Deep Reinforcement Learning, Spring 2026.
+Professor Mohammad Hossein Rohban, Sharif University of Technology.
+Final project --- Phase 4 draft.}}
+\makeatother
 
 \usepackage{amsmath}
 \usepackage{amssymb}
