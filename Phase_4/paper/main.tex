@@ -10,6 +10,11 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{hyperref}
+% Long repo URL sits in a narrow footnote column; allow it to break anywhere.
+\Urlmuskip=0mu plus 1mu\relax
+\def\UrlBreaks{\do\/\do\-\do\.\do\_\do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h%
+\do\i\do\j\do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t\do\u\do\v\do\w%
+\do\x\do\y\do\z}
 \newcommand{\theHalgorithm}{\arabic{algorithm}}
 \usepackage[accepted]{icml2024}
 
@@ -79,9 +84,8 @@ Offline RL from logged data is unreliable when the logging policy observed more
 than the learner does. In a partially observable MDP whose \emph{latent} state
 drives both the recorded actions and the outcomes, the data are
 \emph{confounded}: treating the observation as the state yields a bias that does
-not vanish with more data. This is the central obstacle to trustworthy offline RL
-in healthcare and operations, where unrecorded drivers of decisions are the norm
-rather than the exception.
+not vanish with more data. This is the central obstacle in healthcare and
+operations, where unrecorded drivers of decisions are the norm.
 
 \citet{hong2024} address exactly this setting. Using a pre-decision
 \emph{negative control} $O_0$, they identify the confounded POMDP's reward and
@@ -101,9 +105,8 @@ actually de-bias policy evaluation at practical sample sizes, and can its
 abstract pessimistic $\max$--$\min$ step be made to run at all?}
 
 \paragraph{Contributions.}\footnote{Code and raw results:
-\texttt{github.com/soheilsayahvarg/model-based-rl-}\texttt{confounded-pomdps}.
-The benchmark builds on the public \texttt{gumbel-max-scm} simulator
-\citep{oberst2019}.}
+\url{github.com/soheilsayahvarg/model-based-rl-confounded-pomdps}. The benchmark
+builds on the public \texttt{gumbel-max-scm} simulator \citep{oberst2019}.}
 \begin{enumerate}\itemsep2pt \parskip0pt \topsep0pt
 \item An end-to-end implementation estimating \emph{both} bridge families and
 carrying them through to a tractable pessimistic policy-\emph{selection} step,
@@ -155,8 +158,8 @@ satisfies $O_0 \perp\!\!\!\perp (O_t, O_{t+1}, R_t) \mid S_t, A_t, H_{t-1}$.
 Reward-emission and dynamic-emission bridge functions solve the conditional
 moment restrictions
 \begin{equation}
-\mathbb{E}\!\left[b^{[t]}_{R}(A_t, O_t, r_t, o_t) \mid H_{t-1}, A_t, O_0\right]
-= p(r_t, o_t \mid H_{t-1}, A_t, O_0),
+\mathbb{E}\bigl[b^{[t]}_{R}(A_t, O_t, r_t, o_t) \mid H_{t-1}, A_t, O_0\bigr]
+= p(r_t, o_t \mid \cdot),
 \label{eq:mr}
 \end{equation}
 and analogously for $b^{[t]}_{D}$ with target $p(o_{t+1}, o_t \mid \cdot)$. Under

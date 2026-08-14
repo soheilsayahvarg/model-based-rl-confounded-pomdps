@@ -17,7 +17,7 @@ paper/
   main.tex        Paper source (main body + appendix include)
   appendix.tex    Appendix: setup, continuous derivation, corrections, bugs
   refs.bib        Bibliography
-  main.pdf        Compiled draft — 10 pages (4 main + references + appendices)
+  main.pdf        Compiled draft — 11 pages (4 main + references + appendices)
   figures/        Figures used by the paper
   icml2024.sty    Official ICML 2024 style files (unmodified)
   icml2024.bst
@@ -40,7 +40,7 @@ docs/             Writeups of the three studies run in this phase
 | Experiments or evidence | §4 (seven subsections) |
 | Discussion of limitations | §5 (four named limitations) |
 | Conclusion | §6 |
-| Appendix (unlimited) | Appendices A–H, pages 6–10 |
+| Appendix (unlimited) | Appendices A–I, pages 6–11 |
 
 ## Building
 
@@ -64,11 +64,16 @@ phase boundaries.
 The paper deliberately leads with what did *not* work, because that is where the
 empirical content is:
 
-1. The anchor paper's pessimism step is numerically unusable as written (diverges
-   to `-1779`), and we identify the mechanism.
-2. Our repair achieves zero selection regret but forfeits coverage — the true
-   bridge leaks 21% of its norm outside the projected subspace. Reported as a
-   disclosed heuristic, not a certified bound.
+1. Run **without the bridge-class constraint** that Theorem 4.2 carries, the
+   pessimism step is numerically unusable (diverges to `-1779`), and we identify
+   the mechanism. Restoring the class — the intersection of Assumptions 4.1(f)
+   and D.16(d), which our first implementation dropped — shrinks the magnitudes
+   4–7× but does not remove the divergence (Appendix I).
+2. Our repair reaches zero selection regret, but **that comparison was across
+   region sizes**: on a common grid vanilla pessimism also reaches `0.000`, and a
+   plug-in baseline is never beaten at any width. What survives is the coverage
+   cost — the true bridge leaks up to 21% of its norm outside the projected
+   subspace, so the repair is a disclosed heuristic, not a certified bound.
 3. At benchmark scale a naive confounding-blind baseline beats every bridge-based
    method in all 15 sweep cells, worst at zero confounding.
 4. Pessimistic *selection* fails for a mechanism we first got wrong. We
