@@ -1,0 +1,455 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Final submission --- workshop-style paper, ICML template (course requirements S5).
+% Compile: pdflatex main && bibtex main && pdflatex main && pdflatex main
+% Self-contained inside Phase_5/. Prior phase directories remain frozen.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{article}
+
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+% Long repo URL sits in a narrow footnote column; allow it to break anywhere.
+\Urlmuskip=0mu plus 1mu\relax
+\def\UrlBreaks{\do\/\do\-\do\.\do\_\do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h%
+\do\i\do\j\do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t\do\u\do\v\do\w%
+\do\x\do\y\do\z}
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+\usepackage[accepted]{icml2024}
+% [accepted] shows the author names, but also stamps the page-1 PMLR publication
+% notice. Author names are kept; the notice is replaced with the actual course
+% identity, taken from the project overview. icml2024.sty itself is unmodified.
+\makeatletter
+\renewcommand{\ICML@appearing}{\textit{Deep Reinforcement Learning, Spring 2026.
+Professor Mohammad Hossein Rohban, Sharif University of Technology.
+Final project --- final submission.}}
+\makeatother
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\theoremstyle{definition}
+\newtheorem{assumption}[theorem]{Assumption}
+
+\icmltitlerunning{Running the Theory: Model-Based RL for Confounded POMDPs}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{Running the Theory: An Empirical Study of Model-Based\\
+           Reinforcement Learning for Confounded POMDPs}
+
+\icmlsetsymbol{equal}{*}
+
+\begin{icmlauthorlist}
+\icmlauthor{Soheil Sayah Varg}{sharif}
+\icmlauthor{Mahdi Shirinbayan}{sharif}
+\icmlauthor{Mahdi Ostadmohammadi}{sharif}
+\end{icmlauthorlist}
+
+\icmlaffiliation{sharif}{Department of Computer Engineering, Sharif University of Technology, Tehran, Iran}
+
+\icmlcorrespondingauthor{Soheil Sayah Varg}{soheilsayahvarg@gmail.com}
+
+\icmlkeywords{offline reinforcement learning, confounded POMDPs, proximal causal inference, off-policy evaluation}
+
+\vskip 0.3in
+]
+
+\printAffiliationsAndNotice{}
+
+\begin{abstract}
+Offline reinforcement learning is systematically biased when the behavior policy
+acted on latent state the learner never observes. \citet{hong2024} give a
+model-based theory for this setting, identifying reward and transition models
+through two families of \emph{bridge functions} and planning pessimistically over
+a confidence region --- but the paper is theory only: no algorithm, no code, no
+experiments. We build the pipeline end-to-end, verify it against exact ground
+truth to machine precision, and report what running it reveals. Run without the
+bridge-class bound we omitted, our pessimism step diverges to $-21$ against a
+true value of $2.02$; restoring the class caps the excursion at $-3$ without
+removing it, and a confounding-blind plug-in is never beaten at any width --- the
+pessimism layer costs selection accuracy and returns nothing. At benchmark scale a
+confounding-blind baseline beats every bridge-based method in all 15 sweep cells,
+worst at \emph{zero} confounding --- estimation variance, not confounding bias,
+is the binding constraint. Pessimistic \emph{selection} fails for a reason we
+establish by sweeping it: the penalty tracks behavior-policy coverage, and
+driving coverage of the optimal action up drives regret to exactly zero. A
+negative-control quality sweep then quantifies how good the framework's central
+assumption has to be.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Offline RL from logged data is unreliable when the logging policy observed more
+than the learner does. In a partially observable MDP whose \emph{latent} state
+drives both the recorded actions and the outcomes, the data are
+\emph{confounded}: treating the observation as the state yields a bias that does
+not vanish with more data. This is the central obstacle in healthcare and
+operations, where unrecorded drivers of decisions are the norm.
+
+\citet{hong2024} address exactly this setting. Using a pre-decision
+\emph{negative control} $O_0$, they identify the confounded POMDP's reward and
+transition models through two families of bridge functions ($b_R$, $b_D$), then
+plan pessimistically over a policy-independent confidence region. The result is
+elegant and, importantly, stated for general spaces: states and observations may
+be continuous, and general function approximation is not merely permitted but
+required. The paper is, however, \emph{theory only} --- it contains no algorithm,
+no code, and no experiments. Its neighbors are likewise unrealized empirically
+for this exact pipeline: the closest follow-up runs the bridge \emph{estimator}
+in isolation \citep{venkatesh2026}, and the pessimism precedent is theory-only
+and for the \emph{un}confounded case \citep{guo2022}.
+
+This leaves a concrete question that only implementation can answer: \emph{when
+the framework is built end-to-end, does model-based bridge identification
+actually de-bias policy evaluation at practical sample sizes, and can its
+abstract pessimistic $\max$--$\min$ step be made to run at all?}
+
+\paragraph{Contributions.}\footnote{Code and raw results:
+\url{github.com/soheilsayahvarg/model-based-rl-confounded-pomdps} (private
+repository; access on request). The benchmark builds on the public
+\texttt{gumbel-max-scm} simulator \citep{oberst2019}.}
+\begin{enumerate}\itemsep2pt \parskip0pt \topsep0pt
+\item An end-to-end implementation estimating \emph{both} bridge families and
+carrying them through to a tractable pessimistic policy-\emph{selection} step,
+verified against exact oracles to $\sim\!10^{-15}$ (\cref{sec:exp-correct}) --- a
+capability claim we can check ourselves, not a primacy claim.
+\item A \emph{diagnosis} of a failure mode in coupled multi-block pessimism run
+without the class bound, plus a signal-subspace heuristic that restores in-range
+values but, by our own test, never beats the plug-in selector --- a negative
+result (\cref{sec:method-pess}, \cref{sec:exp-pess}).
+\item A characterization of \emph{where the approach stops working}: a naive
+baseline wins all 15 cells of a benchmark sweep, worst where there is nothing to
+correct (\cref{sec:exp-bench}).
+\item A kernel extension to continuous spaces, and --- in the paper-faithful
+configuration with finite actions --- a diagnostic identifying
+\emph{behavior-policy coverage} as the mechanism behind pessimistic selection
+failure (\cref{sec:exp-cont}, \cref{sec:exp-fa}).
+\end{enumerate}
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Proximal causal inference.} Bridge functions originate in the double
+negative control literature \citep{miao2018,tchetgen2020}, where a pair of proxy
+variables identifies a causal effect under unmeasured confounding.
+\citet{mastouri2021} give the kernel two-stage estimation procedure our
+continuous extension instantiates.
+
+\paragraph{Model-free OPE in confounded POMDPs.} \citet{shi2022} and
+\citet{bennett2024} identify policy values through \emph{value} bridge functions
+solved from Bellman-type backward moment equations. These depend on the
+evaluation policy, so a new estimation problem is solved per policy; the
+model-based route of \citet{hong2024} instead extracts policy-independent reward
+and transition information, which is what makes a policy-independent confidence
+region possible. We implement \citet{shi2022} as a competing baseline.
+
+\paragraph{Pessimism in offline RL.} Conservative planning over confidence
+regions is standard in fully observed offline RL and has a POMDP precedent in
+\citet{guo2022}, which is theory-only and unconfounded. The failure mode of
+\cref{sec:method-pess} is specific to the interaction between a structural null
+space and \emph{joint} multi-block minimization.
+
+\section{Method}
+\label{sec:method}
+
+\subsection{Identification}
+We adopt the setting of \citet{hong2024}: a finite-horizon POMDP with latent
+states $S_t$, observations $O_t$, actions $A_t$ and rewards $R_t$, where the
+behavior policy may depend on $S_t$. \begin{assumption}[Valid pre-decision negative control]
+\label{as:nc}
+$O_0 \perp\!\!\!\perp (O_t, O_{t+1}, R_t) \mid S_t, A_t, H_{t-1}$.
+\end{assumption}
+Reward-emission and dynamic-emission bridge functions solve the conditional
+moment restrictions
+\begin{equation}
+\mathbb{E}\bigl[b^{[t]}_{R}(A_t, O_t, r_t, o_t) \mid H_{t-1}, A_t, O_0\bigr]
+= p(r_t, o_t \mid \cdot),
+\label{eq:mr}
+\end{equation}
+and analogously for $b^{[t]}_{D}$ with target $p(o_{t+1}, o_t \mid \cdot)$. Under
+a completeness condition, the policy value of \emph{any} history-dependent policy
+is identified by a sequential contraction of these bridges
+\citep[Thm.~3.5]{hong2024}. We implement this contraction exactly and verify it
+against dynamic programming on the latent model.
+
+\subsection{Estimation}
+Stage 1 fits a conditional mean embedding $\hat\mu_{W_t \mid x}$ by kernel ridge
+regression; Stage 2 solves the resulting empirical operator equation in closed
+form, $\alpha = (G + N_2\lambda_2 I)^{-1}\hat p$. We implement both the dual
+(representer) and primal (operator) forms and verify they agree to
+$2.4\times10^{-15}$, which catches derivation errors that no single
+implementation could.
+
+\paragraph{Regularization does not transfer.} The paper's RKHS rate schedules,
+applied literally to a tabular instantiation, over-shrink the estimator by
+$\approx\!80\%$ by the third time-step. We grid-calibrate instead: a $0.7{:}0.3$
+split with $\lambda_1 = 1/N_1$ and $\lambda_2 = 0.03/\sqrt{N_2}$. These values
+are measured, not derived.
+
+\paragraph{The usual ill-posedness diagnostic misleads.} Because the observation
+space is structurally richer than the latent space ($|O| > |S|$), the design
+matrix carries a null space that pins $\mathrm{cond}(G)$ flat even as estimation
+quality degrades tenfold --- confirmed by an $O_0$-noise sweep in which Stage-1
+error grows $10\times$ while $\mathrm{cond}(G)$ does not move. We monitor the
+smallest \emph{signal} eigenvalue instead.
+
+\subsection{Pessimism, its failure mode, and a repair}
+\label{sec:method-pess}
+Confidence regions are exact ellipsoids centered at $\hat b$, and the per-block
+inner minimum is the standard ellipsoid support-function identity,
+$V(\hat b) - \sqrt{\xi}\,\lVert g_\pi \rVert_{H^{-1}}$. This is not new
+mathematics and we do not claim it as a contribution. The difficulty is the
+paper's \emph{coupled} minimization across blocks.
+
+\paragraph{Failure mode.} Run class-free, the joint minimization exploits
+precisely the null-space directions identified above: they cost the
+confidence-region geometry almost nothing, so the optimizer walks arbitrarily far
+into them and the pessimistic value diverges (\cref{sec:exp-pess}). The
+diagnosis and the spectral-monitor fix share one root cause.
+
+\paragraph{Signal-Projected Pessimism.} We restrict the pessimistic search to the
+empirically identified signal subspace via an SVD/eigengap decomposition with
+orthonormal basis $U$ and $H_{\mathrm{sub}} = U^\top H U$. This restores
+informative values and correct selection --- but, as \cref{sec:exp-pess} shows,
+at a coverage cost we quantify rather than assume away.
+
+\subsection{Continuous extension}
+\label{sec:method-cont}
+The framework is not inherently tabular: \citet{hong2024} assume continuous $S$
+and $O$ and call function approximation \emph{inevitable} there. We instantiate
+the same pipeline with a two-stage \textbf{kernel} estimator on a linear-Gaussian
+confounded POMDP admitting an exact closed-form oracle, reusing the pessimism
+engine unmodified since it works purely in coefficient space
+(derivation: \cref{app:cont}).
+
+\section{Experiments}
+\label{sec:exp}
+
+Multi-seed results use 5 seeds with 95\% CIs, except
+\cref{app:pess-correction} (3 seeds). Environments:
+a minimal tabular POMDP ($|S|{=}2, |A|{=}2, |O|{=}3, T{=}3$) with closed-form
+oracle bridges; a 720-observation benchmark built on the public
+\texttt{gumbel-max-scm} clinical simulator \citep{oberst2019} with a manufactured
+$O_0$ satisfying the identification assumption by construction; and the
+continuous linear-Gaussian POMDP of \cref{sec:method-cont}. Everything runs on a
+laptop in NumPy; no GPU.
+
+\subsection{Correctness}
+\label{sec:exp-correct}
+We first pin the implementation against exact ground truth. The policy-value
+chain matches exact dynamic programming to $4.4\times10^{-16}$; the estimator
+matches the oracle bridges in the population limit to $3.0\times10^{-15}$; the
+dual and primal solves, independent derivations of the same estimator, agree to
+$2.4\times10^{-15}$; analytic gradients match finite differences to
+$4.9\times10^{-10}$. The dual-versus-primal check is the most informative, since
+it rules out derivation errors a single implementation would silently carry. This
+is what licenses reporting the negative results below as findings rather than
+bugs.
+
+\subsection{De-biasing works where identification is clean}
+On the toy environment the plug-in evaluator beats the confounding-blind baseline
+in \textbf{12/12} $(N,\pi)$ cells. Worst-policy plug-in bias shrinks
+$0.104 \to 0.053 \to 0.036$ as $N$ grows from $5\mathrm{k}$ to $50\mathrm{k}$,
+while naive bias stays flat at $0.13$--$0.33$ regardless of $N$: the textbook
+signature of removed versus irreducible bias.
+
+\subsection{The pessimism step, run class-free, diverges}
+\label{sec:exp-pess}
+Our first implementation minimised over the confidence region alone, omitting the
+bridge-class intersection \citet{hong2024} carry through their Theorem~4.2. Run
+that way, the support-function minimum of \cref{sec:method-pess} drives the
+best-policy $V_{\mathrm{low}}$ from $1.272$ at $c{=}0.03$ through $0.123$ and
+$-3.235$ to $\mathbf{-20.98}$ at $c{=}1.0$, against $V_{\mathrm{true}}=2.018$;
+regret rises $0.000\to0.513$. Restoring the class bounds the excursion without
+removing it --- \citeauthor{hong2024}'s Assumption~D.16(d) $\ell_2$ ball holds
+$V_{\mathrm{low}}$ to $-3.026$, a $6.9\times$ shrinkage, selections unchanged.
+Signal-Projected Pessimism reaches $1.338$ with $0.000$ regret at $c{=}0.03$, but
+so does \emph{every} variant there: our earlier advantage was an artifact of
+reading across region sizes, and its real gain is confined to mid-grid. A
+confounding-blind plug-in achieves $0.000$ regret at every width and is
+\textbf{never beaten} (\cref{app:pess-correction}).
+
+\paragraph{The honest limit.} Stress-testing our own fix, the true bridges leak
+up to \textbf{21\% of their norm} outside the projected subspace, so that region
+provably does \emph{not} contain the truth: its honest coverage is zero. The
+trade-off is \textbf{coverage against informativeness} --- vanilla covers the
+truth but says nothing; the projection is informative and empirically correct but
+uncertified, with $V_{\mathrm{low}} \le V_{\mathrm{true}}$ holding by
+sign-alignment in every test rather than by guarantee.
+
+\subsection{At scale, a naive baseline wins}
+\label{sec:exp-bench}
+\begin{table}[t]
+\caption{Benchmark sweep (5 confounding strengths $\times$ 3 sample sizes $\times$
+5 seeds). MAE against exact ground truth.}
+\label{tab:bench}
+\vskip 0.1in
+\begin{center}\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Method & MAE range & Beats naive \\
+\midrule
+Naive (confounding-blind) & $\mathbf{0.013}$--$\mathbf{0.074}$ & --- \\
+Model-based (plain) & $0.072$--$0.230$ & $0/15$ \\
+Model-based (shrunk) & $0.063$--$0.240$ & $0/15$ \\
+Model-free proximal & $0.164$--$0.180$ & $0/15$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vskip -0.15in
+\end{table}
+
+The de-biasing method's \emph{worst} performance is at $\kappa = 0$, where it is
+$2.8$--$6.8\times$ worse than naive --- precisely where there is nothing to
+correct. That is the clearest possible signature that the dominant error source
+at this scale is \textbf{estimation variance}, not the confounding bias the
+method targets: inverting many small, noisy per-cell matrices injects more noise
+than the bias it removes. The model-free comparator is flat in $N$, which we
+confirmed is an identification limit of the benchmark's binary proxy rather than
+a bug --- it \emph{is} consistent on the toy ($0.0076$ max error at
+$N{=}200\mathrm{k}$).
+
+\subsection{Continuous state, action and observation spaces}
+\label{sec:exp-cont}
+The kernel instantiation reproduces the tabular story. Oracle self-consistency is
+$1.665\times10^{-16}$, the gradient check $\approx\!10^{-11}$, bridge recovery
+improves with sample size ($0.220 \to 0.055$ reward, $0.240 \to 0.102$ dynamics,
+for $N: 300 \to 4{,}000$), and plug-in de-biasing beats naive in \textbf{4/4}
+policies by $3$--$11\times$ in absolute bias --- the continuous analogue of the
+tabular $12/12$, with the same signature: naive bias tight but systematically
+wrong, plug-in bias smaller but noisier (per-policy table in
+\cref{app:cont-tab}).
+
+Pessimism validity holds throughout, but \textbf{validity is not selection
+quality}: ranking by $V_{\mathrm{low}}$ is consistently worse than ranking by the
+plug-in value (regret $0.40$--$0.48$ versus $0.241$), unlike the tabular case's
+clean $0.000$. Two bottlenecks are regime-specific: dense kernel ridge costs
+$O(N_1^3)$, capping $N \approx 4{,}000$; and a \emph{finite-dimensional} kernel
+silently re-creates the rank deficiency of \cref{sec:method-pess}, caught only by
+checking the Gram matrix's rank (\cref{app:cont}).
+
+\subsection{The paper-faithful configuration, and why pessimistic selection fails}
+\label{sec:exp-fa}
+
+\begin{table}[t]
+\caption{Coverage sweep. Varying the logging policy's dose preference changes
+\emph{only the data} --- every candidate's true value is invariant and asserted
+so at each grid point. Regret is averaged over $c \in \{0.1, 0.3, 1.0\}$,
+5 seeds. ``Ratio'' is the optimal policy's pessimism penalty divided by the mean
+penalty of the others.}
+\label{tab:coverage}
+\vskip 0.1in
+\begin{center}\small
+\begin{tabular}{@{}cccc@{}}
+\toprule
+Coverage of & Pessimistic & Plug-in & Penalty \\
+optimal policy & regret & regret & ratio \\
+\midrule
+$0.124$ & $0.367 \pm 0.051$ & $0.000$ & $1.85$ \\
+$0.244$ & $0.211$ & $0.000$ & $1.40$ \\
+$0.407$ & $0.211$ & $0.000$ & $1.04$ \\
+$0.582$ & $0.140$ & $0.000$ & $0.73$ \\
+$\mathbf{0.727}$ & $\mathbf{0.000}$ & $0.000$ & $\mathbf{0.49}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vskip -0.15in
+\end{table}
+
+\citet{hong2024} assume continuous $S$ and $O$ but an explicitly \emph{finite}
+action space, so \cref{sec:exp-cont} varies two things at once. We repeated the
+study with $A = \{0, 0.5, 1\}$, giving each action level its own bridge
+coefficient (a delta kernel on the action coordinate tensored with a linear
+kernel on the observation), all else fixed. The oracle check is exact ($0.000$),
+recovery is monotone in $N$, and validity again holds at $100\%$.
+
+\textbf{The anomaly persists}, refuting our own hypothesis that continuous
+actions caused it. It is also not an optimization failure: restart gaps here are
+$\le 4\times10^{-16}$ up to $c{=}1$, so coordinate descent is finding the global
+optimum. A diagnostic instead found the pessimism penalty to be monotonically
+inverse to behavior-policy coverage, with the optimal policy the least covered
+($12\%$ of logged actions, against $62\%$ for the worst policy).
+
+\textbf{We turned that into a prediction and tested it.} If coverage is the
+mechanism, raising the logging policy's coverage of the optimal action should
+drive pessimistic regret to zero. \cref{tab:coverage} shows exactly that:
+correlation between coverage and regret is $-0.944$, regret falls from $0.367$ to
+\textbf{exactly zero}, and the penalty ratio crosses $1$ near $43\%$ coverage ---
+below it the optimal policy is penalized \emph{more} than the alternatives, above
+it \emph{less}. Plug-in selection is perfect throughout, the control confirming
+that estimation quality is not what moves.
+
+Pessimism is therefore not malfunctioning: it answers ``which policy can I most
+confidently guarantee?'', which coincides with ``which is best?'' only under
+adequate coverage. De-biasing likewise wins $2/4$ rather than $4/4$ --- where
+naive bias is negligible the correction only adds variance.
+
+\subsection{How good does the negative control have to be?}
+\label{sec:exp-nc}
+
+Theory cannot say what happens when the negative-control assumption only
+approximately holds, since it is what the theory conditions on; a simulator with a
+quality knob can. We sweep two failure modes (\cref{app:nc}). Raising the
+control's noise $\sigma_0$ leaves \cref{as:nc} true and degrades only
+informativeness: the plug-in's systematic-bias advantage survives to
+$\sigma_0\approx0.5$ and is gone by $1.0$. Leaking that noise into the reward
+($r_t \mathrel{+}= \delta\,\epsilon_0$) instead makes the assumption \emph{false}
+while leaving $\mathbb{E}[R]$ --- and the oracle --- intact; the advantage is gone
+by $\delta=0.5$. Violating the assumption costs more than weakening the
+instrument, now quantified rather than assumed, though the two knobs are not on a
+common scale so the ordering, not the ratio, is what transfers.
+
+One caution: recovery error is a poor proxy for value bias. At $\delta{=}1$ it is
+$9\times$ baseline while systematic value bias grows $1.9\times$.
+
+\section{Limitations}
+\label{sec:limits}
+
+\paragraph{The pessimism guarantee is empirical.} The projection provably
+excludes part of the truth ($21\%$ norm leakage), so
+$V_{\mathrm{low}} \le V_{\mathrm{true}}$ is an observation, not a theorem.
+
+\paragraph{The coverage explanation is tested in one environment.}
+\cref{tab:coverage} confirms the prediction, but varies coverage through a single
+channel in one linear-Gaussian POMDP; absent actions and state-dependent gaps are
+untested. With four candidate policies regret takes few discrete values --- two
+grid points tie --- and $r=-0.944$ rests on $n{=}5$ points, so we lean on the
+manipulation, not the coefficient.
+
+\paragraph{Restricted scope.} Candidate policies are affine and
+observation-only, or observation-independent --- what preserves the exact oracle.
+All use $T{=}3$; the \emph{continuous} ones scalar spaces and $N\le4{,}000$, the
+tabular and benchmark runs up to $N=200{,}000$. Our one confounding-aware
+comparator is under-identified by the benchmark's binary proxy, so at that scale
+\emph{no} identifying confounding-aware method is in the comparison ---
+\cref{sec:exp-bench}'s ``naive wins'' is bounded by that.
+
+\paragraph{Statistical self-correction.} Two earlier headline numbers rested on
+3-seed deviations; at 5 seeds one changed materially and the other was refuted.
+Both are in \cref{app:corrections}, with the retracted mechanism for
+\cref{sec:exp-fa}.
+
+\section{Conclusion}
+
+Running a theory-only framework end-to-end showed what the theory did not: our
+class-free pessimism diverges and the class bound caps but does not cure it, a
+naive baseline dominates at scale through variance rather than bias, and
+pessimistic selection tracks coverage --- a manipulable cause, and the result we
+would build on next.
+
+\bibliography{refs}
+\bibliographystyle{icml2024}
+
+\newpage
+\appendix
+\onecolumn
+\input{appendix}
+
+\end{document}

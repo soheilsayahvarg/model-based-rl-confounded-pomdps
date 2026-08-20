@@ -34,6 +34,7 @@ SLUGS = {
     "Phase_2": "proposal-and-proof-of-concept",
     "Phase_3": "progress-checkpoint",
     "Phase_4": "final-checkpoint",
+    "Phase_5": "final-submission",
 }
 
 # Files scanned for cross-phase references. Binary deliverables are skipped.
