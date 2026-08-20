@@ -65,10 +65,12 @@ The paper deliberately leads with what did *not* work, because that is where the
 empirical content is:
 
 1. Run **without the bridge-class constraint** that Theorem 4.2 carries, the
-   pessimism step is numerically unusable (diverges to `-1779`), and we identify
-   the mechanism. Restoring the class — the intersection of Assumptions 4.1(f)
-   and D.16(d), which our first implementation dropped — shrinks the magnitudes
-   4–7× but does not remove the divergence (Appendix I).
+   pessimism step diverges to `-20.98` against a true value of `2.018`, and we
+   identify the mechanism. Restoring the class — the intersection of Hong et
+   al.'s Assumptions 4.1(f) and D.16(d), which our first implementation dropped
+   — caps it at `-3.026` (a 6.9× shrinkage) but does not remove it. All numbers
+   in the paper are now the corrected common-grid run (Appendix I); the earlier
+   `-1779` came from the pre-correction implementation and is retracted.
 2. Our repair reaches zero selection regret, but **that comparison was across
    region sizes**: on a common grid vanilla pessimism also reaches `0.000`, and a
    plug-in baseline is never beaten at any width. What survives is the coverage

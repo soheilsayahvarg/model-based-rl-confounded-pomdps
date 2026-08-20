@@ -71,11 +71,11 @@ model-based theory for this setting, identifying reward and transition models
 through two families of \emph{bridge functions} and planning pessimistically over
 a confidence region --- but the paper is theory only: no algorithm, no code, no
 experiments. We build the pipeline end-to-end, verify it against exact ground
-truth to machine precision, and report what running it reveals. Our pessimism
-implementation is numerically unusable, diverging to $-1779$ against true values
-in $[1.5, 2.2]$, traced to a structural null space and to a class bound we
-omitted; a signal-subspace projection repairs the numbers but forfeits coverage,
-making it a disclosed heuristic rather than a bound. At benchmark scale a
+truth to machine precision, and report what running it reveals. Run without the
+bridge-class bound we omitted, our pessimism step diverges to $-21$ against a
+true value of $2.02$; restoring the class caps the excursion at $-3$ without
+removing it, and a confounding-blind plug-in is never beaten at any width --- the
+pessimism layer costs selection accuracy and returns nothing. At benchmark scale a
 confounding-blind baseline beats every bridge-based method in all 15 sweep cells,
 worst at \emph{zero} confounding --- estimation variance, not confounding bias,
 is the binding constraint. Pessimistic \emph{selection} fails for a reason we
@@ -121,9 +121,10 @@ repository; access on request). The benchmark builds on the public
 carrying them through to a tractable pessimistic policy-\emph{selection} step,
 verified against exact oracles to $\sim\!10^{-15}$ (\cref{sec:exp-correct}) --- a
 capability claim we can check ourselves, not a primacy claim.
-\item A \emph{diagnosis} of a failure mode in the paper's coupled multi-block
-pessimism, plus a signal-subspace repair and a quantified account of the coverage
-it forfeits (\cref{sec:method-pess}, \cref{sec:exp-pess}).
+\item A \emph{diagnosis} of a failure mode in coupled multi-block pessimism run
+without the class bound, plus a signal-subspace heuristic that restores in-range
+values but, by our own test, never beats the plug-in selector --- a negative
+result (\cref{sec:method-pess}, \cref{sec:exp-pess}).
 \item A characterization of \emph{where the approach stops working}: a naive
 baseline wins all 15 cells of a benchmark sweep, worst where there is nothing to
 correct (\cref{sec:exp-bench}).
@@ -162,8 +163,10 @@ space and \emph{joint} multi-block minimization.
 \subsection{Identification}
 We adopt the setting of \citet{hong2024}: a finite-horizon POMDP with latent
 states $S_t$, observations $O_t$, actions $A_t$ and rewards $R_t$, where the
-behavior policy may depend on $S_t$. A pre-decision negative control $O_0$
-satisfies $O_0 \perp\!\!\!\perp (O_t, O_{t+1}, R_t) \mid S_t, A_t, H_{t-1}$.
+behavior policy may depend on $S_t$. \begin{assumption}[Valid pre-decision negative control]
+\label{as:nc}
+$O_0 \perp\!\!\!\perp (O_t, O_{t+1}, R_t) \mid S_t, A_t, H_{t-1}$.
+\end{assumption}
 Reward-emission and dynamic-emission bridge functions solve the conditional
 moment restrictions
 \begin{equation}
@@ -230,7 +233,8 @@ engine unmodified since it works purely in coefficient space
 \section{Experiments}
 \label{sec:exp}
 
-All multi-seed results use 5 seeds with 95\% confidence intervals. Environments:
+Multi-seed results use 5 seeds with 95\% CIs, except
+\cref{app:pess-correction} (3 seeds). Environments:
 a minimal tabular POMDP ($|S|{=}2, |A|{=}2, |O|{=}3, T{=}3$) with closed-form
 oracle bridges; a 720-observation benchmark built on the public
 \texttt{gumbel-max-scm} clinical simulator \citep{oberst2019} with a manufactured
@@ -259,29 +263,27 @@ signature of removed versus irreducible bias.
 
 \subsection{The pessimism step, run class-free, diverges}
 \label{sec:exp-pess}
-Minimising over the confidence region alone, Eq.~17 gives a best-policy
-$V_{\mathrm{low}}$ of $-1.15$ at region size $c{=}0.1$, degrading through
-$-10.4$, $-62.2$ and $-305.2$ to $\mathbf{-1779}$ at $c{=}10$ --- against true
-policy values in $[1.5, 2.2]$. Even the mildest setting is outside the feasible
-range (regret $0.68$); it reproduces across seeds, and the mechanism is the
-null-space geometry of \cref{sec:method-pess}. We omitted the bridge-class
-intersection \citet{hong2024} carry through Theorem~4.2; imposing it shrinks
-these magnitudes $4$--$7\times$ (${\sim}200\times$ at $c{=}10$) with $\ell_2$
-selections unchanged (\cref{app:pess-correction}).
+Our first implementation minimised over the confidence region alone, omitting the
+bridge-class intersection \citet{hong2024} carry through their Theorem~4.2. Run
+that way, the support-function minimum of \cref{sec:method-pess} drives the
+best-policy $V_{\mathrm{low}}$ from $1.272$ at $c{=}0.03$ through $0.123$ and
+$-3.235$ to $\mathbf{-20.98}$ at $c{=}1.0$, against $V_{\mathrm{true}}=2.018$;
+regret rises $0.000\to0.513$. Restoring the class bounds the excursion without
+removing it --- \citeauthor{hong2024}'s Assumption~D.16(d) $\ell_2$ ball holds
+$V_{\mathrm{low}}$ to $-3.026$, a $6.9\times$ shrinkage, selections unchanged.
+Signal-Projected Pessimism reaches $1.338$ with $0.000$ regret at $c{=}0.03$, but
+so does \emph{every} variant there: our earlier advantage was an artifact of
+reading across region sizes, and its real gain is confined to mid-grid. A
+confounding-blind plug-in achieves $0.000$ regret at every width and is
+\textbf{never beaten} (\cref{app:pess-correction}).
 
-Signal-Projected Pessimism gives $V_{\mathrm{low}} = 1.35$ at $c{=}0.03$, in
-range, with $0.000$ regret --- but that compares across region sizes: on a common
-grid vanilla also reaches $0.000$ there, and a plug-in baseline is never beaten
-at any width.
-
-\paragraph{The honest limit.} We then stress-tested our own fix. The true bridge
-functions leak up to \textbf{21\% of their norm} outside the projected signal
-subspace, so the projected region provably does \emph{not} contain the truth ---
-its honest coverage is zero. We therefore describe the situation as a
-\textbf{coverage/informativeness trade-off}: vanilla pessimism covers the truth
-but is uninformative; our projection is informative and empirically correct but
-uncertified. $V_{\mathrm{low}} \le V_{\mathrm{true}}$ held in every test we ran,
-by empirical sign-alignment rather than by guarantee.
+\paragraph{The honest limit.} Stress-testing our own fix, the true bridges leak
+up to \textbf{21\% of their norm} outside the projected subspace, so that region
+provably does \emph{not} contain the truth: its honest coverage is zero. The
+trade-off is \textbf{coverage against informativeness} --- vanilla covers the
+truth but says nothing; the projection is informative and empirically correct but
+uncertified, with $V_{\mathrm{low}} \le V_{\mathrm{true}}$ holding by
+sign-alignment in every test rather than by guarantee.
 
 \subsection{At scale, a naive baseline wins}
 \label{sec:exp-bench}
@@ -323,7 +325,7 @@ improves with sample size ($0.220 \to 0.055$ reward, $0.240 \to 0.102$ dynamics,
 for $N: 300 \to 4{,}000$), and plug-in de-biasing beats naive in \textbf{4/4}
 policies by $3$--$11\times$ in absolute bias --- the continuous analogue of the
 tabular $12/12$, with the same signature: naive bias tight but systematically
-wrong, plug-in bias smaller but noisier (per-policy figures in
+wrong, plug-in bias smaller but noisier (per-policy table in
 \cref{app:cont-tab}).
 
 Pessimism validity holds throughout, but \textbf{validity is not selection
@@ -380,71 +382,68 @@ inverse to behavior-policy coverage, with the optimal policy the least covered
 mechanism, raising the logging policy's coverage of the optimal action should
 drive pessimistic regret to zero. \cref{tab:coverage} shows exactly that:
 correlation between coverage and regret is $-0.944$, regret falls from $0.367$ to
-\textbf{exactly zero}, and the penalty ratio crosses $1$ near $40\%$ coverage ---
+\textbf{exactly zero}, and the penalty ratio crosses $1$ near $43\%$ coverage ---
 below it the optimal policy is penalized \emph{more} than the alternatives, above
 it \emph{less}. Plug-in selection is perfect throughout, the control confirming
 that estimation quality is not what moves.
 
-Pessimism is therefore not malfunctioning. It answers ``which policy can I most
+Pessimism is therefore not malfunctioning: it answers ``which policy can I most
 confidently guarantee?'', which coincides with ``which is best?'' only under
-adequate coverage. De-biasing likewise wins $2/4$ here rather than $4/4$: where
-naive bias is already negligible there is nothing to correct and the correction
-only adds variance --- \cref{sec:exp-bench} in miniature.
+adequate coverage. De-biasing likewise wins $2/4$ rather than $4/4$ --- where
+naive bias is negligible the correction only adds variance.
 
 \subsection{How good does the negative control have to be?}
 \label{sec:exp-nc}
 
-Every method in this line assumes a valid negative control and proceeds; theory
-cannot say what happens when the assumption only approximately holds, since that
-assumption is what it is conditioned on. A simulator with a quality knob can. We
-sweep two failure modes separately (tables in \cref{app:nc}). Raising the
-negative control's noise $\sigma_0$ leaves Assumption 3.1 exactly true and
-degrades only informativeness; the plug-in's systematic-bias advantage survives
-to $\sigma_0 \approx 1.0$, about \emph{three times} the observation noise. Leaking
-that noise into the reward ($r_t \mathrel{+}= \delta\,\epsilon_0$) instead makes
-the assumption false while leaving $\mathbb{E}[R]$ --- and the oracle --- intact;
-the advantage is gone by $\delta = 0.5$, and bridge recovery degrades
-$9.2\times$ here against $5.7\times$ under weakening. Violating the assumption
-costs more than weakening the instrument, now quantified rather than assumed.
+Theory cannot say what happens when the negative-control assumption only
+approximately holds, since it is what the theory conditions on; a simulator with a
+quality knob can. We sweep two failure modes (\cref{app:nc}). Raising the
+control's noise $\sigma_0$ leaves \cref{as:nc} true and degrades only
+informativeness: the plug-in's systematic-bias advantage survives to
+$\sigma_0\approx0.5$ and is gone by $1.0$. Leaking that noise into the reward
+($r_t \mathrel{+}= \delta\,\epsilon_0$) instead makes the assumption \emph{false}
+while leaving $\mathbb{E}[R]$ --- and the oracle --- intact; the advantage is gone
+by $\delta=0.5$. Violating the assumption costs more than weakening the
+instrument, now quantified rather than assumed, though the two knobs are not on a
+common scale so the ordering, not the ratio, is what transfers.
 
-One practical caution: bridge recovery error is a poor proxy for value bias. At
-$\delta{=}1$ recovery error is $9\times$ baseline while systematic value bias
-grows $1.9\times$, so bridge fit does not diagnose the estimate that matters.
+One caution: recovery error is a poor proxy for value bias. At $\delta{=}1$ it is
+$9\times$ baseline while systematic value bias grows $1.9\times$.
 
 \section{Limitations}
 \label{sec:limits}
 
-\paragraph{The pessimism guarantee is empirical.} The signal projection provably
+\paragraph{The pessimism guarantee is empirical.} The projection provably
 excludes part of the truth ($21\%$ norm leakage), so
-$V_{\mathrm{low}} \le V_{\mathrm{true}}$ is an observation across our tests, not
-a theorem.
+$V_{\mathrm{low}} \le V_{\mathrm{true}}$ is an observation, not a theorem.
 
-\paragraph{The coverage explanation is tested, but in one environment.} The sweep
-of \cref{tab:coverage} confirms the prediction, but it varies coverage through a
-single channel (a dose-preference offset) in a single linear-Gaussian POMDP with
-three action levels. Other ways of degrading coverage --- actions absent
-entirely, or state-dependent coverage gaps --- are untested. With only four
-candidate policies, regret also takes few discrete values, which coarsens the
-curve: two grid points share a value, so the decrease is monotone but not
-strictly so.
+\paragraph{The coverage explanation is tested in one environment.}
+\cref{tab:coverage} confirms the prediction, but varies coverage through a single
+channel in one linear-Gaussian POMDP; absent actions and state-dependent gaps are
+untested. With four candidate policies regret takes few discrete values --- two
+grid points tie --- and $r=-0.944$ rests on $n{=}5$ points, so we lean on the
+manipulation, not the coefficient.
 
 \paragraph{Restricted scope.} Candidate policies are affine and
 observation-only, or observation-independent --- what preserves the exact oracle.
-All experiments use $T{=}3$, scalar continuous spaces, $N \le 4{,}000$. The one
-confounding-aware comparator is under-identified by the benchmark's binary proxy,
-so a second would sharpen \cref{sec:exp-bench}.
+All use $T{=}3$; the \emph{continuous} ones scalar spaces and $N\le4{,}000$, the
+tabular and benchmark runs up to $N=200{,}000$. Our one confounding-aware
+comparator is under-identified by the benchmark's binary proxy, so at that scale
+\emph{no} identifying confounding-aware method is in the comparison ---
+\cref{sec:exp-bench}'s ``naive wins'' is bounded by that.
 
 \paragraph{Statistical self-correction.} Two earlier headline numbers rested on
-3-seed standard deviations; re-checking at 5 seeds changed one materially and
-refuted the other outright. Both are recorded, with the retracted mechanism for
-\cref{sec:exp-fa}, in \cref{app:corrections}.
+3-seed deviations; at 5 seeds one changed materially and the other was refuted.
+Both are in \cref{app:corrections}, with the retracted mechanism for
+\cref{sec:exp-fa}.
 
 \section{Conclusion}
 
 Running a theory-only framework end-to-end showed what the theory did not: our
-class-free pessimism run diverges, the repair costs a measurable guarantee,
-a naive baseline dominates at scale through variance rather than bias, and
-pessimistic selection tracks coverage rather than value.
+class-free pessimism diverges and the class bound caps but does not cure it, a
+naive baseline dominates at scale through variance rather than bias, and
+pessimistic selection tracks coverage --- a manipulable cause, and the result we
+would build on next.
 
 \bibliography{refs}
 \bibliographystyle{icml2024}
