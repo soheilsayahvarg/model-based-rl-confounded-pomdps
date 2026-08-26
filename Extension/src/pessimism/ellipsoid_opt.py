@@ -296,27 +296,45 @@ def _block_M(M, i):
     return float(M[i])
 
 
+def _block_flag(flag, per_block, i):
+    """Resolve a possibly per-block boolean. per_block, when given, wins."""
+    if per_block is None:
+        return bool(flag)
+    return bool(per_block[i])
+
+
 def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
                       max_sweeps=30, tol=1e-11, n_restarts=3, rng=None,
                       projected=False, M_R=None, M_D=None,
-                      M_R_inf=None, M_D_inf=None):
+                      M_R_inf=None, M_D_inf=None,
+                      projected_R=None, projected_D=None):
     """min over conf_R x conf_D of the multilinear plug-in value, by blockwise
     closed-form coordinate descent with multi-restart.
 
     value_and_grads(bR_flat_list, bD_flat_list) -> (V, gR_flat_list, gD_flat_list)
     projected=True restricts every region to its identified signal subspace.
+    projected_R / projected_D override it per block, which is what a
+    STAGE-SELECTIVE variant needs: cor:selfheal says only the t=1 blocks leak, so
+    restricting every block is heavier than the diagnosis calls for.
+
+    A block with xi = 0 contributes its centre and zero penalty, which is exactly
+    the plug-in for that block -- so the per-block on/off switch needs no code
+    here, only a zero in xis_R / xis_D.
+
     Returns dict(V_low, V_from_center, restart_gap, n_sweeps_center).
     """
     rng = rng or np.random.default_rng(0)
     T = len(blocks_R)
+    pR = [_block_flag(projected, projected_R, t) for t in range(T)]
+    pD = [_block_flag(projected, projected_D, j) for j in range(T - 1)]
 
     def run(start):
         bR = [blocks_R[t].b_hat.copy() for t in range(T)]
         bD = [blocks_D[j].b_hat.copy() for j in range(T - 1)]
         if start == "random":
-            bR = [blocks_R[t].random_boundary_point(xis_R[t], rng, projected)
+            bR = [blocks_R[t].random_boundary_point(xis_R[t], rng, pR[t])
                   for t in range(T)]
-            bD = [blocks_D[j].random_boundary_point(xis_D[j], rng, projected)
+            bD = [blocks_D[j].random_boundary_point(xis_D[j], rng, pD[j])
                   for j in range(T - 1)]
         V_prev = np.inf
         sweeps = 0
@@ -326,13 +344,13 @@ def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
             _, gR, _ = value_and_grads(bR, bD)
             for t in range(T):
                 bR[t], _ = blocks_R[t].linear_min(
-                    gR[t], xis_R[t], projected, M=_block_M(M_R, t),
+                    gR[t], xis_R[t], pR[t], M=_block_M(M_R, t),
                     M_inf=_block_M(M_R_inf, t))
             # dynamic blocks: gradients depend on the other blocks -> refresh each
             for j in range(T - 1):
                 _, _, gD = value_and_grads(bR, bD)
                 bD[j], _ = blocks_D[j].linear_min(
-                    gD[j], xis_D[j], projected, M=_block_M(M_D, j),
+                    gD[j], xis_D[j], pD[j], M=_block_M(M_D, j),
                     M_inf=_block_M(M_D_inf, j))
             V_now = value_and_grads(bR, bD)[0]
             if V_prev - V_now < tol:
