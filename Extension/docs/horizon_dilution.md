@@ -149,3 +149,37 @@ weak-instrument** — which is narrower than the paper implied before this run.
 
 It also supplies the answer to the first question a referee would ask about
 \S6, which previously had none.
+
+---
+
+## 5. Testing the dilution at the decision level
+
+§4 predicts dilution from population algebra. The paper's decision experiment
+runs at `T = 3`. **The direct test is to re-run it at `T = 6` and see whether the
+effect shrinks by the predicted factor.** That is the check the paper currently
+lists as its sharpest open item, so it should be run rather than listed.
+
+### 5.1 What is predicted, committed before the run
+
+From §4.3, for `(4,6,2)` at `confound = 0.9` the floor-to-spread ratio moves
+`0.379 -> 0.177` between `T = 3` and `T = 6`, a factor of **0.467**.
+
+At `T = 3`, schedule C (`kappa = 1.5`), `N = 128,000`, the measured pessimistic
+regret is `0.1804` against a value spread of `0.6659`, i.e. a **normalized
+regret of 0.271**.
+
+| # | prediction |
+|---|---|
+| P6 | Normalized pessimistic regret at `T = 6`, same schedule and `N`, is about `0.271 * 0.467 = 0.127` — **roughly half**. Accept within a factor of ~1.6 either way, since regret is discrete over six policies and cannot track a continuous ratio exactly. |
+| P7 | **RAW regret will not show this.** Since the spread grows `0.666 -> 1.429` (2.15x) while the ratio falls 0.467x, raw regret is predicted at `0.127 * 1.429 ~ 0.18` — essentially unchanged from `0.1804`. Anyone comparing raw regret across horizons would wrongly conclude there is no dilution. This is the trap and we are calling it before seeing the numbers. |
+| P8 | The mechanism is unchanged, so the **sign structure survives**: pessimistic and plug-in slopes still have opposite signs under both `e > 0` schedules. |
+| P9 | The plug-in still reaches `0.000` regret at large `N` under `kappa = 1.5`. |
+| P10 | The crossing under the anchor schedule persists but is weaker — it should occur at a similar or larger `N`, not disappear. |
+
+P7 is the one worth stating loudest. If it holds, then the correct way to report
+horizon effects in this paper is exclusively in normalized units, and any raw
+regret table is misleading across horizons.
+
+### 5.2 Measurements
+
+*(committed empty; filled after the run)*
