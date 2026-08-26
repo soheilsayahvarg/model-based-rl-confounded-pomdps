@@ -66,7 +66,12 @@ SCHEDULES = [
     ("paper a=10,c2=1", (ALPHA_P + 2) / (2 * ALPHA_P + 2),
      ALPHA_P / (ALPHA_P * C2_P + 1)),
 ]
-ARMS = ["full", "tail", "proj1", "plugin"]
+ARMS = ["full", "tail", "proj1", "projall", "plugin"]
+# selfheal_theorem.md refuted the assumption that only the t=1 blocks leak: with
+# rank-deficient transitions every stage leaks, and "tail" then drops the penalty
+# on the wrong blocks. "projall" is the arm that does not need to know which
+# stage leaks -- it refuses to pay for unidentified directions at EVERY block.
+FAMILY = os.environ.get("FAMILY", "dense")
 C_CAL = {}
 RESULTS = {}
 
@@ -139,6 +144,8 @@ def arm_regions(arm, xR_full, xD_full):
     if arm == "proj1":
         return (xR_full, xD_full,
                 [True] + [False] * (nR - 1), [True] + [False] * (nD - 1))
+    if arm == "projall":
+        return xR_full, xD_full, [True] * nR, [True] * nD
     raise ValueError(arm)
 
 
@@ -202,10 +209,20 @@ def logslope(xs, ys):
 
 
 def main():
-    p = default_params(n_s=N_S, n_a=N_A, n_o=N_O, n_o0=N_O0, T=T,
-                       seed=0, confound=CONFOUND)
-    print("(%d,%d,%d) confound=%s  INCOMPLETE   %d seeds\n"
-          % (N_S, N_O, N_O0, CONFOUND, len(SEEDS)))
+    if FAMILY == "dense":
+        p = default_params(n_s=N_S, n_a=N_A, n_o=N_O, n_o0=N_O0, T=T,
+                           seed=0, confound=CONFOUND)
+    else:
+        # Same p1, K0, E and pi_b, so the stage-1 floor is IDENTICAL; only the
+        # transition changes. That makes the comparison a controlled one.
+        from run_selfheal_formula import make_params, span_bruteforce
+        p = make_params((N_S, N_O, N_O0), CONFOUND, FAMILY)
+        spans = [span_bruteforce(p, a, t).shape[1]
+                 for a in range(N_A) for t in (1, 2, 3)]
+        print("family=%s   per-action spans (a,t) = %s against |S| = %d"
+              % (FAMILY, spans, N_S))
+    print("(%d,%d,%d) confound=%s  INCOMPLETE   %d seeds   family=%s\n"
+          % (N_S, N_O, N_O0, CONFOUND, len(SEEDS), FAMILY))
     beta, beta_g = precondition(p)
 
     cands = candidates()
@@ -385,9 +402,11 @@ def main():
     RESULTS.update(rows=rows, penalties=pen_rows, conservatism=cons_rows,
                    v_true=v_true, optimal=best, beta=beta, beta_g=beta_g,
                    floor=beta * beta_g, confound=CONFOUND,
-                   config=[N_S, N_O, N_O0], n_seeds=len(SEEDS), T=T)
+                   config=[N_S, N_O, N_O0], n_seeds=len(SEEDS), T=T,
+                   family=FAMILY, arms=ARMS)
     out = os.path.normpath(os.path.join(HERE, "..", "experiments",
-                                        "results_stage_selective.json"))
+                                        "results_stage_selective_%s.json"
+                                        % FAMILY))
     with open(out, "w") as f:
         json.dump(RESULTS, f, indent=2, default=float)
     print("\nresults written to", out)

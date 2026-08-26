@@ -163,3 +163,58 @@ be earned back.
 That converts the contribution from a diagnosis into a diagnosis plus a
 remedy, which is the difference between a paper that reports a limitation and a
 paper that does something about it.
+
+## 8. Part D: does the remedy survive its own refutation?
+
+**Written and committed before Part D was run.** Disclosure on what was already
+seen: an interrupted 20-seed run completed schedule C on the `dense` family
+before it was killed, so the `full` / `tail` / `proj1` / `plugin` numbers for
+that one schedule are **already observed** and are not predictions. The
+`projall` arm is new, the `dense_lowrank` family is new, and the paper schedule
+is unobserved. P9 through P13 concern only those.
+
+### Why Part D exists
+
+`selfheal_theorem.md` section 6 refuted `cor:selfheal` as published. With
+rank-deficient transitions, every stage leaks, not only the first. The whole
+premise of `tail` and `proj1` is that the leaky blocks are exactly the `t = 1`
+ones, and that premise is now known to be false on a class of problems.
+
+So the remedy has to be tested where its targeting is wrong. `dense_lowrank`
+keeps `p_1`, `K_0`, `E` and `pi_b` and changes only `P`, so the stage-1 floor is
+**identical** (`beta = 1.1775`, `beta_g = 0.3639`, floor `0.4285`) while the
+per-action span is `2` at every stage instead of `2, 4, 4`. One variable moves.
+
+### A fifth arm
+
+`projall` restricts **every** block's region to its identified span, not only
+the first. It is the arm that does not need to know which stage leaks: it
+refuses to pay for directions the design cannot see, wherever they occur. If it
+works in both families, the refutation has produced a better remedy than the one
+it killed.
+
+### Predictions
+
+- **P9.** `tail` has a slope `>= 0` under `dense_lowrank`, against `-0.026`
+  measured under `dense`. The remedy fails when its targeting is wrong.
+- **P10.** `proj1` also fails there, slope `>= 0`, for the same reason: it
+  restricts the `t = 1` region only.
+- **P11.** In `dense_lowrank`, `beta_g` at the `t >= 2` blocks exceeds `0.1` and
+  the empirical null dimension there is nonzero, against exactly `0` and `0` in
+  `dense`. This is the mechanism, and it should be visible in Part A before Part
+  B is consulted.
+- **P12.** `projall` has a **negative** slope in **both** families. This is the
+  one that matters.
+- **P13.** `projall` stays conservative in every cell of both families, so it
+  buys convergence without giving up the property the layer exists to provide.
+
+### If P12 fails
+
+Then there is no remedy that survives without knowing the leak structure, and
+the honest conclusion is that the two switches are a diagnosis and not a
+prescription. We would report that, drop the remedy section, and keep the
+refutation, which is a real result on its own.
+
+### Measurement
+
+*(empty until run)*
