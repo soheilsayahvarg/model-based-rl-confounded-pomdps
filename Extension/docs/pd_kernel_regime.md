@@ -276,3 +276,76 @@ The kernel itself is now in the right class. The fitted decay exponent is
 `b = 2.0055` to `2.0060` across bandwidths that vary by `10x`, which is the
 Sobolev `j^-2` the Matern-1/2 kernel should give. Replacing the Gaussian was the
 right move; the mode budget was not raised to match.
+
+## 8. The guard, rebuilt on the quantity instead of a proxy
+
+`poc/run_pd_kernel3.py`. For `j > J` the spectrum obeys `s_j <= J^-b`, so
+whenever `J^-b <= lambda`,
+
+    tail = sum_{j>J} j^-a / (s_j + lambda)  <=  J^(1-a) / ((a-1) * lambda)
+
+an exact upper bound computable in `O(1)`. A cell is admissible when that bound
+sits below `1%` of the sum actually computed, at every `N` on the grid.
+
+### It catches the cell the old guard lost.
+
+`(1.2, 1.2)`, which the `j*` guard accepted and which then failed by `0.031`, is
+**rejected**. Across the `25`-cell grid the new guard admits `18`, and among
+those there is **no truncation failure at all**. The two admitted cells that miss
+the `0.02` tolerance are `(3.5, 2.5)` and `(5.0, 4.0)`, both at `theta = 0`
+exactly, both by `0.035` to `0.037`, and both are the logarithmic boundary that
+P-K8 independently showed converging `3` of `3`. A truncation guard is not
+supposed to catch those, and it should not be credited or blamed for them.
+
+### It is still conservative, and now for a reason we can state.
+
+Five rejected cells would have passed, all with `a` in `{1.2, 1.8}`. The bound
+replaces `s_j` by `0` for every `j > J`, which is loose exactly when `a` is close
+to `1` and the spectrum just past `J` is still comparable to `lambda`. So the
+conservatism is a property of a **provable upper bound** being slack, not an
+unmodeled failure mode. Part 2 confirms the rejections are honest: all `7`
+rejected cells move toward the prediction as `J` grows from `1e5` to `6e6`,
+`7` of `7`.
+
+| | admits a truncated cell | rejects a sound cell |
+|---|---|---|
+| `j*` proxy guard | **1** | 4 of 5 |
+| tail-bound guard | **0** | 5 of 7, all provably slack |
+
+This is the structural fix `claims.md` says the
+range-cannot-straddle-the-transition mode needs. The previous four instances were
+each patched one cell at a time.
+
+### P-K9 now passes, and the kernel is definitively in the right class.
+
+Splitting the two questions the earlier test confounded:
+
+**Is the Laplacian kernel polynomial-decay?** The fitted exponent is `2.0055`,
+`2.0059`, `2.0060`, `2.0060` across bandwidths `0.05` to `0.5`, a **spread of
+`0.0005` over a tenfold range**, against the Sobolev / Matern-1/2 prediction of
+exactly `2`. Yes.
+
+**Does the law hold there?** On `b = 2.006`, three of four `a` values are
+admissible and the worst error is `0.0376`, inside the `0.05` tolerance, against
+the Gaussian kernel's `0.1064`. The worst of the three is again `theta = 0.0029`,
+the log boundary. The single rejected cell would have passed at `0.0007`.
+
+**P-K9 holds.** The original failure was our choice of kernel and our mode
+budget, both of ours, neither the theory's.
+
+## 9. What the paper has to change
+
+- `sec:not-new` states `e' = tau + theta*kappa - 1`. It needs
+  `clip(theta, 0, 1)`: for `theta <= 0` the exponent saturates at `(tau-1)/2`,
+  measured to `0.0007` at `theta = -0.60` and `0.0000` at `theta = -2.33`.
+- `prop:floor` is **schedule-free only because of the atom**. On a PD spectrum
+  the same quantity decays with log-log slope `-0.302` to `-0.911`. The word
+  "schedule-free" has to be scoped to the exact-null case, and `sec:scope`'s
+  admission that the PD regime is uncharacterized is replaced by a
+  characterization that costs us the adjective.
+- `cor:epaper` becomes conditional. At `c_2 = 1` the schedule is non-contracting
+  iff `theta >= 1/2`, that is **`b >= 2(a-1)`**: the design spectrum decaying at
+  least twice as fast as the gradient's mass concentrates. At `c_2 = 2` the
+  threshold is `0.955` at `alpha = 10`, so almost any smoothness rescues it.
+  That is a sharper and more useful statement than the unconditional one, and it
+  is checkable from a Gram matrix.
