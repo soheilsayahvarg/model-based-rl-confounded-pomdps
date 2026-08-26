@@ -110,4 +110,103 @@ schedule-freeness is a property of the atom and not of the method, and
 
 ## 6. Measurement
 
+`poc/run_pd_kernel.py`. Exact linear algebra on a diagonal spectrum, no
+sampling.
+
+### P-K1 holds. 0 mismatches of 25.
+
+`theta* = (alpha*c_2 + 1)/(2*alpha + 2)` agrees with a direct sign evaluation of
+`tau + theta*kappa - 1` in every admissible cell, and at `c_2 = 1` the value is
+`0.5` **exactly** for every `alpha` in `{0.5, 1, 2, 5, 10}`. The smoothness
+parameter cancels, as derived.
+
+### P-K3 holds. The atom dominates and does not care about the tail.
+
+With an atom inserted, the measured slope is `0.207` to `0.227` against a
+predicted `e/2 = 0.2273`, worst error `0.0195`, and the **spread across the
+entire `(a, b)` grid is `0.0195`**. Whatever the tail does, one exactly-zero
+eigenvalue sets the exponent.
+
+### P-K4 holds, and it takes `prop:floor`'s central adjective.
+
+| spectrum | floor across the `N` grid | log-log slope |
+|---|---|---|
+| atom, `a=2 b=3` | `1.091` -> `1.006` | `-0.0085` |
+| atom, `a=3 b=2` | `1.0005` -> `1.0000` | `-0.0000` |
+| PD, `a=2 b=3` | `9.51e-2` -> `6.42e-3` | `-0.302` |
+| PD, `a=3 b=2` | `5.04e-4` -> `1.34e-7` | `-0.911` |
+
+On the atom spectrum the floor is constant, which is `prop:floor`. On the PD
+spectrum the same quantity decays by up to four orders of magnitude. **It is not
+a floor.** Schedule-freeness is a property of the atom, not of the method.
+
+### P-K2 is REFUTED as stated, and splits into two causes.
+
+Worst error `0.4547` against a `0.02` tolerance. The failures are not one
+phenomenon.
+
+**Cause 1, our own defect: the grid could not straddle the transition.** The
+split point is `j* = lambda^(-1/b)`, and at the smallest `lambda` on the grid
+(`2.70e-7`) that is `2.39e4` for `b = 1.5`, against a truncation at
+`J_MAX = 20000`. The spectrum ended before the ridge scale reached it. Re-run at
+`J_MAX = 4e6`:
+
+| `(a, b)` | `theta` | predicted | at `J_MAX=2e4` | at `J_MAX=4e6` |
+|---|---|---|---|---|
+| `(1.5, 1.5)` | `0.667` | `0.0758` | `0.0147` | **`0.0727`** |
+| `(1.5, 2.0)` | `0.750` | `0.1136` | `0.0987` | **`0.1127`** |
+| `(2.0, 1.5)` | `0.333` | `-0.0758` | `-0.0921` | **`-0.0729`** |
+
+Errors fall to `0.003`, `0.001`, `0.003`. This is the **fifth** instance of the
+failure mode `claims.md` already names, and the one place we did not install the
+precondition guard that exists for it. The guard is now in the driver.
+
+**Cause 2, a real correction to the law.** Cells with `theta <= 0` stay wrong at
+any truncation. `(3.0, 1.5)` has `theta = -0.333` and a predicted `-0.3788`; the
+measured value is `-0.2227` at both truncations. That number is
+`(tau - 1)/2 = -0.2273`. When `theta <= 0` the sum `sum_j g_j^2 / s_j`
+**converges**, `||g||_{H^-1}` tends to a constant, and the width is governed by
+`sqrt(xi)` alone. The exponent saturates:
+
+    slope = ( tau + clip(theta, 0, 1) * kappa - 1 ) / 2
+
+At `theta = 0` exactly the sum diverges logarithmically, and the two boundary
+cells `(3,2)` and `(4,3)` sit at `-0.189` against `-0.2273`, a residual of
+`0.038` that a log factor would explain.
+
+`sec:not-new` of the paper states `e' = tau + theta*kappa - 1` without the clip.
+That is wrong for `theta <= 0` and should be corrected.
+
+### P-K5 is REFUTED, and the fault is our experiment, not the theory.
+
+Worst error `0.1064` against `0.05`. We fitted a power law to a **Gaussian**
+kernel spectrum, whose eigenvalues decay exponentially. A log-log fit to an
+exponential is meaningless, so `b_fit` between `2.77` and `8.37` is an artifact
+of the fitting window rather than a spectral exponent. The Gaussian kernel is
+not in the polynomial-decay class the theory addresses; it behaves like
+`theta = 1` with a logarithmic drag, and `400` modes truncate it besides. Part 5
+is redone with a kernel that actually has polynomial decay.
+
+## 7. The corrected law, and a fresh out-of-sample test
+
+Stated post-hoc, so it is not evidence yet. The grid below shares no `(a, b)`
+pair with the run that produced the correction.
+
+    slope(a, b) = ( tau + clip(1 - (a-1)/b, 0, 1) * kappa - 1 ) / 2
+
+- **P-K6.** On the fresh grid `a in {1.2, 1.8, 2.5, 3.5, 5.0}` and
+  `b in {1.2, 2.5, 4.0, 8.0}`, all `20` cells, the measured slope matches the
+  clipped law to within `0.02`, **provided** the truncation guard passes.
+- **P-K7.** Every cell the guard rejects is a cell where `j*` exceeds a tenth of
+  the mode count, and none of the accepted cells miss. If a rejected cell would
+  have passed anyway, the guard is over-conservative and we say so.
+- **P-K8.** At `theta = 0` exactly, the residual shrinks as the `N` grid extends,
+  consistent with a logarithmic correction rather than a wrong exponent. Measured
+  as the slope of the residual against `log N` over a doubled grid.
+- **P-K9.** With a Laplacian kernel, whose eigenvalues decay polynomially, the
+  fitted `b` predicts the measured slope through the clipped law to within
+  `0.05`, where the Gaussian kernel failed at `0.106`.
+
+### Measurement
+
 *(empty until run)*
