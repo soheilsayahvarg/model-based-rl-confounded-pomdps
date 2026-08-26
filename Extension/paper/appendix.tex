@@ -164,3 +164,28 @@ and the identity --- are a different mode, in which the experiment could not hav
 failed because its knob confounded two variables or its target was arithmetic. We
 have no structural fix for that one beyond deriving the closed form before
 sweeping.
+
+\section{Horizon Dilution: Numbers}
+\label{app:dilution}
+
+The values plotted in \cref{fig:dilution}(a). Entries are the floor
+$\beta\beta_g$ divided by the spread of true values across six candidate
+policies. The floor itself is constant along each row.
+
+\begin{center}\small
+\begin{tabular}{@{}llcccccc@{}}
+\toprule
+config & conf. & $T{=}1$ & $2$ & $3$ & $4$ & $5$ & $6$ \\
+\midrule
+$(4,6,2)$ & $0.6$ & $0.425$ & $0.161$ & $0.099$ & $0.072$ & $0.056$ & $0.046$ \\
+$(4,6,2)$ & $0.9$ & $\mathbf{1.627}$ & $0.615$ & $0.379$ & $0.274$ & $0.215$ & $0.177$ \\
+$(4,8,3)$ & $0.6$ & $0.390$ & $0.205$ & $0.141$ & $0.108$ & $0.088$ & $0.074$ \\
+$(4,8,3)$ & $0.9$ & $0.505$ & $0.266$ & $0.183$ & $0.140$ & $0.114$ & $0.096$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Per-stage leakages behind \cref{cor:selfheal}: at $t=1$ the span is $2$ or $3$
+against $|S|=4$, with $\beta$ between $0.51$ and $0.71$; at every $t \ge 2$ the
+span reaches $|S|$ and $\beta_t \le 2.7\times10^{-15}$, giving a per-stage floor
+below $4.3\times10^{-30}$.

@@ -180,6 +180,87 @@ P7 is the one worth stating loudest. If it holds, then the correct way to report
 horizon effects in this paper is exclusively in normalized units, and any raw
 regret table is misleading across horizons.
 
-### 5.2 Measurements
+### 5.2 Measurements — P6 and P7 are both REFUTED, in opposite directions
 
-*(committed empty; filled after the run)*
+`poc/run_regret_horizon.py`, `HORIZON=6`, 20 seeds, two schedules.
+
+**First, a defect in my own prediction.** §4.3 computed floor/spread using a
+*randomly generated* six-policy set, while the decision experiment uses six
+hand-built policies. Recomputing on the set the experiment actually uses:
+
+| | `T=1` | `T=2` | `T=3` | `T=4` | `T=5` | `T=6` |
+|---|---|---|---|---|---|---|
+| spread | 0.0969 | 0.2038 | 0.2966 | 0.4091 | 0.5148 | 0.6234 |
+| floor/spread | 4.42 | 2.10 | **1.44** | 1.05 | 0.83 | **0.687** |
+
+The **dilution law survives this**: the `T=3 -> T=6` factor is `0.476` against the
+`0.466` predicted from the other set, and the spread still roughly doubles. What
+changes is the level, not the exponent. So §4's Corollary stands.
+
+But every number in P6 and P7 was computed from the wrong spread, so both
+predictions were mis-stated before the run. Correcting them first, then testing:
+
+| | predicted from the wrong spread | correct prediction |
+|---|---|---|
+| `T=3` normalized regret | 0.271 | `0.1804/0.2966` = **0.608** |
+| `T=6` normalized (P6) | 0.127 | `0.608 * 0.476` = **0.290** |
+| `T=6` raw (P7) | 0.180 | `0.290 * 0.6234` = **0.181** |
+
+**Measured, schedule C (`kappa=1.5`):**
+
+| `N` | pessimistic | plug-in |
+|---|---|---|
+| 2,000 | 0.2257 ± 0.0290 | 0.2128 ± 0.0155 |
+| 8,000 | 0.2941 ± 0.0450 | 0.1171 ± 0.0458 |
+| 32,000 | 0.3770 ± 0.0000 | 0.0425 ± 0.0639 |
+| 128,000 | **0.3770 ± 0.0000** | 0.0623 ± 0.0841 |
+
+> **P7 refuted.** Raw regret at `T=6` is **0.3770**, not `0.181`. It more than
+> **doubled** against `T=3`'s `0.1804`.
+>
+> **P6 refuted.** Normalized regret is `0.3770/0.6234` = **0.605**, against
+> `T=3`'s `0.608`. It did not halve — **it did not move at all.**
+
+### 5.3 Why: the same mistake, at a higher price
+
+The modal pick is `uniform` at `N >= 8,000` for **both** horizons. Pessimism makes
+the *identical selection error* at `T=3` and `T=6`; `uniform`'s regret against the
+optimum is simply larger at the longer horizon (`0.377` vs `0.180`). The
+per-block width barely moves either — `0.4018` at `T=6` against `0.4070` at
+`T=3`.
+
+So the decision damage is governed by **which policy the penalty promotes**, not
+by the floor-to-spread ratio. That ratio halves; the selection error does not
+change; the cost of that error scales with the horizon exactly as the spread
+does. The two effects cancel and normalized regret is flat.
+
+> **This refutes the decision-level reading of §4, not §4 itself.** The floor is
+> constant in `T`, the spread grows, and their ratio decays as `1/T` — all
+> measured, all still true. The inference *"therefore the decision-level
+> consequence is a short-horizon phenomenon"* does not follow and is false. A
+> lower bound on one block's width does not predict which of six discrete
+> policies a pessimistic selector will promote.
+
+### 5.4 What survived
+
+| # | prediction | verdict |
+|---|---|---|
+| P6 | normalized regret halves | **refuted** — flat (0.608 → 0.605) |
+| P7 | raw regret unchanged | **refuted** — doubled (0.180 → 0.377) |
+| P8 | opposite-signed slopes survive | **holds** — `+0.0387` vs `−0.0379` (sched. C), `+0.0407` vs `−0.0209` (anchor) |
+| P9 | plug-in reaches 0.000 at large `N` | **weakened** — `0.0623 ± 0.0841`, interval covers zero but the point does not |
+| P10 | crossing persists at similar or larger `N` | **half wrong** — it persists, but moves *earlier*: between `2,000` and `8,000` at `T=6`, against `8,000`–`32,000` at `T=3` |
+
+P8 is the load-bearing survivor: the mechanism is intact at both horizons, and
+under `e>0` more data still converges the plug-in while diverging the pessimistic
+selection built on the same fits.
+
+### 5.5 Consequence for the paper
+
+Corollary 4 keeps its statement about the floor and **loses its decision-level
+sentence**. The honest replacement is stronger, because it is measured rather
+than inferred: *the pessimistic selector commits the same error at every horizon
+tested, and the cost of that error grows with the horizon, so its relative damage
+is horizon-invariant.* The claim we were about to make — that long horizons are
+safe — is wrong, and would have been the kind of reassurance a practitioner acts
+on.

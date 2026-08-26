@@ -79,11 +79,12 @@ this family shows its governing exponent is positive for \emph{every} admissible
 smoothness ($30/30$ cells), so the region it prescribes is non-contracting on the
 leaky branch. At the decision level, over $20$ seeds, pessimistic and plug-in
 selection have opposite-signed regret slopes under that schedule and their curves
-cross: pessimism helps at $N{=}2{,}000$ and hurts at $N{\ge}32{,}000$. That
-consequence, however, is short-horizon: the decision-relevant value spread grows
-with $T$ while the floor does not, so the fraction of the selection problem it
-distorts decays as $1/T$. The width result is horizon-free; its decision-level
-consequence is not. All of this lives outside the anchor paper's own assumptions,
+cross: pessimism helps at $N{=}2{,}000$ and hurts at $N{\ge}32{,}000$. The floor itself is
+diluted by the horizon --- it is constant in $T$ while the value spread grows, so
+their ratio decays as $1/T$ --- but we predicted and then refuted the natural
+inference that long horizons are therefore safe: at $T=6$ normalized regret is
+flat against $T=3$ and raw regret doubles, because the selector commits the same
+error and only its price scales. All of this lives outside the anchor paper's own assumptions,
 which is what makes it a robustness result about the boundary of applicability
 rather than a defect.
 \end{abstract}
@@ -383,30 +384,26 @@ first block leaks: across all configurations and stages $t\ge2$ we measure
 $\beta_t \le 2.7\times10^{-15}$ and a per-stage floor
 $\le 4.3\times10^{-30}$.
 
-\begin{table}[t]
-\caption{The floor is constant in $T$ while the decision-relevant scale grows.
-Entries are $\beta\beta_g$ divided by the spread of true values over six
-candidate policies. Log--log slopes against $T$: $-1.23$ and $-0.93$.}
-\label{tab:dilution}
-\begin{center}\small\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}llcccccc@{}}
-\toprule
-config & conf. & $T{=}1$ & $2$ & $3$ & $4$ & $5$ & $6$ \\
-\midrule
-$(4,6,2)$ & $0.6$ & $0.425$ & $0.161$ & $0.099$ & $0.072$ & $0.056$ & $0.046$ \\
-$(4,6,2)$ & $0.9$ & $\mathbf{1.627}$ & $0.615$ & $0.379$ & $0.274$ & $0.215$ & $0.177$ \\
-$(4,8,3)$ & $0.6$ & $0.390$ & $0.205$ & $0.141$ & $0.108$ & $0.088$ & $0.074$ \\
-$(4,8,3)$ & $0.9$ & $0.505$ & $0.266$ & $0.183$ & $0.140$ & $0.114$ & $0.096$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/dilution.pdf}
+\caption{\textbf{(a)} The floor divided by the spread of true values over six
+candidate policies, against horizon, on log--log axes. Four configurations lie on
+near-parallel lines with measured exponents $-1.23$ and $-0.93$. At $T{=}1$ under
+strong confounding the floor exceeds the entire spread, so pessimism cannot
+discriminate at all. \textbf{(b)} The floor against confounding strength. The
+complete design is at \emph{exactly} zero until the knife-edge at $1$, while the
+incomplete ones rise smoothly --- the conjunction of \cref{cor:conjunction} seen
+directly. Zeros are plotted at zero on a symlog axis rather than clamped onto a
+log decade. Numbers in \cref{app:dilution}.}
+\label{fig:dilution}
+\end{figure*}
 
 \paragraph{The damage is diluted by the horizon.} Because exactly one block
 leaks, the absolute floor does not compound: it is the same number whether the
 horizon is $1$ or $6$. The scale it must be compared against is not. Selection is
 decided by \emph{differences} between candidate policies, and that spread grows
-with $T$. \Cref{tab:dilution} divides one by the other and finds a decay of
+with $T$. \Cref{fig:dilution}(a) divides one by the other and finds a decay of
 roughly $1/T$ --- log--log slopes of $-1.23$ and $-0.93$, about a $10\times$
 reduction from $T=1$ to $T=6$.
 
@@ -417,15 +414,35 @@ linearly, so the fraction of the selection problem it distorts decays as
 $\Theta(1/T)$.
 \end{corollary}
 
-Two consequences we state plainly because they cut in opposite directions. At
-$T=1$ under strong confounding the floor \emph{exceeds the entire value spread}
-($1.627$): pessimism there cannot discriminate among candidates at all, because
-the irreducible penalty is larger than the whole range it would have to resolve.
-But by $T=6$ the same quantity is $0.18$. \textbf{Proposition~1 is horizon-free
---- the region does not contract at any $T$ --- while its decision-level
-consequence is a short-horizon phenomenon.} The regime in which proximal
-pessimism is genuinely unusable is short-horizon, strongly confounded, and
-weak-instrument, which is narrower than the width result alone would suggest.
+\paragraph{The obvious inference from this is false, and we tested it.} It is
+tempting to read \cref{cor:dilution} as saying that long horizons are safe. We
+predicted exactly that --- normalized regret halving between $T=3$ and $T=6$ ---
+committed the prediction, re-ran the $20$-seed decision experiment at $T=6$, and
+it is wrong. Normalized regret is $0.605$ at $T=6$ against $0.608$ at $T=3$:
+\textbf{flat}. Raw regret more than doubled, $0.180 \to 0.377$.
+
+The reason is visible in the selections. The pessimistic selector converges to
+the same wrong policy at both horizons, and the per-block width barely moves
+($0.402$ at $T=6$ against $0.407$ at $T=3$). What changes is only what that
+mistake costs, and that scales with the horizon exactly as the spread does. The
+two effects cancel.
+
+\begin{corollary}[The floor does not govern the decision]
+\label{cor:nogovern}
+A lower bound on one block's width does not predict which of a discrete set of
+policies a pessimistic selector promotes. \Cref{cor:dilution} holds as stated
+about the floor and does \emph{not} imply that the decision-level consequence
+weakens with the horizon; measured, that consequence is horizon-invariant in
+relative terms and grows in absolute ones.
+\end{corollary}
+
+So the regime in which proximal pessimism is unusable is \emph{not} narrowed by a
+long horizon. At $T=1$ under strong confounding the floor exceeds the entire
+value spread, which rules out discrimination outright; at $T=6$ the floor is a
+smaller fraction of a wider spread, and the selector is exactly as wrong. What
+\cref{cor:dilution} does buy is a warning about units: raw regret is not
+comparable across horizons, and a table that compares it is misleading in
+whichever direction the spread happens to move.
 
 \section{Consequences for Rate Schedules}
 \label{sec:placement}
@@ -617,12 +634,12 @@ $T\le3$ and $|S|\le4$, generated from a single construction. The population
 results are exact algebra and so do not depend on sampling, but they do depend on
 that family's structure.
 
-\paragraph{The decision experiment sits at $T=3$.} By \cref{cor:dilution} the
-fraction of the selection problem the floor distorts decays as $1/T$, and $T=3$
-is a regime where that fraction is still $10$--$38\%$. \Cref{tab:decision} is
-therefore a short-horizon result by construction. We have not run the $20$-seed
-experiment at $T=6$, where \cref{tab:dilution} predicts a materially weaker
-effect, and that is the sharpest open check on \cref{sec:decision}.
+\paragraph{Two horizons, not many.} \Cref{tab:decision} is $T=3$ and the check
+behind \cref{cor:nogovern} is $T=6$. Flat normalized regret across two points is
+consistent with horizon-invariance but does not establish it; the selector could
+change its mistake at some larger $T$ we have not reached. What the two points do
+establish is that the $1/T$ dilution of the floor does \emph{not} transmit to the
+decision, which was the specific inference we set out to test.
 
 \paragraph{Dilution is measured, not derived.} \Cref{cor:dilution} rests on the
 value spread growing linearly in $T$, which holds in our environment family
