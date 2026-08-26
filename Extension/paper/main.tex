@@ -72,17 +72,20 @@ inadequate negative control ($|O_0|<|S|$, a statement about dimensions alone)
 makes the truth leak, and confounding --- the behaviour policy depending on
 latent state --- makes the gradient leak. Neither alone suffices; we verify the
 first in $50/50$ population cells and map the second across four configurations.
-The characterization is a statement about the \emph{first} stage: from $t=2$ on,
-history restores per-action completeness and the later blocks stop leaking, so an
-inadequate control is partially self-healing along the horizon.
-Placing the schedule of \citet{hong2024} inside this family shows its governing
-exponent is positive for \emph{every} admissible smoothness ($30/30$ cells), so
-the region it prescribes is non-contracting on the leaky branch. At the decision
-level, over $20$ seeds, pessimistic and plug-in selection have opposite-signed
-regret slopes under that schedule and their curves cross: pessimism helps at
-$N{=}2{,}000$ and hurts at $N{\ge}32{,}000$. We are explicit that all of this
-lives outside the anchor paper's own assumptions, which is what makes it a
-robustness result about the boundary of applicability rather than a defect.
+The characterization concerns the \emph{first} stage: from $t=2$ on, history
+restores per-action completeness, so exactly one block leaks whatever the horizon
+and the floor does not compound. Placing the schedule of \citet{hong2024} inside
+this family shows its governing exponent is positive for \emph{every} admissible
+smoothness ($30/30$ cells), so the region it prescribes is non-contracting on the
+leaky branch. At the decision level, over $20$ seeds, pessimistic and plug-in
+selection have opposite-signed regret slopes under that schedule and their curves
+cross: pessimism helps at $N{=}2{,}000$ and hurts at $N{\ge}32{,}000$. That
+consequence, however, is short-horizon: the decision-relevant value spread grows
+with $T$ while the floor does not, so the fraction of the selection problem it
+distorts decays as $1/T$. The width result is horizon-free; its decision-level
+consequence is not. All of this lives outside the anchor paper's own assumptions,
+which is what makes it a robustness result about the boundary of applicability
+rather than a defect.
 \end{abstract}
 
 \section{Introduction}
@@ -373,13 +376,56 @@ control is \emph{partially self-healing}: per-action completeness is restored at
 every stage after the first, and only the stage-1 blocks leak.
 \end{corollary}
 
-This narrows the claim and sharpens it. The dimensional test $|O_0|<|S|$ is a
-statement about the first stage, not about the whole horizon, and a floor in a
-multi-stage value is carried by the stage-1 blocks inside it. That is still
-enough to move the decision --- \cref{sec:decision} runs at $T=3$ --- but a
-practitioner reading ``check whether $|O_0|<|S|$'' should understand it as
-diagnosing the first stage and should expect the damage to be bounded by that
-stage's contribution rather than to compound along the horizon.
+The restoration is uniform rather than a $t=2$ accident: we computed per-action
+spans stage by stage out to $t=5$, and the span reaches $|S|$ at \emph{every}
+stage after the first, at every confounding level below saturation. Only the
+first block leaks: across all configurations and stages $t\ge2$ we measure
+$\beta_t \le 2.7\times10^{-15}$ and a per-stage floor
+$\le 4.3\times10^{-30}$.
+
+\begin{table}[t]
+\caption{The floor is constant in $T$ while the decision-relevant scale grows.
+Entries are $\beta\beta_g$ divided by the spread of true values over six
+candidate policies. Log--log slopes against $T$: $-1.23$ and $-0.93$.}
+\label{tab:dilution}
+\begin{center}\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llcccccc@{}}
+\toprule
+config & conf. & $T{=}1$ & $2$ & $3$ & $4$ & $5$ & $6$ \\
+\midrule
+$(4,6,2)$ & $0.6$ & $0.425$ & $0.161$ & $0.099$ & $0.072$ & $0.056$ & $0.046$ \\
+$(4,6,2)$ & $0.9$ & $\mathbf{1.627}$ & $0.615$ & $0.379$ & $0.274$ & $0.215$ & $0.177$ \\
+$(4,8,3)$ & $0.6$ & $0.390$ & $0.205$ & $0.141$ & $0.108$ & $0.088$ & $0.074$ \\
+$(4,8,3)$ & $0.9$ & $0.505$ & $0.266$ & $0.183$ & $0.140$ & $0.114$ & $0.096$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\paragraph{The damage is diluted by the horizon.} Because exactly one block
+leaks, the absolute floor does not compound: it is the same number whether the
+horizon is $1$ or $6$. The scale it must be compared against is not. Selection is
+decided by \emph{differences} between candidate policies, and that spread grows
+with $T$. \Cref{tab:dilution} divides one by the other and finds a decay of
+roughly $1/T$ --- log--log slopes of $-1.23$ and $-0.93$, about a $10\times$
+reduction from $T=1$ to $T=6$.
+
+\begin{corollary}[Horizon dilution]
+\label{cor:dilution}
+The floor is constant in $T$ while the decision-relevant value spread grows
+linearly, so the fraction of the selection problem it distorts decays as
+$\Theta(1/T)$.
+\end{corollary}
+
+Two consequences we state plainly because they cut in opposite directions. At
+$T=1$ under strong confounding the floor \emph{exceeds the entire value spread}
+($1.627$): pessimism there cannot discriminate among candidates at all, because
+the irreducible penalty is larger than the whole range it would have to resolve.
+But by $T=6$ the same quantity is $0.18$. \textbf{Proposition~1 is horizon-free
+--- the region does not contract at any $T$ --- while its decision-level
+consequence is a short-horizon phenomenon.} The regime in which proximal
+pessimism is genuinely unusable is short-horizon, strongly confounded, and
+weak-instrument, which is narrower than the width result alone would suggest.
 
 \section{Consequences for Rate Schedules}
 \label{sec:placement}
@@ -571,11 +617,18 @@ $T\le3$ and $|S|\le4$, generated from a single construction. The population
 results are exact algebra and so do not depend on sampling, but they do depend on
 that family's structure.
 
-\paragraph{The switches are a stage-1 statement.} \Cref{cor:selfheal} bounds how
-far the characterization reaches: from $t=2$ on, history restores per-action
-completeness and the later blocks do not leak. We have verified this only in the
-population and only at $t=2$; whether the restoration is uniform in $T$, and how
-quickly the $t=1$ contribution is diluted as the horizon grows, are open.
+\paragraph{The decision experiment sits at $T=3$.} By \cref{cor:dilution} the
+fraction of the selection problem the floor distorts decays as $1/T$, and $T=3$
+is a regime where that fraction is still $10$--$38\%$. \Cref{tab:decision} is
+therefore a short-horizon result by construction. We have not run the $20$-seed
+experiment at $T=6$, where \cref{tab:dilution} predicts a materially weaker
+effect, and that is the sharpest open check on \cref{sec:decision}.
+
+\paragraph{Dilution is measured, not derived.} \Cref{cor:dilution} rests on the
+value spread growing linearly in $T$, which holds in our environment family
+because per-stage rewards are bounded away from zero and candidate policies
+differ at every stage. A family with vanishing late-stage reward differences
+would dilute more slowly, and we have not characterized that.
 
 \paragraph{Saturated confounding is a separate regime.} All of
 \cref{cor:selfheal} is stated for confounding strictly below $1$. At exactly $1$

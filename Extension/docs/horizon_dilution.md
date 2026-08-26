@@ -64,4 +64,88 @@ at stake is whether its **decision-level consequence** survives a long horizon.
 
 ## 4. Measurements
 
-*(committed empty; filled after the run)*
+`poc/run_horizon_dilution.py`, population algebra throughout. **All five
+predictions confirmed, including P5.**
+
+### 4.1 P1 — the restoration is uniform, and the knife-edge is too
+
+Per-action span rank by stage (worst action shown), horizons to `t = 5`:
+
+| config | `cf` | `\|S\|` | t=1 | t=2 | t=3 | t=4 | t=5 |
+|---|---|---|---|---|---|---|---|
+| (4,6,2) | 0.6 | 4 | **2** | 4 | 4 | 4 | 4 |
+| (4,6,2) | 0.9 | 4 | **2** | 4 | 4 | 4 | 4 |
+| (4,8,3) | 0.6 | 4 | **3** | 4 | 4 | 4 | 4 |
+| (4,8,3) | 0.9 | 4 | **3** | 4 | 4 | 4 | 4 |
+| (4,8,3) | **1.0** | 4 | 2 | **2** | **2** | **2** | **2** |
+| (2,6,4) | 1.0 | 2 | 1 | **1** | **1** | **1** | **1** |
+
+The restoration is not a `t=2` accident: the span hits `|S|` at **every** stage
+after the first, at every confounding level below saturation. And the
+`confound = 1` knife-edge is equally uniform in the other direction — history
+never helps there, at any stage.
+
+### 4.2 P2 and P3 — only the first block leaks, and the floor does not compound
+
+| config | `cf` | `t` | span | `beta_t` | `beta_g,t` | floor |
+|---|---|---|---|---|---|---|
+| (4,6,2) | 0.6 | **1** | 2 | **0.7105** | **0.0928** | **6.60e-02** |
+| (4,6,2) | 0.6 | 2 | 4 | 5.7e-16 | 6.1e-16 | 3.5e-31 |
+| (4,6,2) | 0.9 | **1** | 2 | **0.6938** | **0.3639** | **2.52e-01** |
+| (4,6,2) | 0.9 | 2 | 4 | 8.2e-16 | 1.4e-15 | 1.1e-30 |
+| (4,8,3) | 0.9 | **1** | 3 | **0.5116** | **0.1869** | **9.56e-02** |
+| (4,8,3) | 0.9 | 4 | 4 | 2.7e-15 | 1.6e-15 | 4.3e-30 |
+
+Max `beta_t` over all `t >= 2` cells: **2.69e-15**. Max floor over `t >= 2`:
+**4.26e-30** — machine zero squared, as it must be for a product of two machine
+zeros.
+
+> **The floor is carried by exactly one block, whatever the horizon.** It does
+> not compound along the trajectory. This is a stronger statement than
+> "restoration happens at `t = 2`": the later blocks contribute *nothing* to the
+> floor at any depth.
+
+### 4.3 P4 and P5 — and this is the uncomfortable one
+
+The absolute floor is constant in `T` by §4.2. The decision-relevant scale is
+not:
+
+| config | `cf` | T=1 | T=2 | T=3 | T=4 | T=5 | T=6 |
+|---|---|---|---|---|---|---|---|
+| (4,6,2) | 0.6 | 0.425 | 0.161 | **0.099** | 0.072 | 0.056 | 0.046 |
+| (4,6,2) | 0.9 | **1.627** | 0.615 | **0.379** | 0.274 | 0.215 | 0.177 |
+| (4,8,3) | 0.6 | 0.390 | 0.205 | **0.141** | 0.108 | 0.088 | 0.074 |
+| (4,8,3) | 0.9 | 0.505 | 0.266 | **0.183** | 0.140 | 0.114 | 0.096 |
+
+(floor divided by the spread of true values across six candidate policies.)
+
+Log–log slopes against `T`: **−1.234** and **−0.927**. P4 predicted about −1;
+both configurations bracket it. The ratio falls by roughly **10×** from `T = 1`
+to `T = 6`.
+
+Two readings, and the paper needs both.
+
+1. **At `T = 1` with strong confounding the floor exceeds the entire value
+   spread** (1.627). Pessimism there cannot discriminate between candidate
+   policies at all — the irreducible penalty is larger than the whole range it
+   would have to resolve.
+2. **The damage dilutes as `1/T`.** At the `T = 3` where the paper's 20-seed
+   decision experiment runs, the floor is still 10–38% of the spread, which is
+   why the effect is visible. By `T = 6` it is 5–18%.
+
+> **P5 confirmed: the decision-level consequence is a short-horizon phenomenon.**
+> Proposition 1 is a per-block statement and is untouched — the region still does
+> not contract, at any horizon. What decays is the *fraction of the decision it
+> distorts*. Those two claims must be separated in the paper, because only the
+> first is horizon-free.
+
+### 4.4 What this changes
+
+This is partly good news for the method and must be reported that way. An
+inadequate negative control is self-healing after the first stage, and its
+residual damage is diluted linearly by the horizon. The regime where proximal
+pessimism is genuinely unusable is **short-horizon, strongly-confounded,
+weak-instrument** — which is narrower than the paper implied before this run.
+
+It also supplies the answer to the first question a referee would ask about
+\S6, which previously had none.
