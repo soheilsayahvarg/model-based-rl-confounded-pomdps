@@ -1,0 +1,555 @@
+{
+  "rows": [
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.0,
+      "stage": 1,
+      "nulldim": 96.0,
+      "pred_nulldim": 96,
+      "beta_emp": 0.7065461158149099,
+      "beta_pop_rel": 0.7134401176100357,
+      "betag_emp": 0.01578874411860917,
+      "bridge_resid": 2.5673907444456745e-16,
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.0,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 96,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 0.7134401176100357,
+      "betag_emp": 0.0,
+      "bridge_resid": 2.5673907444456745e-16,
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.6,
+      "stage": 1,
+      "nulldim": 96.0,
+      "pred_nulldim": 96,
+      "beta_emp": 0.7046691904733816,
+      "beta_pop_rel": 0.7105198018232126,
+      "betag_emp": 0.09603807677634058,
+      "bridge_resid": 2.5673907444456745e-16,
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.6,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 96,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 0.7105198018232126,
+      "betag_emp": 0.0,
+      "bridge_resid": 2.5673907444456745e-16,
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "stage": 1,
+      "nulldim": 96.0,
+      "pred_nulldim": 96,
+      "beta_emp": 0.6949426780939095,
+      "beta_pop_rel": 0.6937824519787696,
+      "betag_emp": 0.36501188606200224,
+      "bridge_resid": 2.5673907444456745e-16,
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 96,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 0.6937824519787696,
+      "betag_emp": 0.0,
+      "bridge_resid": 2.5673907444456745e-16,
+      "n_s": 4,
+      "n_o": 6,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.0,
+      "stage": 1,
+      "nulldim": 48.333333333333336,
+      "pred_nulldim": 48,
+      "beta_emp": 0.012724571235856984,
+      "beta_pop_rel": 8.389072055875574e-16,
+      "betag_emp": 0.0065768472644424725,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.0,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 48,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 8.389072055875574e-16,
+      "betag_emp": 0.0,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.6,
+      "stage": 1,
+      "nulldim": 48.5,
+      "pred_nulldim": 48,
+      "beta_emp": 0.020792433101589784,
+      "beta_pop_rel": 8.400367056092112e-16,
+      "betag_emp": 0.013044911591234646,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.6,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 48,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 8.400367056092112e-16,
+      "betag_emp": 0.0,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.9,
+      "stage": 1,
+      "nulldim": 49.666666666666664,
+      "pred_nulldim": 48,
+      "beta_emp": 0.07260299806636776,
+      "beta_pop_rel": 1.1864687085108209e-15,
+      "betag_emp": 0.0446979960430382,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.9,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 48,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 1.1864687085108209e-15,
+      "betag_emp": 0.0,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 2,
+      "n_o": 6,
+      "n_o0": 4
+    },
+    {
+      "config": [
+        2,
+        3,
+        2
+      ],
+      "confound": 0.0,
+      "stage": 1,
+      "nulldim": 12.0,
+      "pred_nulldim": 12,
+      "beta_emp": 0.006529897808911817,
+      "beta_pop_rel": 4.2146253037811527e-16,
+      "betag_emp": 0.004688526480645899,
+      "bridge_resid": 2.1163626406917047e-16,
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        2,
+        3,
+        2
+      ],
+      "confound": 0.0,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 12,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 4.2146253037811527e-16,
+      "betag_emp": 0.0,
+      "bridge_resid": 2.1163626406917047e-16,
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        2,
+        3,
+        2
+      ],
+      "confound": 0.6,
+      "stage": 1,
+      "nulldim": 12.0,
+      "pred_nulldim": 12,
+      "beta_emp": 0.007353247737622194,
+      "beta_pop_rel": 4.442834424079782e-16,
+      "betag_emp": 0.003313431559295373,
+      "bridge_resid": 2.1163626406917047e-16,
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        2,
+        3,
+        2
+      ],
+      "confound": 0.6,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 12,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 4.442834424079782e-16,
+      "betag_emp": 0.0,
+      "bridge_resid": 2.1163626406917047e-16,
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        2,
+        3,
+        2
+      ],
+      "confound": 0.9,
+      "stage": 1,
+      "nulldim": 12.0,
+      "pred_nulldim": 12,
+      "beta_emp": 0.013804596117712334,
+      "beta_pop_rel": 4.507300062375251e-16,
+      "betag_emp": 0.013157081338099777,
+      "bridge_resid": 2.1163626406917047e-16,
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        2,
+        3,
+        2
+      ],
+      "confound": 0.9,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 12,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 4.507300062375251e-16,
+      "betag_emp": 0.0,
+      "bridge_resid": 2.1163626406917047e-16,
+      "n_s": 2,
+      "n_o": 3,
+      "n_o0": 2
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.0,
+      "stage": 1,
+      "nulldim": 56.5,
+      "pred_nulldim": 56,
+      "beta_emp": 0.025489164288743635,
+      "beta_pop_rel": 4.456478969684933e-16,
+      "betag_emp": 0.009939879163483456,
+      "bridge_resid": 4.440892098500626e-16,
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.0,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 56,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 4.456478969684933e-16,
+      "betag_emp": 0.0,
+      "bridge_resid": 4.440892098500626e-16,
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.6,
+      "stage": 1,
+      "nulldim": 57.166666666666664,
+      "pred_nulldim": 56,
+      "beta_emp": 0.04242285439828029,
+      "beta_pop_rel": 9.663307944609592e-16,
+      "betag_emp": 0.016952214115511503,
+      "bridge_resid": 4.440892098500626e-16,
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.6,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 56,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 9.663307944609592e-16,
+      "betag_emp": 0.0,
+      "bridge_resid": 4.440892098500626e-16,
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.9,
+      "stage": 1,
+      "nulldim": 57.666666666666664,
+      "pred_nulldim": 56,
+      "beta_emp": 0.12003909852983241,
+      "beta_pop_rel": 9.818044290775203e-16,
+      "betag_emp": 0.05855464294150089,
+      "bridge_resid": 4.440892098500626e-16,
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.9,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 56,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 9.818044290775203e-16,
+      "betag_emp": 0.0,
+      "bridge_resid": 4.440892098500626e-16,
+      "n_s": 3,
+      "n_o": 7,
+      "n_o0": 5
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.0,
+      "stage": 1,
+      "nulldim": 160.0,
+      "pred_nulldim": 160,
+      "beta_emp": 0.5078052630099747,
+      "beta_pop_rel": 0.5121306364145184,
+      "betag_emp": 0.014973945955171578,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 4,
+      "n_o": 8,
+      "n_o0": 3
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.0,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 160,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 0.5121306364145184,
+      "betag_emp": 0.0,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 4,
+      "n_o": 8,
+      "n_o0": 3
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.6,
+      "stage": 1,
+      "nulldim": 160.0,
+      "pred_nulldim": 160,
+      "beta_emp": 0.4966135908691802,
+      "beta_pop_rel": 0.5060451618241594,
+      "betag_emp": 0.148165886142418,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 4,
+      "n_o": 8,
+      "n_o0": 3
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.6,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 160,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 0.5060451618241594,
+      "betag_emp": 0.0,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 4,
+      "n_o": 8,
+      "n_o0": 3
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.9,
+      "stage": 1,
+      "nulldim": 160.16666666666666,
+      "pred_nulldim": 160,
+      "beta_emp": 0.5149379098497825,
+      "beta_pop_rel": 0.5037388115926457,
+      "betag_emp": 0.2066198212439826,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 4,
+      "n_o": 8,
+      "n_o0": 3
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.9,
+      "stage": 2,
+      "nulldim": 0.0,
+      "pred_nulldim": 160,
+      "beta_emp": 0.0,
+      "beta_pop_rel": 0.5037388115926457,
+      "betag_emp": 0.0,
+      "bridge_resid": 3.3306690738754696e-16,
+      "n_s": 4,
+      "n_o": 8,
+      "n_o0": 3
+    }
+  ],
+  "tol": 1e-09,
+  "N_grid": [
+    8000,
+    32000
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "worst_complete_beta": 0.12003909852983241
+}

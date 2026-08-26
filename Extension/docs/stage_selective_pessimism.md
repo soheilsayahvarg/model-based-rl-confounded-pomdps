@@ -560,3 +560,33 @@ time.
 ### Measurement
 
 *(empty until run)*
+
+### The decisive follow-up: is it finite-sample or structural?
+
+**Disclosure: `(2, 6, 4)` at confounding `0.9` was already run before this was
+written.** It gave
+
+    N =   4,000   nulldim 52.3   beta_emp 0.1282
+    N =  16,000   nulldim 48.3   beta_emp 0.0437
+    N =  64,000   nulldim 48.0   beta_emp 0.0338
+    N = 256,000   nulldim 48.0   beta_emp 0.0138
+
+so `beta_emp` falls by a factor of `9` over a `64x` increase in `N`, about
+`N^(-1/2)`, and the null dimension converges to the structural `48`. The
+remaining configurations are unobserved and P-E5 and P-E6 are predictions about
+them.
+
+- **P-E5.** In every complete design (`|O_0| >= |S|`, confounding below `1`),
+  `beta_emp` has a log-log slope in `N` of `-0.5 +- 0.15`. It is sampling noise
+  projected onto a structurally empty direction, so it should carry the
+  parametric rate.
+- **P-E6.** The measured null dimension converges to the exact cell count
+  `(|A||O| - |A|min(|O_0|,|O|)) x n_y` as `N` grows, so P-E4's misses were
+  near-threshold eigenvalues in sparsely sampled cells and not a wrong formula.
+
+If P-E5 holds, `cor:conjunction` is **correct as a population statement** and
+gains a finite-sample caveat with an explicit rate: a complete design has a
+measured floor of order `N^(-1/2)`, which is not zero at any finite `N` but does
+not survive the limit. That is a footnote, not a defect.
+
+If `beta_emp` were flat in `N` instead, the corollary would be false as stated.
