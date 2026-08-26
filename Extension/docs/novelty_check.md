@@ -145,3 +145,133 @@ literature before building on a result, not after it looks clean.**
 - Allman, Matias, Rhodes 2009; Gassiat, Cleynen, Robin 2016, on finite-state
   nonparametric HMM identifiability via Kruskal rank
 - Uehara et al. 2022a, future-dependent value functions
+
+---
+
+# Second Novelty Check: The Converse
+
+Run immediately after `converse_identification.md` section 7 measured the claim,
+and before anything was built on it.
+
+## The result: rediscovery number four
+
+The converse says three things. All three are in the nonparametric
+instrumental-variables literature, where the failure of completeness has been
+studied for twenty years.
+
+### 1. The identified set is the min-norm solution plus the null space
+
+Florens, Simoni and co-authors, *Is Completeness Necessary? Estimation in
+Nonidentified Linear Models* (arXiv:1709.03473):
+
+> the identified set becomes a closed linear manifold, which is denoted by
+> `I_0 = phi + N(K)`
+
+That is our `b_hat + Nul`, verbatim, for a general linear operator `K`.
+**Known.**
+
+### 2. A linear functional is point-identified iff `g` is orthogonal to the null
+
+Same paper: a linear functional `<g, phi>` is point-identified when `g` lies in
+
+> `N(K)^perp = closure(R(K*))`
+
+That is our "point-identified iff `beta_g = 0` iff `g` is in the design span",
+which we presented as section 4 of the converse. It is Severini and Tripathi
+(2006, 2012), who "derive the necessary and sufficient conditions for
+identification of the linear functional of the nonparametric function, a
+necessary condition for its root-n estimability, and the associated efficiency
+bound", and Santos (2011, 2012) for inference without completeness. **Known, and
+with a sharper result attached than ours: they also give the efficiency bound.**
+
+### 3. Confidence regions failing to shrink under identification failure
+
+Same paper connects the two directly:
+
+> For non-identified functionals, confidence regions would fail to shrink when
+> the chi-square component dominates, providing no informative inference.
+
+Which is `prop:floor`'s content, stated in that literature as an already-understood
+consequence. **Known.**
+
+### What is genuinely left
+
+Only the arithmetic. `HW = beta_g * sqrt(M^2 - ||b_hat||^2)` is the half-width of
+a linear functional over an affine set intersected with a norm ball, which is a
+one-line convex computation once (1) and (2) are in hand, and the observation
+that at the tight class `M = ||b_true||` it equals `beta * beta_g` exactly. That
+observation makes `prop:floor` tight and is worth a remark. It is not a
+contribution.
+
+## Standing count
+
+| # | rediscovered | found |
+|---|---|---|
+| 1 | the power-law dichotomy is Tikhonov source-condition theory | **after** building on it |
+| 2 | `prop:betag` follows from the anchor paper's own Lemma C.1 | **after** building on it |
+| 3 | the span theorem's conditions are classical HMM identifiability | **before** |
+| 4 | the converse is NPIV partial identification | **before** |
+
+Four for four. The last two were caught before the paper was rebuilt, which is
+the process working, but the conclusion has to be faced squarely:
+
+**This line of work has no novel theoretical core.** Every theoretical piece
+belongs to one of two mature literatures and was transported into proximal POMDP
+notation without knowing it.
+
+## What is actually unexplored
+
+Both neighbouring literatures do **inference on a functional**. Neither does
+**policy selection**. Everything we measured that is not a theorem is on the
+selection side, and none of it appears in either:
+
+| finding | where it sits |
+|---|---|
+| Under an `e > 0` schedule the pessimistic selector and a plug-in built on the **identical fit** have opposite-signed regret slopes and their curves cross | decision, not inference |
+| More data makes pessimistic selection **worse**, converging to a wrong policy with zero variance across 20 seeds | decision |
+| The floor's `1/T` dilution does **not** reach the decision (`cor:nogovern`), and **reverses** without the rank hypothesis | decision |
+| The calibrated widths used throughout are **below** the sharp identified half-width, so the regions are invalid, and the selector is misled by an invalid region rather than a conservative one | decision |
+| `projall`: restrict every block to its identified span, which converges in both families and stays conservative in every cell | method |
+
+NPIV does not ask what a pessimistic *argmax over policies* does when the region
+is invalid. That question is ours, it is measured, and it is where every number
+in this project lives.
+
+## Recommendation
+
+Stop looking for a theorem. There is not one here, and the search has now cost
+four rediscoveries.
+
+The honest framing is decision-theoretic and empirical:
+
+> Partial identification is well understood for inference on a functional. For
+> policy **selection** it behaves in a way inference does not predict:
+> pessimistic selection is anti-monotone in sample size, it degrades while the
+> region is still too narrow to be valid, and a plug-in built on the same
+> estimates converges. Here is the mechanism, the checkable trigger, and a fix.
+
+The identification results become cited background, not contributions. That is a
+smaller paper and a defensible one.
+
+Revised chances, replacing the estimate in section 7 above:
+
+| venue | with a theory claim | as a decision-level empirical study |
+|---|---|---|
+| workshop | 75-80% | 75-85% |
+| CLeaR | 30-40% | 25-35% |
+| UAI | 25-35% | 25-35% |
+| AISTATS | 20-25% | 15-20% |
+| ICML / NeurIPS | 12-18% | 10-15% |
+
+Little changes numerically, because the theory claim was never what a reviewer
+would have believed. What changes is that the paper would no longer assert
+something false about its own novelty.
+
+## Sources
+
+- Florens, Simoni et al., *Is Completeness Necessary? Estimation in Nonidentified
+  Linear Models*, arXiv:1709.03473
+- Severini and Tripathi, *Efficiency bounds for estimating linear functionals of
+  nonparametric regression models with endogenous regressors*, J. Econometrics
+  170(2), 2012, and their 2006 paper
+- Santos, inference on linear functionals of NPIV without completeness, 2011-2012
