@@ -127,3 +127,65 @@ that is silently false on a class of problems the reviewer will think of.
 ## 6. Measurement
 
 *(empty until run)*
+
+## 7. Correction, made before any measurement
+
+The proof in section 2 is wrong, and the error is in the first line of the
+algebra rather than in the conclusion. Recording it here rather than editing
+section 2, so the mistake stays in the history.
+
+**What was wrong.** Section 2 writes the profile as
+`E^T ( E[:, o_1] * u )`, treating the free observation as an elementwise factor
+on `s_2`. It is not. The `o_1` emission is observed at `s_1`, so it sits
+**inside** the sum over `s_1`, before the transition:
+
+    v[s_2] = sum_{s_1} p_1[s_1] K_0[s_1,o_0] E[s_1,o_1] pi_b[s_1,a_1]
+                       P[a_1](s_1,s_2) pi_b[s_2,a]
+
+The support argument of section 2 does not survive that, because elementwise
+multiplication happens on the wrong side of `P`.
+
+**The corrected statement.** Write `w_{a_1,o_0}[s] = p_1[s] K_0[s,o_0] pi_b[s,a_1]`
+and `M_{a_1,o_0} = diag(pi_b[:,a]) P[a_1]^T diag(w_{a_1,o_0})`. Then
+`v = M_{a_1,o_0} E[:, o_1]`, and the `t = 2` per-action design span is
+
+    span = E^T * W_2,
+    W_2  = sum over (a_1, o_0) of
+           diag(pi_b[:,a]) * rowspan{ P[a_1][s, :] : s in supp(w_{a_1,o_0}) }
+    dim  = rank( E^T * basis(W_2) )
+
+**Proof.** `E` has rank `|S|`, so `{E[:, o_1]}` spans `R^{|S|}` and the span over
+`o_1` at fixed `(a_1, o_0)` is `E^T range(M_{a_1,o_0})`. Now
+`range(M) = diag(pi_b[:,a]) P[a_1]^T span{e_s : s in supp(w)}`, and
+`P[a_1]^T e_s` is the row `P[a_1][s, :]`. Summing the subspaces over
+`(a_1, o_0)` gives `W_2`. QED
+
+**What changes, and what does not.** The one-line reading of self-healing
+survives intact: a free observation index appears in the conditioning set, and
+the span jumps from at most `|O_0|` vectors to the image of a full `R^{|S|}`.
+The side condition is now sharper than section 3 claimed. Completeness at
+`t = 2` fails when
+
+1. `diag(pi_b[:,a])` is rank-deficient, i.e. saturated confounding, exactly as
+   before, giving `dim <= |S| / |A|`; or
+2. the reachable transition rows `{P[a_1][s, :] : s in supp(w)}`, collected over
+   all `(a_1, o_0)`, fail to span `R^{|S|}`.
+
+Condition 2 is a **rank** condition on `P`, not the support condition section 3
+stated. That is strictly more informative: a sparse `P` can fail either by
+having too few reachable source rows or by those rows being linearly dependent
+even though their supports cover `S`. Section 3's version would have missed the
+second case entirely.
+
+**Corrected predictions.** P-S1, P-S2 and P-S5 are unchanged in content. The two
+that move:
+
+- **P-S3'.** With `P` engineered so the reachable rows are rank-deficient, the
+  measured `t = 2` span is strictly below `|S|` at **every** confounding level
+  including `0`, and `beta_2 > 0` there. We build the counterexample by making
+  the transition rows low-rank, which the support version would not have
+  suggested.
+- **P-S4'.** `rank(E^T basis(W_2))` equals the brute-force SVD rank over all
+  conditioning cells in **every** cell of the sweep. This is the sharper test:
+  the closed form is `O(|S|^3)` while the brute force enumerates
+  `|O| |A| |O_0|` profiles, so agreement is not arithmetic restatement.
