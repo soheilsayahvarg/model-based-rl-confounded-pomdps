@@ -126,7 +126,94 @@ that is silently false on a class of problems the reviewer will think of.
 
 ## 6. Measurement
 
-*(empty until run)*
+`poc/run_selfheal_formula.py`, population algebra only, `360` cells:
+`3` families x `3` configurations x `5` confounding levels x `2` actions x
+`4` stages. The closed form is `O(|S|^3)` per stage; the brute force enumerates
+up to `12,288` conditioning profiles and takes one SVD. Agreement is checked on
+the **subspace**, not only the dimension: `||U_c U_c^T - U_b U_b^T||_2 < 1e-8`.
+
+### P-S4' holds. 360/360 cells, dimension and subspace.
+
+The corollary is now proved rather than observed. Both `t = 1` and the recursion
+for `t >= 2` reproduce the enumerated design span exactly, in every family
+including the two built to break it.
+
+### P-S1 holds (control). 0 violations of 72.
+
+Dense family, confounding below `1`, `t >= 2`: the span reaches `|S|` every
+time. This was already known and is here only so a formula that got the easy
+cells wrong would be caught.
+
+### P-S2 holds. The knife-edge has a formula.
+
+At confounding exactly `1`, `diag(pi_b[:,a])` has rank `|S|/|A|`, and the
+measured span equals that in all six cells: `2` for `(4,6,2)` and `(4,8,3)`,
+`1` for `(2,6,4)`. We had measured the collapse and called the point contrived
+without saying what breaks. What breaks is a diagonal factor losing rank.
+
+### P-S3' holds, and it refutes `cor:selfheal` as published.
+
+Both engineered families lose completeness at `t = 2` **at confounding `0.0`**:
+
+| family | config | `t=2` span | `|S|` | `beta_2 / ||b||` |
+|---|---|---|---|---|
+| sparse_support | `(4,6,2)` | 2 | 4 | `0.725` |
+| sparse_support | `(4,8,3)` | 2 | 4 | `0.707` |
+| dense_lowrank  | `(4,6,2)` | 2 | 4 | `0.730` |
+| dense_lowrank  | `(4,8,3)` | 2 | 4 | `0.705` |
+
+Self-healing fails with no confounding at all. `cor:selfheal` is **false as
+stated** and needs the hypothesis that the reachable transition rows span
+`R^{|S|}`.
+
+### The discriminating cell settles which proof is right.
+
+`dense_lowrank` has strictly positive transition rows, so every support covers
+`S`. Section 2's support proof predicts a span of `|S| = 4`. Section 7's rank
+proof predicts the row-space dimension, `2`. **Measured: 2.** In all four
+`|S| = 4` cells. Had we run before catching the error, we would have recorded a
+`4/4` refutation of a proof whose conclusion was right and whose argument was
+wrong.
+
+### P-S5 is REFUTED, and this is the finding.
+
+We predicted the span is monotone nondecreasing in `t`: once complete, always
+complete. It decreases in **16** sequences, and every one of them is
+`(4, 8, 3)`:
+
+    dense_lowrank  and  sparse_support,  (4,8,3),  every confounding below 1
+    t = 1..4 span:  3, 2, 2, 2      against |S| = 4
+
+`|O_0| = 3` gives three negative-control profiles and a stage-1 span of `3`.
+Conditioning on history collapses it to `2`, the rank of the transition row
+space. Everything the instrument resolved gets funnelled through a rank-`2`
+map, and one dimension is destroyed.
+
+**So history is not a partial substitute for the instrument. It is a different
+instrument, which is usually better and sometimes strictly worse.** The exact
+statement the formula supports is
+
+    dim(stage-t span) = rank( E^T diag(pi_b[:,a]) W_t )
+
+with `W_t` from the recursion, and nothing in that expression is monotone in
+`t`. `cor:selfheal` read monotonicity into a family where the transitions
+happened to be full-rank Dirichlet draws.
+
+### What this costs, item by item
+
+- **`cor:selfheal`** needs "provided the reachable transition rows span
+  `R^{|S|}`", and loses the word "partial": history can be worse than the
+  instrument, not merely incomplete.
+- **`cor:dilution`** assumed exactly one block leaks, which is what makes the
+  absolute floor constant in `T`. Under a rank failure every stage leaks and the
+  floor compounds. The `1/T` law is now conditional on the same hypothesis.
+- **The stage-selective remedy** in `stage_selective_pessimism.md` targets the
+  `t = 1` blocks because they are the only leaky ones. Under a rank failure that
+  targeting is wrong and the remedy would leave the divergence in place. The
+  pre-fit check gains a third item: rank of the reachable transition rows.
+
+None of that was visible from one environment family whose transition rows are
+Dirichlet draws, which are full-rank with probability one.
 
 ## 7. Correction, made before any measurement
 
