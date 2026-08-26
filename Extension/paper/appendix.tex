@@ -1,0 +1,166 @@
+\section{The Width Identity, and What It Cost Us}
+\label{app:identity}
+
+\Cref{eq:identity} deserves its own account because believing otherwise shaped an
+earlier version of this line of work.
+
+\paragraph{Derivation.} Under \cref{as:null} the design has an exact null space on
+which $H$ acts as $\lambda I$, and a signal space on which its top eigenvalue is
+$\sigma + \lambda$. Splitting $g$ into its in-span and null components, of squared
+norms $(1-\beta_g^2)\lVert g\rVert^2$ and $\beta_g^2 \lVert g\rVert^2$,
+\[
+\lVert g\rVert_{H^{-1}}^2
+= \frac{(1-\beta_g^2)\lVert g\rVert^2}{\sigma+\lambda}
++ \frac{\beta_g^2\lVert g\rVert^2}{\lambda},
+\qquad
+\lVert P_{\mathrm{span}} g\rVert_{H^{-1}}^2
+= \frac{(1-\beta_g^2)\lVert g\rVert^2}{\sigma+\lambda},
+\]
+whose ratio is
+$1 + \frac{\beta_g^2}{1-\beta_g^2}\cdot\frac{\sigma+\lambda}{\lambda}$. Writing
+$\sin\theta = \beta_g$ and $\mathrm{cond}(H) = (\sigma+\lambda)/\lambda$ gives
+\cref{eq:identity}.
+
+\paragraph{Verification.} We checked the closed form against measurement over two
+independent knobs, $17$ cells in total, and the worst relative error is
+$8.45\times10^{-15}$ --- machine precision at every point of both sweeps.
+
+\paragraph{Why this matters.} An earlier version of this work presented a sweep of
+gradient alignment against width ratio as the load-bearing empirical result,
+concluding that ``ill-conditioning is necessary but not sufficient; the alignment
+between the value functional and the null space decides it''. Both halves of that
+sentence are wrong as stated:
+
+\begin{itemize}
+\item The relation is an identity, so no sweep of it could ever have produced a
+different answer. It is arithmetic, not evidence.
+\item Conditioning enters as $\sqrt{\mathrm{cond}(H)}$ on \emph{exactly equal
+footing} with $\tan\theta$. Neither factor ``decides'' the penalty; it is their
+product. The dichotomy was read off a sweep in which $\tan\theta$ moved $119\times$
+while $\sqrt{\mathrm{cond}(H)}$ moved $1.26\times$ --- a $95{:}1$ imbalance built
+into the knob rather than a property of the problem.
+\end{itemize}
+
+\paragraph{The knob was also degenerate.} That sweep varied alignment by
+interpolating every emission row toward their mean. That operation scales the row
+separation by exactly $(1-\alpha)$, and $\beta_g$ tracks it with a log--log slope
+of $0.954$ ($R^2 = 0.998$): alignment and channel informativeness were a single
+variable. At the far end of the sweep the emission channel carries almost no
+information about the latent state, so leakage falls for a reason unrelated to
+identification geometry. The claim that ``the null space is held fixed'' was also
+false --- its \emph{dimension} is fixed, but the span vector rotates $36.8^\circ$
+across the sweep.
+
+\paragraph{A non-degenerate replacement.} At confounding $1$ with $|S|=|A|=2$ the
+behaviour policy is a deterministic indicator, so the normalized stage-2 design
+weight sits on a single latent state whatever the prior is, making $H$
+\emph{algebraically} independent of $p_1$. Tilting
+$p_1(t) = (1-t)p_1 + t\,\delta_{s_a}$ therefore moves alignment with the emission
+channel, the span and $H$ all frozen:
+
+\begin{center}\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+$t$ & row separation & $\max|\Delta H|$ & span rotation & $\beta_g$ & $W/W_{\mathrm{proj}}$ \\
+\midrule
+$0.000$ & $0.81364$ & $0$ & $0^\circ$ & $0.7578$ & $24.738$ \\
+$0.400$ & $0.81364$ & $5.6\times10^{-17}$ & $0^\circ$ & $0.4572$ & $10.984$ \\
+$0.800$ & $0.81364$ & $5.6\times10^{-17}$ & $0^\circ$ & $0.1345$ & $3.056$ \\
+$0.999$ & $0.81364$ & $5.6\times10^{-17}$ & $0^\circ$ & $0.00061$ & $1.000$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The same curve, $3.09$ decades of $\beta_g$, at a channel that is never touched.
+So the qualitative conclusion survives on a clean knob; it simply was not being
+tested by the sweep that established it, and it is an identity in any case.
+
+\section{Experimental Setup}
+\label{app:setup}
+
+\paragraph{Environment family.} Confounded POMDPs with independently specified
+$(|S|,|A|,|O|,|O_0|)$. Emission and negative-control matrices are drawn from a
+Dirichlet with a diagonal boost and asserted to have full row rank, so that
+identification never fails for an uninteresting reason. A confounding knob
+interpolates the behaviour policy between latent-state-independent and a
+deterministic function of the latent state. Horizon $T=3$ throughout.
+
+\paragraph{Population computations.} \Cref{tab:beta,tab:floor} involve no
+sampling. True bridges are minimum-norm solutions obtained by pseudo-inverse, and
+the design span for each action is the range of $\{E^\top v_{a,x}\}_x$ computed by
+SVD with a relative tolerance of $10^{-12}$. Reported leakages are exact up to
+floating point; the maximum bridge residual across all cells is
+$4.4\times10^{-16}$.
+
+\paragraph{Decision experiment.} Six candidate policies, selection regret against
+the exact dynamic-programming optimum on the latent model. The plug-in selector is
+computed inside the same seed loop from the same fitted bridge, so the two columns
+of \cref{tab:decision} differ only by the pessimism layer. Intervals are
+$1.96\hat\sigma/\sqrt{n}$ over $20$ seeds.
+
+\paragraph{A precondition guard.} The decision driver aborts if $\beta_g < 10^{-6}$
+on the configured grid. This exists because three earlier experiments in this line
+were run on grids that could not have exhibited the effect they were testing;
+see \cref{app:corrections}.
+
+\section{Corrections to Our Own Results}
+\label{app:corrections}
+
+We list the claims from earlier drafts of this work that did not survive, with
+what killed each. All were found by adversarial review of our own results rather
+than by external referees.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.42\textwidth}p{0.52\textwidth}@{}}
+\toprule
+claim & disposition \\
+\midrule
+A coverage crossing predicted at $N = 1.7\times10^9$ &
+\textbf{withdrawn.} The grid reached $10^6$. The prediction rested on treating a
+measured $\beta$ as an environment constant; it in fact decays at $N^{-0.495}$ with
+a population value of $5.4\times10^{-16}$, so the quantity being extrapolated was a
+grid average of something converging to zero. \\
+\midrule
+``Validity holds in $36/36$ cells'' &
+\textbf{withdrawn as evidence.} The violation threshold sits four orders of
+magnitude below the smallest grid value. The grid could not have produced a
+violation. \\
+\midrule
+``The width schedule changes the decision'' (first sweep) &
+\textbf{refuted.} $\beta_g = 0$ exactly on that design, so there was no mechanism
+to detect, and three of four schedules started inside an attractor. Re-run on an
+incomplete design, where the floor is nonzero, it holds --- \cref{tab:decision}. \\
+\midrule
+``Gradient alignment is the causal driver, not conditioning'' &
+\textbf{corrected.} The relation is the identity of \cref{eq:identity};
+conditioning enters as $\sqrt{\mathrm{cond}(H)}$ on equal footing. See
+\cref{app:identity}. \\
+\midrule
+``The power-law dichotomy is novel'' &
+\textbf{refuted.} It is Tikhonov source-condition theory specialized to an exact
+null atom (\cref{sec:not-new}). \\
+\midrule
+``A truth-dependent width rule would escape the floor'' &
+\textbf{refuted.} \Cref{prop:floor} quantifies over all width rules including
+truth-dependent ones. The escapes are a prior-informed centre, a non-ellipsoidal
+region, or $\beta\beta_g = 0$. \\
+\midrule
+``The plug-in also fails in the incomplete design'' &
+\textbf{refuted before publication.} Measured at one value of $\kappa$ only;
+because $\bhat$ depends on $\lambda_2$, that was not a control. Re-run at each
+schedule's own $\kappa$, the plug-in dominates. \\
+\midrule
+``Schedule B is a flat $e=0$ control'' &
+\textbf{refuted.} A $3$-seed artifact. At $20$ seeds it runs $0.1230 \to 0.0644$
+and plateaus. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Four of these share one failure mode: the measurement range did not straddle the
+transition being predicted. The precondition guard described in \cref{app:setup}
+is the structural fix for that mode. Two others --- the degenerate alignment knob
+and the identity --- are a different mode, in which the experiment could not have
+failed because its knob confounded two variables or its target was arithmetic. We
+have no structural fix for that one beyond deriving the closed form before
+sweeping.

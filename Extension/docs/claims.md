@@ -103,6 +103,9 @@ result.
 | The absolute `N*` predicted in §4 | **wrong** | two errors of ours; corrected post-hoc and labelled as such |
 | "`confound=1` is a contrived knife-edge, `\|O_0\|<\|S\|` is the robust route" | **corrected** | true for `beta`; wrong for the floor. In an incomplete design `beta_g` is **graded** in confounding |
 | **Incompleteness leaks the truth; confounding leaks the gradient; the floor needs both** | **holds** | §5c, four configurations |
+| The two-switch claim, unscoped in $ | **scoped to stage-1 blocks** | round 8 B3, `poc/critic8_t2span.py`. At $t=2$ the conditioning set includes history; the per-action span reaches $|S|$ and `beta_pop ~ 1e-15` in 24/24 cells at every confound < 1. History is a partial substitute for the instrument; only the $t=1$ blocks leak |
+| Prop. 2 (unconfounded gradients cannot leak) is novel | **refuted** | derivable from the anchor’s own Lemma C.1; restates the folk fact that without unmeasured confounding a negative control is unnecessary. The novel part is the conjunction |
+| The floor should use the angle, not the product | **refuted** | round 8: coverage forces `xi >= lam*beta^2` and `W >= sqrt(xi/lam)*beta_g` independently, so the product is the right object for a **floor** and is achieved at the minimal covering `xi` for any angle. The angle would enter only a matching upper bound |
 
 ## Decision level
 

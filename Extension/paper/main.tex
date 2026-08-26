@@ -1,0 +1,619 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Extension paper --- the theoretical result, aimed at a venue rather than at
+% the course. Independent of Phase_1..Phase_5, which stay frozen.
+% Compile: pdflatex main && bibtex main && pdflatex main && pdflatex main
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{article}
+
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\Urlmuskip=0mu plus 1mu\relax
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+\usepackage[accepted]{icml2024}
+\makeatletter
+\renewcommand{\ICML@appearing}{\textit{Preprint. Work in progress.}}
+\makeatother
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}[proposition]{Corollary}
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption}
+
+\DeclareMathOperator{\Nul}{Nul}
+\newcommand{\Pnul}{P_{\Nul}}
+\newcommand{\btrue}{b_{\star}}
+\newcommand{\bhat}{\hat{b}}
+\newcommand{\Vlow}{V_{\mathrm{low}}}
+
+\icmltitlerunning{When Proximal Pessimism Cannot Contract}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{When Proximal Pessimism Cannot Contract:\\
+           A Schedule-Free Floor and Two Checkable Switches}
+
+\begin{icmlauthorlist}
+\icmlauthor{Soheil Sayah Varg}{sharif}
+\icmlauthor{Mahdi Shirinbayan}{sharif}
+\icmlauthor{Mahdi Ostadmohammadi}{sharif}
+\end{icmlauthorlist}
+
+\icmlaffiliation{sharif}{Department of Computer Engineering, Sharif University of Technology, Tehran, Iran}
+\icmlcorrespondingauthor{Soheil Sayah Varg}{soheilsayahvarg@gmail.com}
+\icmlkeywords{offline reinforcement learning, confounded POMDPs, proximal causal inference, pessimism}
+
+\vskip 0.3in
+]
+
+\printAffiliationsAndNotice{}
+
+\begin{abstract}
+Offline RL in confounded POMDPs identifies policy values through \emph{bridge
+functions} and then plans pessimistically over a confidence region around the
+fitted bridge. The construction is only useful if that region contracts as data
+accumulates. We show it need not. For any ridge $\lambda>0$ and \emph{any} width
+rule --- power-law, logarithmic, data-adaptive, even truth-dependent --- a region
+that covers the truth pays a penalty of at least $\beta\beta_g$ at every sample
+size, where $\beta$ is the true bridge's mass in the design's null space and
+$\beta_g$ the value gradient's. The regularizer cancels, so no schedule escapes
+it. We then characterize exactly when this floor is nonzero, and the answer is a
+conjunction of two conditions a practitioner can check \emph{before} fitting: an
+inadequate negative control ($|O_0|<|S|$, a statement about dimensions alone)
+makes the truth leak, and confounding --- the behaviour policy depending on
+latent state --- makes the gradient leak. Neither alone suffices; we verify the
+first in $50/50$ population cells and map the second across four configurations.
+The characterization is a statement about the \emph{first} stage: from $t=2$ on,
+history restores per-action completeness and the later blocks stop leaking, so an
+inadequate control is partially self-healing along the horizon.
+Placing the schedule of \citet{hong2024} inside this family shows its governing
+exponent is positive for \emph{every} admissible smoothness ($30/30$ cells), so
+the region it prescribes is non-contracting on the leaky branch. At the decision
+level, over $20$ seeds, pessimistic and plug-in selection have opposite-signed
+regret slopes under that schedule and their curves cross: pessimism helps at
+$N{=}2{,}000$ and hurts at $N{\ge}32{,}000$. We are explicit that all of this
+lives outside the anchor paper's own assumptions, which is what makes it a
+robustness result about the boundary of applicability rather than a defect.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Offline reinforcement learning from logged data is biased when the logging policy
+acted on latent state the learner never sees. Proximal causal inference gives a
+principled route out: with a \emph{negative control} variable, reward and
+transition models are identified through bridge functions solving conditional
+moment restrictions \citep{miao2018,tchetgen2020}, and this has been carried into
+sequential decision making both model-free \citep{shi2022,bennett2024} and
+model-based \citep{hong2024}.
+
+Because the identified object is estimated, these methods plan
+\emph{pessimistically}: they build a confidence region around the fitted bridge
+$\bhat$ and evaluate a policy at its worst admissible member. For a value
+functional linear in the bridge block, the region is an ellipsoid and the inner
+minimum has the closed form
+\begin{equation}
+\Vlow \;=\; \langle g, \bhat\rangle - W,
+\qquad W = \sqrt{\xi}\,\lVert g \rVert_{H^{-1}},
+\label{eq:support}
+\end{equation}
+with $H = \hat{T}_2 + \lambda I$ the ridged stage-2 design and $\xi$ the region
+radius. The whole construction rests on a premise that is rarely stated: that $W$
+shrinks as $N$ grows, so the pessimistic value approaches the true one and
+selection eventually becomes correct.
+
+\paragraph{This paper.} We show the premise can fail, characterize exactly when,
+and locate an existing method inside that characterization.
+
+\begin{enumerate}\itemsep2pt \parskip0pt \topsep0pt
+\item \textbf{A schedule-free floor} (\cref{sec:floor}). Any width rule whose
+region covers the truth satisfies $W \ge \beta\beta_g$ at every $N$, where
+$\beta$ and $\beta_g$ are the null-space masses of the true bridge and of the
+value gradient. The proof is two lines and the regularizer cancels, so this is
+not a statement about a particular schedule --- it holds for all of them.
+\item \textbf{Two checkable switches} (\cref{sec:switches}). The floor is nonzero
+exactly when \emph{both} an inadequate negative control and genuine confounding
+are present. Incompleteness makes the truth leak but leaves the gradient inside
+the identified span; confounding makes the gradient leak but, under completeness,
+leaves the truth inside. Both conditions are assessable in advance, one from
+dimensions alone.
+\item \textbf{Where an existing schedule sits} (\cref{sec:placement}). Writing
+the schedule of \citet{hong2024} in our parametrization, its governing exponent
+is positive for every admissible smoothness parameter, so on the leaky branch the
+penalty it assigns \emph{grows} with $N$.
+\item \textbf{A decision-level consequence} (\cref{sec:decision}). In a design
+where both switches are on, over $20$ seeds, pessimistic and plug-in regret
+slopes have opposite signs and the two curves cross.
+\end{enumerate}
+
+\paragraph{What we are not claiming.} \Cref{sec:scope} is explicit that the
+binding hypothesis fails under the anchor paper's own assumptions: completeness
+forces $\beta = 0$, and zero population gradient leakage is equivalent to a
+finite concentrability coefficient by that paper's own Lemma~C.1. Everything here
+is therefore a statement about what happens \emph{outside} those assumptions.
+That is the right question for a robustness study, and we label it as one rather
+than presenting it as a flaw.
+
+\section{Setting}
+\label{sec:setting}
+
+We work per bridge block. The stage-2 empirical risk is exactly quadratic, so the
+confidence region is an exact ellipsoid,
+\begin{equation}
+\mathrm{conf}(\xi) = \{\, b : (b-\bhat)^\top H (b-\bhat) \le \xi \,\},
+\quad H = \hat T_2 + \lambda I,
+\label{eq:region}
+\end{equation}
+and \cref{eq:support} is the standard support-function minimum. Write $\Nul$ for
+the null space of $\hat T_2$, $\Pnul$ for the orthogonal projector onto it, and
+\begin{equation}
+\beta := \lVert \Pnul \btrue \rVert,
+\qquad
+\beta_g := \lVert \Pnul g \rVert .
+\label{eq:betas}
+\end{equation}
+
+\begin{assumption}[Exact structural null]
+\label{as:null}
+$\hat T_2$ has an exact null space with
+$\dim \Nul \ge |O| - \min(|O|,|O_0|) > 0$, fixed by the dimensions of the
+observation and negative-control alphabets and independent of $N$.
+\end{assumption}
+
+\Cref{as:null} is a property of a bridge parametrized over the observation space
+but identified only through the latent bottleneck: when the observation alphabet
+is richer than the instrument can resolve, the design matrix is structurally
+rank-deficient at every sample size. It is exact in the tabular case because the
+design is a finite-rank count matrix; \cref{sec:scope} discusses what survives
+for a strictly positive-definite kernel.
+
+We further assume the fitted bridge is the minimum-norm solution, so
+$\Pnul \bhat = 0$. The ridge solve satisfies this exactly, to machine precision,
+on both solver paths we implement.
+
+\section{A Schedule-Free Floor}
+\label{sec:floor}
+
+\begin{proposition}[Floor]
+\label{prop:floor}
+Under \cref{as:null} and $\Pnul\bhat = 0$, for \emph{any} ridge $\lambda>0$ and
+\emph{any} width $\xi>0$ --- power-law, logarithmic, data-adaptive, or chosen
+with knowledge of the truth --- a region satisfying
+$\btrue \in \mathrm{conf}(\xi)$ obeys
+\begin{equation}
+W \;\ge\; \beta\,\beta_g \qquad \text{at every } N .
+\label{eq:floor}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Coverage of the truth constrains the radius from below. Decomposing
+$\btrue - \bhat$ and keeping only its null component, on which $H$ acts as
+$\lambda I$,
+\[
+\xi \;\ge\; (\btrue-\bhat)^\top H (\btrue-\bhat) \;\ge\; \lambda \beta^2 .
+\]
+Separately $H^{-1} \succeq \lambda^{-1} \Pnul$, so
+$\lVert g \rVert_{H^{-1}} \ge \beta_g/\sqrt{\lambda}$. Multiplying,
+\[
+W = \sqrt{\xi}\,\lVert g\rVert_{H^{-1}}
+\;\ge\; \sqrt{\lambda}\,\beta \cdot \frac{\beta_g}{\sqrt{\lambda}}
+\;=\; \beta\beta_g . \qedhere
+\]
+\end{proof}
+
+The regularizer enters both factors and cancels. That is why the statement is
+schedule-free: tuning $\lambda$ trades the coverage requirement against the
+gradient norm at exactly the rate that leaves their product fixed. A tighter
+region buys a smaller $\lVert g\rVert_{H^{-1}}$ only by demanding a larger $\xi$
+to keep covering the truth.
+
+\paragraph{What can escape it.} \Cref{prop:floor} is not a claim that pessimism
+is hopeless. Three routes out are visible in the proof, and none of them is a
+width rule: centring the region somewhere other than the min-norm solution (which
+breaks $\Pnul\bhat=0$), using a non-ellipsoidal region (which breaks the support
+identity), or arranging $\beta\beta_g = 0$. The third is the practical one, and
+\cref{sec:switches} is about when it holds.
+
+\section{Two Checkable Switches}
+\label{sec:switches}
+
+The floor is a product. It vanishes if either factor does, so the useful question
+is not ``is the design ill-posed'' but ``which of the two leakages is present''.
+They turn out to be controlled by different, independent properties of the
+problem. All results in this section are exact population algebra --- no
+sampling, no rank selection, no estimation noise.
+
+\subsection{Incompleteness leaks the truth}
+\label{sec:switch-beta}
+
+\begin{table}[t]
+\caption{Population null-space share of the true bridge, $\beta$, as a fraction
+of $\lVert\btrue\rVert$, across configurations and confounding levels. Exact
+algebra, no sampling.}
+\label{tab:beta}
+\begin{center}\small\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+$(|S|,|O|,|O_0|)$ & $0.0$ & $0.3$ & $0.6$ & $0.9$ & $1.0$ \\
+\midrule
+$(2,6,4)$ & $0$ & $0$ & $0$ & $0$ & $66.0\%$ \\
+$(2,3,2)$ & $0$ & $0$ & $0$ & $0$ & $65.7\%$ \\
+$(3,7,5)$ & $0$ & $0$ & $0$ & $0$ & $56.9\%$ \\
+$(2,6,2)$ & $0$ & $0$ & $0$ & $0$ & $64.3\%$ \\
+$\mathbf{(4,6,2)}$ & $\mathbf{71.3\%}$ & $\mathbf{71.3\%}$ & $\mathbf{71.1\%}$
+                   & $\mathbf{69.4\%}$ & $\mathbf{69.5\%}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+The identification argument requires a completeness condition: the negative
+control must resolve the latent state. When it does not --- concretely when
+$|O_0| < |S|$ --- the minimum-norm bridge acquires mass in the design null.
+
+We evaluate $\beta$ in the population over five configurations and ten
+confounding levels. The prediction holds in \textbf{$50/50$ cells}, and the
+dichotomy is \emph{sharp} rather than graded: $\beta \le 1.5\times10^{-15}$ in
+every complete cell and between $56.9\%$ and $77.3\%$ of the bridge norm in every
+incomplete one, with nothing in between (\cref{tab:beta}; maximum bridge residual
+$4.4\times10^{-16}$, so the min-norm solve is exact throughout).
+
+Two routes therefore produce $\beta>0$, and they are not equally useful.
+Saturating the confounding knob at exactly $1.0$ works in a complete design, but
+it is a knife-edge: at $0.9$ completeness is restored and $\beta$ returns to
+machine zero, and a deterministic behaviour policy is contrived. The dimensional
+route $|O_0|<|S|$ is the robust one --- it holds at \emph{every} confounding
+level, as the last row of \cref{tab:beta} shows, and it is checkable before
+fitting anything.
+
+\subsection{Confounding leaks the gradient}
+\label{sec:switch-betag}
+
+We initially assumed $\beta_g$ travels with $\beta$. It does not, and the
+distinction is the substance of this section.
+
+The stage-1 gradient's observation profile is the marginal $\nu_1 = E^\top p_1$,
+where $E$ is the emission matrix and $p_1$ the initial state distribution. The
+design span for action $a$ is generated by $E^\top v_{a,x}$ with
+$v_{a,x}[s] \propto p_1[s]\,\pi_b[s,a]\,K_0[s,x]$. If $\pi_b$ does \emph{not}
+depend on $s$, then $\pi_b[s,a]$ factors out and summing over $x$ returns
+$E^\top p_1$ up to scale. Hence:
+
+\begin{proposition}[Unconfounded gradients cannot leak]
+\label{prop:betag}
+If the behaviour policy is independent of the latent state, then
+$\nu_1 \in \mathrm{span}\{E^\top v_{a,x}\}_x$ and hence $\beta_g = 0$, however
+incomplete the negative control is.
+\end{proposition}
+
+\Cref{prop:betag} carries one dependency worth stating: the argument needs $K_0$
+row-normalized. Were the negative control subject to state-dependent missingness,
+so that its rows summed to different constants, the sum would return
+$E^\top(p_1 \circ \mathrm{rowsum})$ instead and the gradient could leak
+\emph{without} any confounding at all.
+
+Confounding is exactly what breaks that sum. \Cref{tab:floor} maps both leakages
+across four configurations. In a \emph{complete} design both are knife-edged at
+confounding $1$. In an \emph{incomplete} design $\beta$ is essentially flat while
+$\beta_g$ is \textbf{graded} in confounding, giving a floor that rises smoothly
+from $0$ to $0.82$ --- eight non-degenerate cells with a nonzero floor.
+
+\begin{table*}[t]
+\caption{Population leakages and the resulting floor $\beta\beta_g$ against
+confounding strength. The floor is nonzero only where both switches are on.}
+\label{tab:floor}
+\begin{center}\small
+\begin{tabular}{@{}llcccccc@{}}
+\toprule
+config & & $0.0$ & $0.3$ & $0.6$ & $0.9$ & $0.99$ & $1.0$ \\
+\midrule
+$(2,6,4)$  & $\beta$   & $0$ & $0$ & $0$ & $0$ & $0$ & $.759$ \\
+complete   & $\beta_g$ & $0$ & $0$ & $0$ & $0$ & $0$ & $.758$ \\
+\midrule
+$(4,6,2)$  & $\beta$   & $1.211$ & $1.210$ & $1.206$ & $1.178$ & $1.177$ & $1.179$ \\
+incomplete & $\beta_g$ & $0$ & $.028$ & $.093$ & $.364$ & $.678$ & $.698$ \\
+           & \textbf{floor} & $\mathbf{0}$ & $\mathbf{.034}$ & $\mathbf{.112}$
+           & $\mathbf{.428}$ & $\mathbf{.798}$ & $\mathbf{.823}$ \\
+\midrule
+$(4,8,3)$  & \textbf{floor} & $\mathbf{0}$ & $\mathbf{.070}$ & $\mathbf{.125}$
+           & $\mathbf{.162}$ & $\mathbf{.171}$ & $\mathbf{.966}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table*}
+
+\subsection{The conjunction}
+\label{sec:conjunction}
+
+Collecting the two switches:
+
+\begin{center}\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+ & truth leaks & gradient leaks \\
+ & ($\beta>0$) & ($\beta_g>0$) \\
+\midrule
+$|O_0| < |S|$ (weak control) & \textbf{yes} & no \\
+$\pi_b$ depends on $S$ (confounding) & no & \textbf{yes} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{corollary}
+\label{cor:conjunction}
+For a stage-1 bridge block, the floor of \cref{prop:floor} is nonzero exactly
+when genuine confounding coincides with an inadequate negative control. Either
+condition alone leaves one factor at zero and the floor vanishes.
+\end{corollary}
+
+\paragraph{The stage restriction is real, and it is good news.} At $t=1$ the
+conditioning set is $(A_1, O_0)$, so a per-action design has only $|O_0|$
+profiles and $|O_0|<|S|$ forces an incomplete span. From $t=2$ on the
+conditioning set includes history: at $t=2$ it is $(A_2, O_1, A_1, O_0)$, giving
+$|O|\,|A|\,|O_0|$ cells per action, and the $O_1$-conditioned posteriors are
+generically rich enough to span all of $\mathbb{R}^{|S|}$. We checked this in the
+population: at every confounding level below $1$, the $t=2$ per-action span
+reaches $|S|$ and $\beta \approx 10^{-15}$ in $24/24$ cells, against a $t=1$ span
+of $2$ or $3$ in the same configurations.
+
+\begin{corollary}[History is a partial substitute for the instrument]
+\label{cor:selfheal}
+With $T>1$ and confounding strictly below saturation, an inadequate negative
+control is \emph{partially self-healing}: per-action completeness is restored at
+every stage after the first, and only the stage-1 blocks leak.
+\end{corollary}
+
+This narrows the claim and sharpens it. The dimensional test $|O_0|<|S|$ is a
+statement about the first stage, not about the whole horizon, and a floor in a
+multi-stage value is carried by the stage-1 blocks inside it. That is still
+enough to move the decision --- \cref{sec:decision} runs at $T=3$ --- but a
+practitioner reading ``check whether $|O_0|<|S|$'' should understand it as
+diagnosing the first stage and should expect the damage to be bounded by that
+stage's contribution rather than to compound along the horizon.
+
+\section{Consequences for Rate Schedules}
+\label{sec:placement}
+
+\subsection{The power-law family}
+
+Specialize to $\lambda(N) = \lambda_0 N^{-\kappa}$ and $\xi(N) = c/(N\mu(N))$
+with $\mu(N) = m N^{-\tau}$, and define the governing exponent
+\begin{equation}
+e \;:=\; \tau + \kappa - 1 .
+\label{eq:e}
+\end{equation}
+
+\begin{corollary}[Dichotomy]
+\label{cor:dichotomy}
+While the bridge-class constraint is inactive:
+\emph{(i)} $W(N) = \Theta(N^{e/2})$, with
+$W(N) \ge \beta_g \sqrt{c/m}\,\lambda_0^{-1/2} N^{e/2}$;
+\emph{(ii)} coverage \emph{requires} $N^{e} \ge K$ with
+$K := \lambda_0\beta^2 m/c$;
+\emph{(iii)} if $e<0$ the width contracts at $N^{e/2}$ but the necessary
+condition fails for all $N > K^{1/e}$, while if $e \ge 0$ the width is
+non-decreasing and never contracts.
+\end{corollary}
+
+Two cautions, stated because earlier drafts of ours got them wrong. The constant
+$K$ matters: for $e>0$ the coverage condition fails for all $N<K^{1/e}$, so
+``$e\ge0$ implies coverage at every $N$'' needs $K\le1$. And (ii) is
+\emph{necessary}, not sufficient --- it says the null obstruction is absent, not
+that coverage holds. Signal directions demand width too, and on our toy design
+they dominate the required radius by $15\times$.
+
+\subsection{Where an existing schedule sits}
+\label{sec:e-paper}
+
+The schedule of \citet{hong2024} has width
+$\xi \sim M_R N_2^{-\alpha/(2\alpha+2)}$ and ridge
+$\lambda_2 = N_2^{-\alpha/(\alpha c_2+1)}$, which places it inside the family of
+\cref{cor:dichotomy} with
+\[
+\tau = \frac{\alpha+2}{2\alpha+2},
+\qquad
+\kappa = \frac{\alpha}{\alpha c_2 + 1},
+\]
+and therefore
+\begin{equation}
+e \;=\; \frac{\alpha\,(2\alpha + 1 - \alpha c_2)}{(\alpha c_2+1)(2\alpha+2)} .
+\label{eq:epaper}
+\end{equation}
+Their Assumption~D.16 restricts $c_2$ to $(1,2]$, so the factor
+$2\alpha+1-\alpha c_2$ is positive for every $\alpha>0$. We verified
+\cref{eq:epaper} against a direct evaluation of $\tau+\kappa-1$ over the
+admissible grid: $e>0$ in $\mathbf{30/30}$ cells, minimum $0.0217$ at
+$\alpha=10$, $c_2=2$.
+
+\begin{corollary}
+\label{cor:epaper}
+The schedule of \citet{hong2024} lies strictly on the non-contracting branch of
+\cref{cor:dichotomy} for every admissible smoothness. On a design where the floor
+is nonzero, the penalty it assigns therefore \emph{grows} with $N$.
+\end{corollary}
+
+We stress the conditional. Where that paper's assumptions hold, completeness
+forces $\beta=0$ and \cref{cor:epaper} is decision-irrelevant: we measured
+$\beta_g = 0$ exactly for three policies at the exact bridges on a complete
+design, and four schedules including this one give $0.000$ regret at every $N$
+tested. \Cref{cor:epaper} is a statement about the boundary of applicability, and
+it is one the original analysis does not make.
+
+\subsection{What is not new here}
+\label{sec:not-new}
+
+\Cref{cor:dichotomy} is not a new phenomenon. It is Tikhonov source-condition
+theory \citep{caponnetto2007} specialized to a design with an exact null atom: in
+the classical setting with singular values $s_j \sim j^{-b}$ and gradient mass
+$g_j^2 \sim j^{-a}$, the same calculation gives $e' = \tau + \theta\kappa - 1$
+with $\theta = 1 - (a-1)/b < 1$, and $\theta=1$ --- our case --- arises exactly
+when the spectrum has an atom at zero. Readers should treat
+\cref{cor:dichotomy} as the specialization it is.
+
+\Cref{prop:betag} is also not new in substance. It is derivable from the anchor
+paper's own machinery: without confounding the behaviour policy is observable, so
+importance weights $\pi_e(a\mid o)/\pi_b(a)$ exist on observables for every
+observation-based policy, giving $C^*_\pi < \infty$, which by their Lemma~C.1
+forbids population gradient leakage. In proximal-inference terms it restates the
+folk fact that without unmeasured confounding a negative control is unnecessary.
+Our contribution here is the \emph{conjunction} with the completeness switch and
+the observation that the two are independent, not either switch alone.
+
+What we believe is new is \cref{prop:floor}, which is schedule-free and does not
+go through rates at all; \cref{cor:conjunction} together with
+\cref{cor:selfheal}, which say which problems the floor applies to --- and at
+which stage --- in terms a practitioner can check; and \cref{cor:epaper}, which
+locates a published schedule inside the dichotomy.
+
+We also record a negative methodological finding about our own earlier work. The
+ratio of unprojected to projected width obeys, to machine precision over $17$
+cells of two independent sweeps,
+\begin{equation}
+\frac{W}{W_{\mathrm{proj}}} = \sqrt{1 + \tan^2\!\theta\;\mathrm{cond}(H)},
+\qquad \sin\theta = \beta_g ,
+\label{eq:identity}
+\end{equation}
+an \emph{identity}. Sweeping gradient alignment and observing that the width
+follows is therefore a re-measurement of arithmetic, not evidence. It also
+corrects a dichotomy we previously asserted: conditioning enters as
+$\sqrt{\mathrm{cond}(H)}$ on exactly equal footing with alignment, and the
+penalty is their product. Details in \cref{app:identity}.
+
+\section{A Decision-Level Consequence}
+\label{sec:decision}
+
+A growing width matters only if it changes which policy is selected. We test that
+in a design where both switches are on, comparing pessimistic selection against a
+plug-in selector computed from the \emph{same} fitted bridge inside the same
+loop, so that the only difference between the two columns is whether the
+pessimism layer is applied. All numbers are $20$ seeds with $95\%$ intervals.
+
+\begin{table}[t]
+\caption{Selection regret, $20$ seeds. Top: a schedule with $e=+0.50$. Bottom:
+the schedule of \citet{hong2024}, $e=+0.455$. Both switches on.}
+\label{tab:decision}
+\begin{center}\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+$N$ & pessimistic & plug-in \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Schedule C, $e=+0.50$}}\\
+$2{,}000$   & $0.0952 \pm 0.0195$ & $0.0894 \pm 0.0194$ \\
+$8{,}000$   & $0.1218 \pm 0.0210$ & $0.0226 \pm 0.0138$ \\
+$32{,}000$  & $0.1714 \pm 0.0177$ & $\mathbf{0.0000 \pm 0.0000}$ \\
+$128{,}000$ & $\mathbf{0.1804 \pm 0.0000}$ & $\mathbf{0.0000 \pm 0.0000}$ \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{\citet{hong2024} schedule, $e=+0.455$}}\\
+$2{,}000$   & $\mathbf{0.0694 \pm 0.0098}$ & $0.1641 \pm 0.0000$ \\
+$8{,}000$   & $0.0943 \pm 0.0205$ & $0.1641 \pm 0.0000$ \\
+$32{,}000$  & $0.1225 \pm 0.0000$ & $\mathbf{0.0644 \pm 0.0000}$ \\
+$128{,}000$ & $0.1225 \pm 0.0000$ & $\mathbf{0.0644 \pm 0.0000}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Two readings of \cref{tab:decision}. First, the separation is complete: at
+$N=128{,}000$ under schedule C, all $20$ seeds put pessimism at $0.1804$ and all
+$20$ put the plug-in at the optimum, with zero interval on both, from a start
+where the two are statistically indistinguishable.
+
+Second, and sharper, under the anchor paper's own schedule the curves
+\textbf{cross}. Pessimism is \emph{better} at $N=2{,}000$ and \emph{worse} from
+$N=32{,}000$ on. The layer helps when data is scarce, which is what it is for,
+and then actively hurts as data accumulates. Regret slopes in $\log N$ confirm
+the pattern: under both schedules with $e>0$ the pessimistic and plug-in slopes
+have \emph{opposite signs} ($+0.0220$ against $-0.0210$ for schedule C, and
+$+0.0135$ against $-0.0288$ for the anchor schedule). More data converges the
+plug-in and diverges the pessimistic selection built on the same estimates.
+
+\section{Scope: What This Does and Does Not Establish}
+\label{sec:scope}
+
+\paragraph{Does not.} The binding hypothesis is $\beta\beta_g > 0$, and both
+halves live outside \citet{hong2024}'s assumptions. Their completeness condition
+forces the min-norm bridge out of the population null, giving $\beta = 0$; and by
+their Lemma~C.1, nonzero population gradient leakage is equivalent to an infinite
+concentrability coefficient $C^*_\pi$, which they exclude. \textbf{Nothing here
+is a defect in that paper.} Where its assumptions hold its construction behaves
+as advertised, and we measured exactly that.
+
+\paragraph{Does.} A robustness question the theory cannot ask of itself: what
+happens when the assumption it conditions on only approximately holds. The answer
+is that the failure is not graceful. It is not that the region contracts more
+slowly --- it does not contract at all, and under an $e>0$ schedule the penalty
+grows without bound while the estimate underneath it converges. Because the
+trigger is a conjunction of two checkable conditions, this is actionable rather
+than merely cautionary.
+
+\paragraph{The exact-null assumption.} \Cref{as:null} is exact for a tabular
+delta-kernel, where the design is a finite-rank count matrix. For a strictly
+positive-definite kernel the spectrum decays smoothly with no atom at zero, and
+\cref{prop:floor} degrades to a statement about the effective null at the ridge
+scale rather than an exact one. We have not characterized that regime, and
+\cref{sec:not-new} indicates the exponent changes there.
+
+\section{Limitations}
+\label{sec:limits}
+
+\paragraph{One environment family.} All experiments are tabular POMDPs with
+$T\le3$ and $|S|\le4$, generated from a single construction. The population
+results are exact algebra and so do not depend on sampling, but they do depend on
+that family's structure.
+
+\paragraph{The switches are a stage-1 statement.} \Cref{cor:selfheal} bounds how
+far the characterization reaches: from $t=2$ on, history restores per-action
+completeness and the later blocks do not leak. We have verified this only in the
+population and only at $t=2$; whether the restoration is uniform in $T$, and how
+quickly the $t=1$ contribution is diluted as the horizon grows, are open.
+
+\paragraph{Saturated confounding is a separate regime.} All of
+\cref{cor:selfheal} is stated for confounding strictly below $1$. At exactly $1$
+the behaviour policy is a deterministic function of the latent state, history
+stops helping, and the $t=2$ span collapses back to the $t=1$ value. We regard
+that point as contrived, but it is the one place where the leak does propagate
+along the horizon.
+
+\paragraph{Discrete regret.} The decision experiment selects among six
+hand-constructed candidate policies, so regret takes few values. The crossing in
+\cref{tab:decision} is stable across $20$ seeds but has not been checked against
+a randomly generated candidate set.
+
+\paragraph{Our own corrections.} Several claims in earlier drafts of this line
+did not survive: a headline sample size computed on a grid that could not reach
+it, a validity result on a grid that could not falsify it, a decision sweep whose
+schedules all started inside an attractor, and the alignment result of
+\cref{eq:identity} that turned out to be an identity. \Cref{app:corrections}
+lists them.
+
+\section{Conclusion}
+
+Pessimism over a proximal bridge confidence region is only useful if the region
+contracts. We showed a floor that no width rule escapes, identified the exact
+conjunction of conditions under which that floor is nonzero, placed a published
+schedule strictly on the non-contracting branch, and exhibited a decision-level
+crossing where more data makes pessimistic selection worse while a plug-in built
+on the same estimates converges. The two triggering conditions are checkable
+before fitting, which turns a negative result into a pre-deployment test: if the
+negative control cannot resolve the latent state and the logging policy did, do
+not expect the region to shrink.
+
+\bibliography{refs}
+\bibliographystyle{icml2024}
+
+\newpage
+\appendix
+\onecolumn
+\input{appendix}
+
+\end{document}
