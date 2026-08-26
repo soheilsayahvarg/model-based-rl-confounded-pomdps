@@ -209,4 +209,70 @@ pair with the run that produced the correction.
 
 ### Measurement
 
-*(empty until run)*
+`poc/run_pd_kernel2.py`. The `(a, b)` grid shares no pair with the run that
+produced the correction.
+
+#### P-K6 holds for 17 of 20, and all three failures are accounted for.
+
+| `(a, b)` | `theta` | predicted | measured | error | why |
+|---|---|---|---|---|---|
+| `(3.5, 2.5)` | `0.0000` | `-0.2273` | `-0.1899` | `0.0374` | the `theta = 0` log boundary |
+| `(5.0, 4.0)` | `0.0000` | `-0.2273` | `-0.1924` | `0.0349` | the `theta = 0` log boundary |
+| `(1.2, 1.2)` | `0.8333` | `0.1515` | `0.1204` | `0.0311` | **our guard missed it** |
+
+The other 17 land within `0.0083`, and 9 of them within `0.001`. The clipped law
+is right; `theta <= 0` saturates at `(tau-1)/2` exactly as the correction says,
+including `(5.0, 1.2)` at `theta = -2.33` measuring `-0.2272` against `-0.2273`.
+
+#### P-K8 holds, 3 of 3, and it explains two of the three failures.
+
+At `theta = 0` exactly, extending the `N` grid from `2^24` to `2^38` moves the
+measured slope toward the predicted value every time:
+
+| `(a, b)` | predicted | short grid | long grid |
+|---|---|---|---|
+| `(3, 2)` | `-0.2273` | `-0.1889` | `-0.1981` |
+| `(5, 4)` | `-0.2273` | `-0.1924` | `-0.2002` |
+| `(9, 8)` | `-0.2273` | `-0.1978` | `-0.2037` |
+
+A wrong exponent would not move. A logarithmic correction does, slowly, which is
+what this is.
+
+#### P-K7 fails in both directions, and the fault is our guard.
+
+The guard rejects a cell when `j* = lambda^(-1/b)` exceeds a tenth of the mode
+budget. Of the five cells it rejected, it was **right about one** and
+**over-conservative about four**:
+
+    a=1.2 b=1.0   pred +0.1364   meas +0.0746   err 0.0618   guard was right
+    a=1.8 b=1.0   pred -0.1364   meas -0.1311   err 0.0053   over-conservative
+    a=2.5 b=1.0   pred -0.2273   meas -0.2255   err 0.0017   over-conservative
+    a=3.5 b=1.0   pred -0.2273   meas -0.2272   err 0.0001   over-conservative
+    a=5.0 b=1.0   pred -0.2273   meas -0.2272   err 0.0000   over-conservative
+
+And it **missed** `(1.2, 1.2)`, which it accepted and which failed.
+
+Both errors have the same root: `j*` is where the ridge meets the spectrum, but
+it is not where the truncation error lives. When `theta <= 0` the sum is
+dominated by the head and the tail is irrelevant however far `j*` sits, so the
+rejections were pointless. When `a` is close to `1` the tail
+`sum_{j>J} j^-a` converges so slowly that `J = 20 j*` is not enough, so the
+acceptance was wrong. A guard built on a proxy for the quantity, rather than on
+the quantity, fails on both sides.
+
+**The structural fix is to stop using a proxy.** Compute the slope at `J` and at
+`2J` and reject when they differ by more than `0.005`. That is assumption-free,
+covers both failure modes, and is what `run_pd_kernel3.py` does.
+
+#### P-K9 fails, and our own guard says the measurement was invalid.
+
+Worst error `0.0871` against a `0.05` tolerance. But the diagnostic printed
+alongside it reports `j* = 1880` against `3000` modes in **all four**
+bandwidths: `TRUNCATED`. The Laplacian measurement is inadmissible by the same
+criterion that rejected the stress rows, so `0.0871` is not evidence about the
+law.
+
+The kernel itself is now in the right class. The fitted decay exponent is
+`b = 2.0055` to `2.0060` across bandwidths that vary by `10x`, which is the
+Sobolev `j^-2` the Matern-1/2 kernel should give. Replacing the Gaussian was the
+right move; the mode budget was not raised to match.
