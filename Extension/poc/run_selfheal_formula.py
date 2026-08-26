@@ -71,9 +71,9 @@ def orth(M, tol=TOL):
     return U[:, :r]
 
 
-def make_params(cfg, confound, family, seed=0):
+def make_params(cfg, confound, family, seed=0, T=3):
     n_s, n_o, n_o0 = cfg
-    p = default_params(n_s=n_s, n_a=2, n_o=n_o, n_o0=n_o0, T=3,
+    p = default_params(n_s=n_s, n_a=2, n_o=n_o, n_o0=n_o0, T=T,
                        seed=seed, confound=confound)
     if family == "dense":
         return p

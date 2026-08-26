@@ -276,3 +276,47 @@ that move:
   conditioning cells in **every** cell of the sweep. This is the sharper test:
   the closed form is `O(|S|^3)` while the brute force enumerates
   `|O| |A| |O_0|` profiles, so agreement is not arithmetic restatement.
+
+## 8. Does the dilution law survive the refutation?
+
+**Written and committed before it was run.**
+
+`claims.md` now says `cor:dilution` "inherits the missing hypothesis". That is an
+assertion, and this project's own standard is that an asserted consequence is not
+a measured one. Section 6 refuted `cor:selfheal`; this section measures what that
+does to the corollary built on top of it.
+
+### What `cor:dilution` actually rests on
+
+`poc/run_horizon_dilution.py` part 3 computes
+
+    floor1 = max over actions of the STAGE-1 floor
+    ratio  = floor1 / value spread at horizon T
+
+and takes `floor1` as the whole floor because exactly one block leaks. Under a
+rank failure every block leaks, so the right quantity is the aggregate over all
+`2T-1` blocks, and it has no reason to be constant in `T`.
+
+### Predictions
+
+- **P-D1.** In `dense_lowrank` and `sparse_support`, `beta_t > 0.1` at **every**
+  stage `t = 1..6`, against `beta_t <= 2.7e-15` for `t >= 2` in `dense`.
+- **P-D2.** The aggregate floor, summed over blocks, grows roughly **linearly**
+  in `T` under a rank failure: log-log slope near `+1`, against near `0` for
+  `dense`.
+- **P-D3.** The ratio aggregate-floor over spread is therefore **flat** in `T`
+  under a rank failure, against the `-1.23` and `-0.93` measured in `dense`.
+  The `1/T` dilution law would then be a consequence of the rank hypothesis
+  rather than of the horizon, and `cor:dilution` needs the same side condition
+  as `cor:selfheal`.
+- **P-D4 (control).** In `dense`, swapping the stage-1-only floor for the
+  aggregate changes the published ratios by less than `1%`, because the
+  `t >= 2` per-stage floors are around `1e-30`. If this fails, the aggregate is
+  not the right generalization and P-D2/P-D3 mean nothing.
+
+P-D4 is the control that makes the other three interpretable. It is listed last
+and it is the one to read first.
+
+### Measurement
+
+*(empty until run)*
