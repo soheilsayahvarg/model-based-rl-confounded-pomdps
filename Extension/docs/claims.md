@@ -227,3 +227,20 @@ theorem work caused us to make.
 | Our P-K2 and P-K5 | **refuted, both our fault** | truncation (`j* = 2.4e4` against a `2e4` cut, the **fifth** instance) and fitting a power law to a Gaussian spectrum |
 | Our `j*` truncation guard | **refuted, both directions** | over-conservative on 4 of 5 rejections, and it missed `(1.2,1.2)`. Replaced by an exact tail bound `J^(1-a)/((a-1) lambda)`, which admits **0** truncated cells and whose conservatism is a provable slackness |
 | `cor:epaper`, unconditional | **scoped** | conditional on `b >= 2(a-1)` at `c_2 = 1`; at `c_2 = 2` the threshold is `0.955` at `alpha = 10`, so almost any smoothness rescues the schedule |
+
+## Novelty, checked against the literature
+
+`novelty_check.md`, run 2026-08-27 **before** rebuilding the paper around the
+span theorem. Third rediscovery in this project, and the first one caught before
+we built on it.
+
+| claim | status | where |
+|---|---|---|
+| The `\|O_0\| >= \|S\|` completeness switch is ours | **refuted -- known** | Ying, Miao, Shi & Tchetgen Tchetgen JRSS-B 2023, eq. (6): `min(d_z, d_w) >= d_u`, attributed to four earlier papers |
+| Sequential completeness is characterized in the longitudinal proximal literature | **no -- it is assumed** | their Assumptions 4 and 5 state it per time point; "rank" appears once in the whole paper, in an unrelated remark |
+| The stage-wise rank condition is ours | **refuted -- known and assumed** | Zhang & Jiang arXiv:2402.14703 Assumption 2: `rank(M_H,h) = rank(M_F,h) = S` at every `h`; they also note Uehara et al. 2022a had pointed out its role |
+| **"History substitutes for a negative control" is ours** | **refuted -- classical** | finite-state nonparametric HMMs are identifiable "as soon as the transition matrix has full rank and the emission distributions are linearly independent" (Allman-Matias-Rhodes 2009 via Kruskal; Gassiat et al. 2016). Those are our two conditions verbatim |
+| The exact span formula with **partial** rank and the behaviour-policy factor | **plausibly new** | HMM identifiability has no actions and no confounded logger; the `\|S\|/\|A\|` saturation knife-edge is specific to a confounded POMDP |
+| Non-monotonicity in `t` (span `3 -> 2`) | **no hit found, weak evidence** | once the rank condition is stated it is close to a one-line corollary |
+| **What a violated rank assumption costs a pessimistic planner** | **not found in either literature** | this is where every measurement in this project lives, and it is the defensible framing |
+| The `projall` remedy | **not found** | |
