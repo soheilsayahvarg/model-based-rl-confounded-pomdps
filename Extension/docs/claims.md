@@ -104,7 +104,7 @@ result.
 | "`confound=1` is a contrived knife-edge, `\|O_0\|<\|S\|` is the robust route" | **corrected** | true for `beta`; wrong for the floor. In an incomplete design `beta_g` is **graded** in confounding |
 | **Incompleteness leaks the truth; confounding leaks the gradient; the floor needs both** | **holds** | §5c, four configurations |
 | The two-switch claim, unscoped in `t` | **scoped to stage-1 blocks** | round 8 B3, `poc/critic8_t2span.py`. At `t=2` the conditioning set includes history; the per-action span reaches `\|S\|` and `beta_pop ~ 1e-15` in 24/24 cells at every confound < 1. History is a partial substitute for the instrument; only the `t=1` blocks leak |
-| Stage-2+ restoration is uniform in `t` | **holds** | `horizon_dilution.md` §4.1. Span reaches `\|S\|` at every `t` in 2..5 for every confound < 1, and the knife-edge at confound 1 is equally uniform the other way. Only the first block leaks: `beta_t <= 2.7e-15`, per-stage floor `<= 4.3e-30` |
+| Stage-2+ restoration is uniform in `t` | **scoped -- needs a hypothesis we did not state** | `horizon_dilution.md` §4.1 measured it; `selfheal_theorem.md` §6 proves it and bounds it. True **iff the reachable transition rows span `R^\|S\|`**. Our generator draws transition rows from a Dirichlet, which is full-rank a.s., so the hypothesis was invisible. On two engineered families it fails at confound **0.0** with `beta_2 ~ 0.71` |
 | The floor compounds along the horizon | **refuted** | §4.2. Exactly one block leaks at any `T`, so the absolute floor is constant in `T` |
 | **The decision-level consequence is short-horizon** | **holds** | §4.3. Floor constant while the value spread grows; ratio decays with log–log slope −1.23 and −0.93, about 10× from `T=1` to `T=6`. At `T=1` under strong confounding the floor **exceeds the entire value spread** (1.63). Proposition 1 is horizon-free; its decision consequence is not |
 | Prop. 2 (unconfounded gradients cannot leak) is novel | **refuted** | derivable from the anchor’s own Lemma C.1; restates the folk fact that without unmeasured confounding a negative control is unnecessary. The novel part is the conjunction |
@@ -157,3 +157,73 @@ So the honest statement is not "one defect, one fix" but:
 
 Two of the three modes have no structural fix. The claim that the guard is *the*
 fix was itself over-general.
+
+## Self-healing, proved and re-scoped
+
+`selfheal_theorem.md`. Population algebra, 360 cells, closed form checked
+against brute-force enumeration on the **subspace**, not only the dimension.
+
+| claim | status | where |
+|---|---|---|
+| The stage-`t` per-action span is `E^T diag(pi_b[:,a]) W_t`, with `W_1 = span{p1*K0[:,o0]}` and `W_{k+1} = sum_a P[a]^T diag(pi_b[:,a]) span{z*E[:,o]}` | **holds** | §6, **360/360** cells, dimension and subspace, `\|\|U_c U_c^T - U_b U_b^T\|\|_2 < 1e-8`. Closed form is `O(\|S\|^3)`; brute force enumerates up to 12,288 profiles |
+| Self-healing is *the appearance of a free observation index* in the conditioning set | **holds** | §7. At `t=1` there is no free `o`, so the span is at most `\|O_0\|`; from `t=2` the span is the image of a full `R^\|S\|` |
+| The confound-1 knife-edge is `dim = \|S\|/\|A\|` | **holds** | §6, 6/6 cells. `diag(pi_b[:,a])` loses rank. We had measured the collapse and called the point "contrived" without saying what breaks |
+| **`cor:selfheal` as published** | **refuted -- false as stated** | §6. `sparse_support` and `dense_lowrank` both lose completeness at `t=2` at confounding **0.0**, `beta_2` = 0.705-0.730 of the bridge norm. Needs "provided the reachable transition rows span `R^\|S\|`" |
+| The span is monotone nondecreasing in `t` (our P-S5) | **refuted** | §6, 16 sequences. In `(4,8,3)` the stage-1 span is **3** and history collapses it to **2**, the transition row rank. History is not a *partial substitute* for the instrument; it is a **different** instrument, usually better and sometimes strictly worse |
+| The support version of the span proof | **refuted -- our own, caught before measuring** | §7. The free observation multiplies *before* the transition, so the support argument sits on the wrong side of `P`. The discriminating cell is `dense_lowrank`, whose rows have full support: support proof predicts 4, rank proof predicts 2, **measured 2** |
+| `cor:dilution` and the stage-selective remedy | **inherit the missing hypothesis** | both assume exactly one block leaks. Under a rank failure every stage leaks, the floor compounds, and the remedy targets the wrong blocks |
+
+## Stage-selective pessimism
+
+`stage_selective_pessimism.md`. Four arms off one fit per `(N, seed)`, 20 seeds.
+
+| claim | status | where |
+|---|---|---|
+| The divergence is concentrated in the `t=1` blocks | **holds** | Part A, schedule C. `beta_g` = 0.326 at both `t=1` blocks and **exactly 0** at every `t>=2` block; empirical null dim 96/0/0/288/0. Penalty slopes `+0.181/+0.151` at `t=1` against `-0.417/-0.429/-0.438` at `t>=2`. `t=1` share of total penalty 0.908 -> 0.991 |
+| Dropping pessimism on the `t=1` blocks recovers selection | **holds, schedule C** | Part B. `full` diverges (slope +0.022, regret 0.1804 at `N=128k`); `tail` and `proj1` both reach **0.0000** from `N=32k`, matching the plug-in |
+| `proj1` keeps the layer and still converges | **holds, schedule C** | restricting the `t=1` region to the identified span, rather than dropping it, gives slope **-0.034** and 0.0000 regret. The guarantee is not abandoned |
+| Our P7/P8: the remedy trades away conservatism | **refuted** | Part C. All arms stay conservative in **every** cell; `plugin` is the only arm that ever fails (0.99 at `N=32k`). `full` pays a mean gap of `-2.004` and **growing**; `proj1` pays `-0.335` and **shrinking**. Against `full` this is not a trade |
+| The remedy holds under a rank failure | **holds -- our prediction that it would fail was wrong** | §8. We predicted `tail` and `proj1` slopes `>= 0` where their targeting is wrong. Measured `-0.0149` and `-0.0254`, against `full` stuck at 0.0997 from `N=32k` |
+| The paper schedule reproduces schedule C's pattern | **open** | run in progress |
+
+## The two null spaces
+
+`stage_selective_pessimism.md` §9. Found because Part D refuted a prediction the
+theorem work caused us to make.
+
+| claim | status | where |
+|---|---|---|
+| **`projall` is the arm to carry** | **holds, both families** | slope `-0.0290` dense and `-0.0300` rank-failure; reaches the plug-in's regret within the interval; conservative in **every** cell while its gap shrinks `-1.125 -> -0.399` and `full`'s grows to `-2.085`. It needs no knowledge of which stage leaks |
+| The population per-action span and the empirical stage-2 design are the same object | **refuted -- a caveat on our own theorem** | §9. `beta_g` and the empirical null at `t>=2` are **identical** in the rank-failure family and the dense one (`0.0000`, `0`). The span `selfheal_theorem.md` proves lives in `R^\|O\|` and is cut by the transition rank; the design the floor uses is the empirical `T_2`, whose cells are counted by the history alphabet. A rank-deficient `P` leaves it full rank and merely ill-conditioned |
+| The `t=1` empirical null is `(\|A\|\|O\| - \|A\|min(\|O_0\|,\|O\|)) x n_y`, a pure cell count | **holds** | §9. Exact in 8/15 at moderate `N` and in **every** case at `N = 256,000`; the excess at small `N` is near-threshold eigenvalues in sparse cells. It involves neither `\|S\|` nor `P` |
+| `as:null` and `sec:switch-beta` state the same condition | **refuted** | `as:null` is `\|O_0\| < \|O\|` (cells); `sec:switch-beta` is `\|O_0\| < \|S\|` (latent states). The paper moves between them without saying so |
+| `cor:conjunction`, as a **population** statement | **holds** | §9. Empirical `beta` in a complete design decays at `N^-0.50` (measured `-0.5006`, `-0.5267`, `-0.4103`, `-0.5003`), so the finite-sample floor is real but vanishes in the limit |
+| `cor:conjunction`, at finite `N` | **scoped** | a complete design carries a measured floor of order `N^-1/2`: `beta_emp` up to `0.1200` in `(3,7,5)` at `N = 8k..32k`. A footnote with a rate, not a defect |
+| The rank failure does not reach the later blocks | **refuted** | §8. `bR_t2` and `bD_t2` penalty slopes flip from `-0.417` and `-0.438` to `+0.090` and `+0.121`. It propagates as conditioning, not as a null, so `beta_g` cannot see it |
+
+## Horizon dilution, re-scoped
+
+`selfheal_theorem.md` §8.
+
+| claim | status | where |
+|---|---|---|
+| Pipeline agrees with the published dilution numbers | **holds** | `ratio_t1` slope `-1.2340` against the paper's `-1.23`; dense aggregate exactly constant for `T>=2`, slope `+0.00000` |
+| Every stage leaks under a rank failure | **holds** | `beta_t` at `t>=2` is `5e-16` in dense and **`0.67` to `0.73`** in both rank-failure families, per-stage floors `0.25` to `0.52` |
+| **`cor:dilution` merely needs a side condition** | **refuted -- it REVERSES without one** | ratio slope in `T`: `-0.89`/`-0.58` dense, **`+0.90` to `+1.93`** rank-failure. The floor compounds faster than the spread widens, so a longer horizon is strictly worse, not neutral |
+| Our P-D3 ("flat under a rank failure") | **refuted** | the ratio grows. Worse than we predicted |
+| Our P-D4 control, as stated | **refuted -- the control was mis-specified** | it compared a two-block aggregate against a one-block published number, so the "failure" was exactly `1.00`. Corrected, it passes at `0.00e+00` at every `T` |
+
+## The PD-kernel regime
+
+`pd_kernel_regime.md`. Fills the gap `sec:scope` admits.
+
+| claim | status | where |
+|---|---|---|
+| `theta* = (alpha c_2 + 1)/(2 alpha + 2)`, and `= 1/2` at `c_2 = 1` for every `alpha` | **holds** | §6, 0 mismatches of 25. Equivalently `b >= 2(a-1)` |
+| **`prop:floor` is schedule-free because of the ATOM, not the method** | **holds** | §6. Atom spectrum: floor slope `-0.009`, `-0.000`. PD spectrum: `-0.302`, `-0.911`, decaying four orders. The paper's central adjective must be scoped to the exact-null case |
+| `sec:not-new`'s `e' = tau + theta kappa - 1` | **corrected** | needs `clip(theta, 0, 1)`. For `theta <= 0` the exponent saturates at `(tau-1)/2`, measured to `0.0007` at `theta = -0.60` and `0.0000` at `theta = -2.33` |
+| The clipped law, out of sample | **holds** | §7, 17/20 within 0.02, 9 within 0.001; the three misses are two `theta = 0` log boundaries and one truncation |
+| `theta = 0` residual is a log correction | **holds** | §7, 3/3. Extending the `N` grid moves the slope toward the prediction every time |
+| Our P-K2 and P-K5 | **refuted, both our fault** | truncation (`j* = 2.4e4` against a `2e4` cut, the **fifth** instance) and fitting a power law to a Gaussian spectrum |
+| Our `j*` truncation guard | **refuted, both directions** | over-conservative on 4 of 5 rejections, and it missed `(1.2,1.2)`. Replaced by an exact tail bound `J^(1-a)/((a-1) lambda)`, which admits **0** truncated cells and whose conservatism is a provable slackness |
+| `cor:epaper`, unconditional | **scoped** | conditional on `b >= 2(a-1)` at `c_2 = 1`; at `c_2 = 2` the threshold is `0.955` at `alpha = 10`, so almost any smoothness rescues the schedule |
