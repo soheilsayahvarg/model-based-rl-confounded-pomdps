@@ -72,6 +72,11 @@ ARMS = ["full", "tail", "proj1", "projall", "plugin"]
 # on the wrong blocks. "projall" is the arm that does not need to know which
 # stage leaks -- it refuses to pay for unidentified directions at EVERY block.
 FAMILY = os.environ.get("FAMILY", "dense")
+# Long background jobs here get killed before two families x two schedules
+# finish, so the driver runs one slice at a time and the JSON is keyed by both.
+_ONLY = [t for t in os.environ.get("SCHED", "").split(",") if t]
+if _ONLY:
+    SCHEDULES = [s for s in SCHEDULES if any(o in s[0] for o in _ONLY)]
 C_CAL = {}
 RESULTS = {}
 
@@ -405,8 +410,11 @@ def main():
                    config=[N_S, N_O, N_O0], n_seeds=len(SEEDS), T=T,
                    family=FAMILY, arms=ARMS)
     out = os.path.normpath(os.path.join(HERE, "..", "experiments",
-                                        "results_stage_selective_%s.json"
-                                        % FAMILY))
+                                        "results_stage_selective_%s%s.json"
+                                        % (FAMILY,
+                                           "_" + "_".join(_ONLY).replace(
+                                               "=", "").replace(".", "")
+                                           if _ONLY else "")))
     with open(out, "w") as f:
         json.dump(RESULTS, f, indent=2, default=float)
     print("\nresults written to", out)

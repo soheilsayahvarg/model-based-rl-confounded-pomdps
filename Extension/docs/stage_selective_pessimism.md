@@ -90,7 +90,77 @@ fingerprint at the level of the estimator and not just in population algebra.
 
 ### Measurement
 
-*(empty until run)*
+`FAMILY=dense_lowrank SCHED=kappa=1.5`, 20 seeds, against the same slice of the
+`dense` family. Only `P` differs, so the stage-1 floor is identical
+(`beta = 1.1775`, `beta_g = 0.3639`, floor `0.4285`) and the per-action span is
+`2` at every stage instead of `2, 4, 4`.
+
+#### P9 and P10 are REFUTED. The remedy does not fail.
+
+| arm | slope, `dense` | slope, `dense_lowrank` |
+|---|---|---|
+| `full` | `+0.0220` | `+0.0045` |
+| `tail` | `-0.0255` | **`-0.0149`** |
+| `proj1` | `-0.0345` | **`-0.0254`** |
+| `projall` | `-0.0290` | `-0.0300` |
+| `plugin` | `-0.0210` | `-0.0162` |
+
+We predicted `tail` and `proj1` would have slopes `>= 0` where their targeting is
+wrong. Both stay negative. `tail` runs `0.0855 -> 0.0096` and `proj1`
+`0.1256 -> 0.0257`, while `full` sticks at `0.0997` from `N = 32,000` on.
+
+#### P12 and P13 hold.
+
+`projall` is negative in both families, `-0.0290` and `-0.0300`, and at
+`N = 128,000` in the rank-failure family it reaches `0.0096 +- 0.0086`, which is
+the plug-in's `0.0072 +- 0.0077` within the interval. It stays conservative in
+**every** cell of both families, and its mean gap shrinks `-1.125 -> -0.399`
+while `full`'s grows `-1.424 -> -2.085`.
+
+The arm that needs no knowledge of which stage leaks is the one that works
+everywhere. That is the remedy to carry.
+
+#### P11 is REFUTED, and the reason matters more than the prediction.
+
+We predicted `beta_g > 0.1` and a nonzero empirical null at the `t >= 2` blocks
+under a rank failure. Measured, they are **exactly what the dense family gives**:
+
+    beta_g    bR_t1 0.3259   bR_t2 0.0000   bR_t3 0.0000   bD_t1 0.3259   bD_t2 0.0000
+    nulldim   bR_t1 96       bR_t2 0        bR_t3 0        bD_t1 288      bD_t2 0
+
+**The population per-action design span and the empirical stage-2 design are
+different objects.** The span that `selfheal_theorem.md` proves lives in
+`R^|O|` and is cut to dimension `2` by the transition rank. The design the floor
+actually uses is the empirical `T_2` in coefficient space, whose conditioning
+cells are counted by the history alphabet, not by the transition rank. A
+rank-deficient `P` leaves that matrix **full rank** and merely ill-conditioned.
+
+So `cor:selfheal`'s link to `prop:floor` is looser than the paper states. The
+corollary is about identification of the bridge; the floor is about an exact null
+in a coefficient-space design. They coincide at `t = 1` and come apart after.
+This is a caveat on our own theorem, found by a prediction it caused us to make.
+
+#### The rank failure does propagate, as conditioning rather than as a null.
+
+Per-block penalty slopes, same schedule, same seeds:
+
+| block | `dense` | `dense_lowrank` |
+|---|---|---|
+| `bR_t1` | `+0.181` | `+0.181` |
+| `bR_t2` | `-0.417` | **`+0.090`** |
+| `bR_t3` | `-0.429` | `-0.144` |
+| `bD_t1` | `+0.151` | `+0.147` |
+| `bD_t2` | `-0.438` | **`+0.121`** |
+
+The `t = 1` blocks are untouched, as they must be since `P` does not enter their
+design. Two of the three later blocks **flip sign** and the third shrinks three
+times more slowly. So the effect is real and it reaches the later stages; it
+simply is not an exact null, and `beta_g` cannot see it.
+
+That is why `tail` still converges: the later blocks' penalties grow, but from
+`0.0135` and `0.0369` rather than from `0.19` and `0.85`, so they never dominate
+the decision on this grid. A longer `N` grid or a stronger rank failure could
+change that, and we have not tested either.
 
 ## 5. Part B: does the remedy recover selection?
 
@@ -124,7 +194,77 @@ cannot be presented afterwards as what we expected.
 
 ### Measurement
 
-*(empty until run)*
+`FAMILY=dense_lowrank SCHED=kappa=1.5`, 20 seeds, against the same slice of the
+`dense` family. Only `P` differs, so the stage-1 floor is identical
+(`beta = 1.1775`, `beta_g = 0.3639`, floor `0.4285`) and the per-action span is
+`2` at every stage instead of `2, 4, 4`.
+
+#### P9 and P10 are REFUTED. The remedy does not fail.
+
+| arm | slope, `dense` | slope, `dense_lowrank` |
+|---|---|---|
+| `full` | `+0.0220` | `+0.0045` |
+| `tail` | `-0.0255` | **`-0.0149`** |
+| `proj1` | `-0.0345` | **`-0.0254`** |
+| `projall` | `-0.0290` | `-0.0300` |
+| `plugin` | `-0.0210` | `-0.0162` |
+
+We predicted `tail` and `proj1` would have slopes `>= 0` where their targeting is
+wrong. Both stay negative. `tail` runs `0.0855 -> 0.0096` and `proj1`
+`0.1256 -> 0.0257`, while `full` sticks at `0.0997` from `N = 32,000` on.
+
+#### P12 and P13 hold.
+
+`projall` is negative in both families, `-0.0290` and `-0.0300`, and at
+`N = 128,000` in the rank-failure family it reaches `0.0096 +- 0.0086`, which is
+the plug-in's `0.0072 +- 0.0077` within the interval. It stays conservative in
+**every** cell of both families, and its mean gap shrinks `-1.125 -> -0.399`
+while `full`'s grows `-1.424 -> -2.085`.
+
+The arm that needs no knowledge of which stage leaks is the one that works
+everywhere. That is the remedy to carry.
+
+#### P11 is REFUTED, and the reason matters more than the prediction.
+
+We predicted `beta_g > 0.1` and a nonzero empirical null at the `t >= 2` blocks
+under a rank failure. Measured, they are **exactly what the dense family gives**:
+
+    beta_g    bR_t1 0.3259   bR_t2 0.0000   bR_t3 0.0000   bD_t1 0.3259   bD_t2 0.0000
+    nulldim   bR_t1 96       bR_t2 0        bR_t3 0        bD_t1 288      bD_t2 0
+
+**The population per-action design span and the empirical stage-2 design are
+different objects.** The span that `selfheal_theorem.md` proves lives in
+`R^|O|` and is cut to dimension `2` by the transition rank. The design the floor
+actually uses is the empirical `T_2` in coefficient space, whose conditioning
+cells are counted by the history alphabet, not by the transition rank. A
+rank-deficient `P` leaves that matrix **full rank** and merely ill-conditioned.
+
+So `cor:selfheal`'s link to `prop:floor` is looser than the paper states. The
+corollary is about identification of the bridge; the floor is about an exact null
+in a coefficient-space design. They coincide at `t = 1` and come apart after.
+This is a caveat on our own theorem, found by a prediction it caused us to make.
+
+#### The rank failure does propagate, as conditioning rather than as a null.
+
+Per-block penalty slopes, same schedule, same seeds:
+
+| block | `dense` | `dense_lowrank` |
+|---|---|---|
+| `bR_t1` | `+0.181` | `+0.181` |
+| `bR_t2` | `-0.417` | **`+0.090`** |
+| `bR_t3` | `-0.429` | `-0.144` |
+| `bD_t1` | `+0.151` | `+0.147` |
+| `bD_t2` | `-0.438` | **`+0.121`** |
+
+The `t = 1` blocks are untouched, as they must be since `P` does not enter their
+design. Two of the three later blocks **flip sign** and the third shrinks three
+times more slowly. So the effect is real and it reaches the later stages; it
+simply is not an exact null, and `beta_g` cannot see it.
+
+That is why `tail` still converges: the later blocks' penalties grow, but from
+`0.0135` and `0.0369` rather than from `0.19` and `0.85`, so they never dominate
+the decision on this grid. A longer `N` grid or a stronger rank failure could
+change that, and we have not tested either.
 
 ## 6. Part C: what the remedy costs
 
@@ -147,7 +287,77 @@ paper should present it that way.
 
 ### Measurement
 
-*(empty until run)*
+`FAMILY=dense_lowrank SCHED=kappa=1.5`, 20 seeds, against the same slice of the
+`dense` family. Only `P` differs, so the stage-1 floor is identical
+(`beta = 1.1775`, `beta_g = 0.3639`, floor `0.4285`) and the per-action span is
+`2` at every stage instead of `2, 4, 4`.
+
+#### P9 and P10 are REFUTED. The remedy does not fail.
+
+| arm | slope, `dense` | slope, `dense_lowrank` |
+|---|---|---|
+| `full` | `+0.0220` | `+0.0045` |
+| `tail` | `-0.0255` | **`-0.0149`** |
+| `proj1` | `-0.0345` | **`-0.0254`** |
+| `projall` | `-0.0290` | `-0.0300` |
+| `plugin` | `-0.0210` | `-0.0162` |
+
+We predicted `tail` and `proj1` would have slopes `>= 0` where their targeting is
+wrong. Both stay negative. `tail` runs `0.0855 -> 0.0096` and `proj1`
+`0.1256 -> 0.0257`, while `full` sticks at `0.0997` from `N = 32,000` on.
+
+#### P12 and P13 hold.
+
+`projall` is negative in both families, `-0.0290` and `-0.0300`, and at
+`N = 128,000` in the rank-failure family it reaches `0.0096 +- 0.0086`, which is
+the plug-in's `0.0072 +- 0.0077` within the interval. It stays conservative in
+**every** cell of both families, and its mean gap shrinks `-1.125 -> -0.399`
+while `full`'s grows `-1.424 -> -2.085`.
+
+The arm that needs no knowledge of which stage leaks is the one that works
+everywhere. That is the remedy to carry.
+
+#### P11 is REFUTED, and the reason matters more than the prediction.
+
+We predicted `beta_g > 0.1` and a nonzero empirical null at the `t >= 2` blocks
+under a rank failure. Measured, they are **exactly what the dense family gives**:
+
+    beta_g    bR_t1 0.3259   bR_t2 0.0000   bR_t3 0.0000   bD_t1 0.3259   bD_t2 0.0000
+    nulldim   bR_t1 96       bR_t2 0        bR_t3 0        bD_t1 288      bD_t2 0
+
+**The population per-action design span and the empirical stage-2 design are
+different objects.** The span that `selfheal_theorem.md` proves lives in
+`R^|O|` and is cut to dimension `2` by the transition rank. The design the floor
+actually uses is the empirical `T_2` in coefficient space, whose conditioning
+cells are counted by the history alphabet, not by the transition rank. A
+rank-deficient `P` leaves that matrix **full rank** and merely ill-conditioned.
+
+So `cor:selfheal`'s link to `prop:floor` is looser than the paper states. The
+corollary is about identification of the bridge; the floor is about an exact null
+in a coefficient-space design. They coincide at `t = 1` and come apart after.
+This is a caveat on our own theorem, found by a prediction it caused us to make.
+
+#### The rank failure does propagate, as conditioning rather than as a null.
+
+Per-block penalty slopes, same schedule, same seeds:
+
+| block | `dense` | `dense_lowrank` |
+|---|---|---|
+| `bR_t1` | `+0.181` | `+0.181` |
+| `bR_t2` | `-0.417` | **`+0.090`** |
+| `bR_t3` | `-0.429` | `-0.144` |
+| `bD_t1` | `+0.151` | `+0.147` |
+| `bD_t2` | `-0.438` | **`+0.121`** |
+
+The `t = 1` blocks are untouched, as they must be since `P` does not enter their
+design. Two of the three later blocks **flip sign** and the third shrinks three
+times more slowly. So the effect is real and it reaches the later stages; it
+simply is not an exact null, and `beta_g` cannot see it.
+
+That is why `tail` still converges: the later blocks' penalties grow, but from
+`0.0135` and `0.0369` rather than from `0.19` and `0.85`, so they never dominate
+the decision on this grid. A longer `N` grid or a stronger rank failure could
+change that, and we have not tested either.
 
 ## 7. What a positive result would mean, and what it would not
 
@@ -217,4 +427,74 @@ refutation, which is a real result on its own.
 
 ### Measurement
 
-*(empty until run)*
+`FAMILY=dense_lowrank SCHED=kappa=1.5`, 20 seeds, against the same slice of the
+`dense` family. Only `P` differs, so the stage-1 floor is identical
+(`beta = 1.1775`, `beta_g = 0.3639`, floor `0.4285`) and the per-action span is
+`2` at every stage instead of `2, 4, 4`.
+
+#### P9 and P10 are REFUTED. The remedy does not fail.
+
+| arm | slope, `dense` | slope, `dense_lowrank` |
+|---|---|---|
+| `full` | `+0.0220` | `+0.0045` |
+| `tail` | `-0.0255` | **`-0.0149`** |
+| `proj1` | `-0.0345` | **`-0.0254`** |
+| `projall` | `-0.0290` | `-0.0300` |
+| `plugin` | `-0.0210` | `-0.0162` |
+
+We predicted `tail` and `proj1` would have slopes `>= 0` where their targeting is
+wrong. Both stay negative. `tail` runs `0.0855 -> 0.0096` and `proj1`
+`0.1256 -> 0.0257`, while `full` sticks at `0.0997` from `N = 32,000` on.
+
+#### P12 and P13 hold.
+
+`projall` is negative in both families, `-0.0290` and `-0.0300`, and at
+`N = 128,000` in the rank-failure family it reaches `0.0096 +- 0.0086`, which is
+the plug-in's `0.0072 +- 0.0077` within the interval. It stays conservative in
+**every** cell of both families, and its mean gap shrinks `-1.125 -> -0.399`
+while `full`'s grows `-1.424 -> -2.085`.
+
+The arm that needs no knowledge of which stage leaks is the one that works
+everywhere. That is the remedy to carry.
+
+#### P11 is REFUTED, and the reason matters more than the prediction.
+
+We predicted `beta_g > 0.1` and a nonzero empirical null at the `t >= 2` blocks
+under a rank failure. Measured, they are **exactly what the dense family gives**:
+
+    beta_g    bR_t1 0.3259   bR_t2 0.0000   bR_t3 0.0000   bD_t1 0.3259   bD_t2 0.0000
+    nulldim   bR_t1 96       bR_t2 0        bR_t3 0        bD_t1 288      bD_t2 0
+
+**The population per-action design span and the empirical stage-2 design are
+different objects.** The span that `selfheal_theorem.md` proves lives in
+`R^|O|` and is cut to dimension `2` by the transition rank. The design the floor
+actually uses is the empirical `T_2` in coefficient space, whose conditioning
+cells are counted by the history alphabet, not by the transition rank. A
+rank-deficient `P` leaves that matrix **full rank** and merely ill-conditioned.
+
+So `cor:selfheal`'s link to `prop:floor` is looser than the paper states. The
+corollary is about identification of the bridge; the floor is about an exact null
+in a coefficient-space design. They coincide at `t = 1` and come apart after.
+This is a caveat on our own theorem, found by a prediction it caused us to make.
+
+#### The rank failure does propagate, as conditioning rather than as a null.
+
+Per-block penalty slopes, same schedule, same seeds:
+
+| block | `dense` | `dense_lowrank` |
+|---|---|---|
+| `bR_t1` | `+0.181` | `+0.181` |
+| `bR_t2` | `-0.417` | **`+0.090`** |
+| `bR_t3` | `-0.429` | `-0.144` |
+| `bD_t1` | `+0.151` | `+0.147` |
+| `bD_t2` | `-0.438` | **`+0.121`** |
+
+The `t = 1` blocks are untouched, as they must be since `P` does not enter their
+design. Two of the three later blocks **flip sign** and the third shrinks three
+times more slowly. So the effect is real and it reaches the later stages; it
+simply is not an exact null, and `beta_g` cannot see it.
+
+That is why `tail` still converges: the later blocks' penalties grow, but from
+`0.0135` and `0.0369` rather than from `0.19` and `0.85`, so they never dominate
+the decision on this grid. A longer `N` grid or a stronger rank failure could
+change that, and we have not tested either.
