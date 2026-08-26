@@ -498,3 +498,65 @@ That is why `tail` still converges: the later blocks' penalties grow, but from
 `0.0135` and `0.0369` rather than from `0.19` and `0.85`, so they never dominate
 the decision on this grid. A longer `N` grid or a stronger rank failure could
 change that, and we have not tested either.
+
+## 9. Two different null spaces, and which one the floor actually uses
+
+**Written and committed before it was run.**
+
+Part D refuted P11 in a way that exposed something the paper does not
+distinguish. Two objects have been used interchangeably:
+
+    POPULATION per-action design span     lives in R^|O|
+                                          rank = min(|O_0|, |S|) generically
+                                          governs whether the BRIDGE is identified
+                                          this is what tab:beta and cor:selfheal measure
+
+    EMPIRICAL stage-2 design T_2          lives in coefficient space, dim |A||O| x n_y
+                                          rank = (distinct conditioning cells) x n_y
+                                          governs the FLOOR, since Nul is its null
+                                          this is what the pessimism layer uses
+
+At `t = 1` the conditioning set is `(A_1, O_0)`, giving `|A||O_0| = 4` cells
+against `|A||O| = 12` coefficient profiles, so the measured null dimension is
+`(12 - 4) x 12 = 96`, exactly what Part A printed. **That count involves neither
+`|S|` nor `P`.** It is driven by `|O_0| < |O|`.
+
+`sec:switch-beta` says the truth leaks when `|O_0| < |S|`. `as:null` says the
+design has a null of dimension at least `|O| - min(|O|, |O_0|)`, which is
+`|O_0| < |O|`. Those are **different conditions**, and the paper moves between
+them without saying so.
+
+`(2, 6, 4)` separates them: `|O_0| = 4 >= |S| = 2`, so the population span
+resolves the latent state and `tab:beta` reports `beta = 0`. But
+`|O_0| = 4 < |O| = 6`, so the empirical design still carries a null of dimension
+`(12 - 8) x 12 = 48`. The question the paper never asks is whether the true
+bridge has mass in **that** null.
+
+### Predictions
+
+- **P-E1.** In `(4,6,2)`, empirical null dimension is `96` at `t = 1` and `0` at
+  `t >= 2`, matching Part A, and empirical `beta_hat` is within `10%` of the
+  population `1.1775`. The two notions agree where both switches are on.
+- **P-E2.** In `(2,6,4)` at confounding below `1`, the empirical null dimension
+  at `t = 1` is `48` and **nonzero**, yet empirical `beta_hat` is below `0.05`
+  relative to the bridge norm. The truth lies inside the empirical span even
+  though that span is not everything, so the two conditions agree in effect and
+  the paper's switch is the right one.
+- **P-E3.** Empirical `beta_g` in `(2,6,4)` is below `0.05` at every confounding
+  below `1`, matching `prop:betag`.
+- **P-E4.** The empirical null dimension is exactly
+  `(|A||O| - |A|min(|O_0|,|O|)) x n_y` at `t = 1` in every configuration tested,
+  i.e. a pure cell count, independent of `|S|`, of `P`, and of the confounding
+  level.
+
+### If P-E2 fails
+
+Then a design the paper calls complete still has a nonzero floor, the two
+switches do not characterize it, and `cor:conjunction` is false as stated. That
+would be the most serious defect found in this line of work, and it would have
+been sitting inside the gap between `as:null` and `sec:switch-beta` the whole
+time.
+
+### Measurement
+
+*(empty until run)*
