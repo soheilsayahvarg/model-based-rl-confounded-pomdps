@@ -590,3 +590,41 @@ measured floor of order `N^(-1/2)`, which is not zero at any finite `N` but does
 not survive the limit. That is a footnote, not a defect.
 
 If `beta_emp` were flat in `N` instead, the corollary would be false as stated.
+
+### Measurement of the rate
+
+`poc/run_empirical_null_rate.py`, complete designs only, `N` from `4,000` to
+`256,000`, 3 seeds.
+
+**P-E5 holds in 5 of 6.** Log-log slopes of `beta_emp` in `N`:
+
+    -0.662   (2,6,4) cf 0.6      <- the one miss
+    -0.501   (2,6,4) cf 0.9
+    -0.527   (2,3,2) cf 0.6
+    -0.410   (2,3,2) cf 0.9
+    -0.500   (3,7,5) cf 0.6
+    -0.505   (3,7,5) cf 0.9
+
+Four of the six sit within `0.03` of the parametric rate. The single miss is
+faster than predicted, not slower, so it does not threaten the conclusion.
+
+**P-E6 holds in 6 of 6.** The measured null dimension reaches the exact cell
+count at the largest `N` in every case: `48`, `48`, `12`, `12`, `56`, `56`. The
+excess at small `N` was near-threshold eigenvalues in sparsely sampled cells, as
+suspected, and not a wrong formula.
+
+The largest `beta_emp` at the largest `N` is `0.0273`, down from `0.2356` at
+`N = 4,000` in the same cell.
+
+### Verdict
+
+`cor:conjunction` is **correct as a population statement**. What it gains is a
+finite-sample footnote with a rate: a design the paper calls complete carries a
+measured floor of order `N^(-1/2)`, which reaches `0.12` at the sample sizes used
+in `tab:decision` and is not zero at any finite `N`.
+
+The gap between `as:null` and `sec:switch-beta` is real and the paper should name
+it. `as:null` counts conditioning cells, `sec:switch-beta` counts latent states,
+and the two coincide only in the limit. Since every decision experiment in this
+work runs at `N <= 128,000`, the distinction is not academic for our own numbers,
+even though it is for the theorem.
