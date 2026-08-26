@@ -319,4 +319,78 @@ and it is the one to read first.
 
 ### Measurement
 
-*(empty until run)*
+`poc/run_dilution_under_rank_failure.py`. Population algebra, three families x
+two configurations x two confounding levels x `T = 1..6`.
+
+#### P-D4, the control, fails as literally stated. The fault is the control.
+
+We predicted the aggregate would reproduce the published stage-1-only ratios to
+within `1%` in the dense family, and measured a relative difference of exactly
+`1.00`. Exactly `1.00` is the tell: the aggregate sums over all `2T-1` blocks and
+there are **two** stage-1 blocks, `bR_t1` and `bD_t1`, while the published number
+uses one. The prediction compared a two-block sum against a one-block quantity
+and the factor is `2`.
+
+With that corrected, the control passes exactly:
+
+| `T` | aggregate | `f1` | expected | relative error |
+|---|---|---|---|---|
+| 1 | `0.252450` | `0.252450` | `0.252450` | `0.00e+00` |
+| 2 | `0.504899` | `0.252450` | `0.504899` | `0.00e+00` |
+| 3-6 | `0.504899` | `0.252450` | `0.504899` | `0.00e+00` |
+
+The dense aggregate is **constant in `T`** for every `T >= 2`, log-log slope
+`+0.00000`. And `ratio_t1` reproduces a slope of **`-1.2340`** against the
+paper's published `-1.23`. The pipeline agrees with `run_horizon_dilution.py` to
+three digits, which is the check that makes the rest interpretable.
+
+#### P-D1 holds with a wide margin.
+
+Per-stage `beta_t` at `t >= 2`:
+
+| family | `beta_t` range | per-stage floor range |
+|---|---|---|
+| `dense` | `5.06e-16` to `2.69e-15` | `1.14e-31` to `4.91e-30` |
+| `dense_lowrank` | **`0.669` to `0.723`** | **`0.254` to `0.417`** |
+| `sparse_support` | **`0.721` to `0.727`** | **`0.420` to `0.515`** |
+
+Predicted `> 0.1`, measured about `0.7`. Every stage leaks under a rank failure,
+and it leaks about as much as stage 1 does.
+
+#### P-D2 holds in direction; our stated magnitude was sloppy.
+
+Aggregate-floor slope in `T`: `dense` gives exactly `0` over `T >= 2`, and the
+rank-failure families give `+1.55` to `+2.37`. We predicted "about `+1`". That
+was careless: a log-log fit of `2T-1` against `T` over `T = 1..6` is already
+about `+1.34`, not `+1`, so the prediction was wrong before any measurement. The
+qualitative claim, that the floor compounds instead of staying constant, is what
+the numbers support.
+
+#### P-D3 is REFUTED, and the truth is worse than what we predicted.
+
+We predicted the ratio would be **flat** under a rank failure, on the reasoning
+that numerator and denominator both grow linearly. Measured:
+
+| family | ratio slope in `T` |
+|---|---|
+| `dense` | `-0.888`, `-0.888`, `-0.580`, `-0.580` |
+| `dense_lowrank` | **`+1.356`, `+0.895`, `+1.629`, `+1.486`** |
+| `sparse_support` | **`+1.883`, `+1.193`, `+1.929`, `+1.796`** |
+
+The ratio **grows**. The floor compounds faster than the value spread widens, so
+a longer horizon makes the situation strictly worse in relative terms rather than
+neutral.
+
+#### What this does to `cor:dilution`
+
+The corollary does not merely acquire a side condition. **It reverses sign
+without it.** Under the rank hypothesis the fraction of the selection problem the
+floor distorts decays as `1/T`; without it, that fraction grows roughly as `T`.
+A reader who takes `cor:dilution` at face value on a system with irreversible
+states or a low-rank transition would conclude that a longer horizon is safer,
+when it is the opposite.
+
+Together with `cor:nogovern`, which already says the `1/T` decay does not reach
+the decision, the honest version of the dilution story is narrow: it is a
+statement about one block's floor against one scale, under one hypothesis, with
+no decision-level consequence in either direction.
