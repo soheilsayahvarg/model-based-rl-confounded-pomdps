@@ -495,3 +495,40 @@ to contain a good policy and must be withdrawn, not rescoped.
 
 ### Measurement
 
+
+## 11. Environment L at `T = 5`: P-L1 to P-L4 are UNTESTABLE here, not refuted
+
+`poc/run_environment_L.py` with `HORIZON=5`, `9` blocks, `5` seeds. The horizon
+truncation fixed the numerics: penalties are order `0.1`, not `1e8`.
+
+| `N` | `full` | `plugin` | `projall` | `hoeffding` |
+|---|---|---|---|---|
+| regret at `4,000` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
+| regret at `16,000` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
+| regret at `64,000` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
+| modal pick, all `N` | `bc` | `bc` | `bc` | `bc` |
+
+Every arm selects `bc` at every sample size. The script prints P-L1 through P-L4
+as `False`, and **that output is misleading**: the predictions were not refuted,
+the grid cannot discriminate. `bc` beats the next candidate by `0.3775`, which is
+`95%` of the spread, so no penalty differential of order `0.3` can reorder the
+ranking. This is the recurring defect's first mode again, arriving through the
+candidate set rather than the sample-size range.
+
+Recorded as **untestable on this grid**. Not as evidence either way.
+
+### The penalties are still informative
+
+| `N` | `full` | `projall` | `hoeffding` |
+|---|---|---|---|
+| `4,000` | `0.2647` | `0.1315` | `0.2264` |
+| `16,000` | `0.3518` | `0.0648` | `0.1814` |
+| `64,000` | `0.3121` | `0.0159` | `0.0850` |
+
+`full` does not contract, as `prop:floor` requires. `hoeffding` decays roughly as
+`N^(-1/2)` by construction. `projall` decays fastest of all, which is what an arm
+that refuses to pay for unidentified directions should do, and is also why its
+bound is not valid: `scale_and_baselines.md` section 7 measured `c < 0` here, so
+`projall` is anti-conservative wherever `|c| = 0.055` exceeds its own penalty.
+**At `N = 64,000` that penalty is `0.0159`, so `projall` is anti-conservative by
+roughly `0.039` on this environment.** That is the concrete cost of the sign flip.

@@ -3,13 +3,16 @@
     {
       "N": 4000,
       "arm": "full",
-      "regret": 0.7075903343852898,
-      "regret_ci": 0.09386560963877447,
-      "penalty": 283167900.29066944,
-      "modal": "greedy_hi",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.26472336824332565,
+      "modal": "bc",
       "picks": [
-        "always_1",
-        "greedy_hi"
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
       ],
       "conservative_frac": 1.0
     },
@@ -22,6 +25,9 @@
       "modal": "bc",
       "picks": [
         "bc",
+        "bc",
+        "bc",
+        "bc",
         "bc"
       ],
       "conservative_frac": 1.0
@@ -29,13 +35,16 @@
     {
       "N": 4000,
       "arm": "projall",
-      "regret": 0.7753178946871131,
+      "regret": 0.0,
       "regret_ci": 0.0,
-      "penalty": 87454007.84192139,
-      "modal": "always_1",
+      "penalty": 0.13151261546743048,
+      "modal": "bc",
       "picks": [
-        "always_1",
-        "always_1"
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
       ],
       "conservative_frac": 1.0
     },
@@ -44,46 +53,179 @@
       "arm": "hoeffding",
       "regret": 0.0,
       "regret_ci": 0.0,
-      "penalty": 0.21928908088671,
+      "penalty": 0.2264373545911383,
       "modal": "bc",
       "picks": [
+        "bc",
+        "bc",
+        "bc",
         "bc",
         "bc"
       ],
       "conservative_frac": 1.0
+    },
+    {
+      "N": 16000,
+      "arm": "full",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.3518290037537389,
+      "modal": "bc",
+      "picks": [
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
+      ],
+      "conservative_frac": 0.9428571428571428
+    },
+    {
+      "N": 16000,
+      "arm": "plugin",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.0,
+      "modal": "bc",
+      "picks": [
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
+      ],
+      "conservative_frac": 0.8857142857142857
+    },
+    {
+      "N": 16000,
+      "arm": "projall",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.06482398327968655,
+      "modal": "bc",
+      "picks": [
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
+      ],
+      "conservative_frac": 0.8857142857142857
+    },
+    {
+      "N": 16000,
+      "arm": "hoeffding",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.18140491925111066,
+      "modal": "bc",
+      "picks": [
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
+      ],
+      "conservative_frac": 0.9428571428571428
+    },
+    {
+      "N": 64000,
+      "arm": "full",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.31205445810050075,
+      "modal": "bc",
+      "picks": [
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
+      ],
+      "conservative_frac": 0.9428571428571428
+    },
+    {
+      "N": 64000,
+      "arm": "plugin",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.0,
+      "modal": "bc",
+      "picks": [
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
+      ],
+      "conservative_frac": 0.8857142857142857
+    },
+    {
+      "N": 64000,
+      "arm": "projall",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.015926192242712568,
+      "modal": "bc",
+      "picks": [
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
+      ],
+      "conservative_frac": 0.8857142857142857
+    },
+    {
+      "N": 64000,
+      "arm": "hoeffding",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.08503884976686295,
+      "modal": "bc",
+      "picks": [
+        "bc",
+        "bc",
+        "bc",
+        "bc",
+        "bc"
+      ],
+      "conservative_frac": 0.8857142857142857
     }
   ],
   "slopes": {
-    "full": -0.020851694378156517,
-    "plugin": -0.0,
-    "projall": -0.015341248128590527,
-    "hoeffding": -0.0
+    "full": 0.0,
+    "plugin": 0.0,
+    "projall": 0.0,
+    "hoeffding": 0.0
   },
   "v_true": {
-    "always_0": 7.478227237171577,
-    "always_1": 7.102517637952987,
-    "uniform": 7.371808987498465,
-    "greedy_lo": 7.50037235086203,
-    "greedy_hi": 7.237972758556634,
-    "soft": 7.39777391779911,
-    "bc": 7.8778355326401
+    "always_0": 3.752913176421931,
+    "always_1": 3.558227546243077,
+    "uniform": 3.6875368323062063,
+    "greedy_lo": 3.74652043396623,
+    "greedy_hi": 3.6247747489648,
+    "soft": 3.699592592552395,
+    "bc": 3.941058612922837
   },
   "optimal": "bc",
-  "spread": 0.7753178946871131,
+  "spread": 0.38283106667975986,
   "beta": 1.7791418842943294,
   "beta_g": 0.5622627047883976,
   "floor": 1.000345128065656,
-  "v_bc": 7.8778355326401,
+  "v_bc": 3.941058612922837,
   "config": [
     8,
     10,
     3
   ],
-  "T": 10,
+  "T": 5,
   "confound": 0.9,
-  "n_seeds": 2,
+  "n_seeds": 5,
   "N_grid": [
-    4000
+    4000,
+    16000,
+    64000
   ],
   "arms": [
     "full",
@@ -91,6 +233,6 @@
     "projall",
     "hoeffding"
   ],
-  "c_mult": 1.617407046912562e-08,
-  "c_h": 0.08496967745682135
+  "c_mult": 6.411874461243663e-08,
+  "c_h": 0.11068984352897263
 }
