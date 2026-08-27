@@ -178,3 +178,53 @@ has:
 `cor:nogovern` said the `1/T` dilution does not reach the decision. This is why:
 dilution fixes the **necessary** condition and the selector fails on a different
 one.
+
+## 6. The baseline found a defect in our own regret definition, before it ran
+
+The first thing `run_environment_L.py` printed, before any arm was evaluated:
+
+    behaviour-clone policy value 7.8778  (regret -0.3775)
+
+The behaviour clone, the observation-marginal of the logging policy, is **better
+than every candidate policy**, by `0.3775`, which is `95%` of the entire spread
+of `0.3979`.
+
+Checked across the project's other configurations:
+
+| config | `T` | best candidate | its value | BC value | BC wins |
+|---|---|---|---|---|---|
+| `(4,6,2)` | `3` | `always_1` | `2.3157` | `2.3166` | **yes**, by `0.0009` |
+| `(4,6,2)` | `6` | `always_1` | `4.6188` | `4.6215` | **yes**, by `0.0027` |
+| `(8,10,3)` | `3` | `always_0` | `2.2584` | `2.3662` | **yes**, by `0.1078` |
+| `(8,10,3)` | `10` | `greedy_lo` | `7.5004` | `7.8778` | **yes**, by `0.3775` |
+| `(6,10,3)` | `10` | `greedy_lo` | `6.7102` | `7.3452` | **yes**, by `0.6350` |
+| `(2,6,4)` | `3` | `always_1` | `2.1083` | `2.1657` | **yes**, by `0.0574` |
+
+**Six of six.** The "optimal policy" against which every regret number in this
+project is measured is not optimal. It is the best of six hand-made policies, and
+a baseline that runs no OPE at all beats it on every configuration tested.
+
+### What this does and does not invalidate
+
+**Does not.** All arms select from the same candidate set, so every
+arm-versus-arm comparison is unaffected. The measured facts stand: pessimistic
+regret rises, plug-in regret falls, the slopes have opposite signs, `full`
+converges to a wrong pick with zero variance.
+
+**Does.** The absolute numbers are regret against a reference that a trivial
+baseline beats. On `(4,6,2)` at `T = 3` the margin is `0.0009` against a spread
+of `0.2966`, i.e. `0.3%`, so the published small-grid results are numerically
+unaffected. At scale it is `95%` of the spread and the defect is fatal to any
+absolute claim.
+
+### The fix
+
+`bc` is now in the candidate set, so the arms can select it and regret is
+measured against a reference nothing trivial beats. That also makes the baseline
+a competitor rather than an unmeasured elephant: an arm that cannot beat "clone
+the logs" has not earned its complexity.
+
+This is the seventh entry in `claims.md`'s recurring-defect list, and a fifth
+mode: **the reference against which the outcome is measured was never itself
+checked against a trivial alternative.** No range guard would have caught it. Only
+running a baseline we did not write.

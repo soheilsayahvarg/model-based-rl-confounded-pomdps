@@ -175,6 +175,21 @@ the same collision as P11 -- two null spaces sharing a name -- one layer up.
 The correction is in `converse_identification.md` section 8, and it strengthens
 the conclusion rather than reversing it.
 
+**A seventh incident, and a fifth mode.** Adding a behaviour-cloning baseline
+showed it beats the best of our six candidate policies on **6 of 6**
+configurations, including `(4,6,2)` at `T = 3`, the grid every decision result in
+this project used. The reference against which all regret is measured was never
+itself checked against a trivial alternative. Arm-versus-arm comparisons survive
+because every arm draws from the same set; absolute regret claims do not.
+
+| failure mode | instances | fix |
+|---|---|---|
+| the range cannot straddle the transition | 1, 2, 3, 4 | precondition guard, in place |
+| the knob confounds the treatment with something else | 5 | **none yet** |
+| the measured relation is arithmetic | 5 | **none yet** |
+| two quantities share a name and not a space | P11, 6 | **none yet** |
+| the reference was never checked against a trivial baseline | 7 | `bc` is now a candidate; the general rule is that every outcome measure needs a do-nothing competitor |
+
 ## Self-healing, proved and re-scoped
 
 `selfheal_theorem.md`. Population algebra, 360 cells, closed form checked
