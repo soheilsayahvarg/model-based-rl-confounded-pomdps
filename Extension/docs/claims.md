@@ -158,6 +158,23 @@ So the honest statement is not "one defect, one fix" but:
 Two of the three modes have no structural fix. The claim that the guard is *the*
 fix was itself over-general.
 
+**A sixth incident, and it is a fourth mode.** P-C4 divided a value-unit penalty
+(`sqrt(xi)*||g||_{H^-1}`, empirical coefficient space `R^144`) by a bridge-unit
+floor (`beta*beta_g`, population per-action null in `R^6`) and read the quotient
+as an overpayment ratio. Both objects are called "the width of the gap" in
+prose, so the mismatch is invisible at the level the prose operates on. This is
+the same collision as P11 -- two null spaces sharing a name -- one layer up.
+
+| failure mode | instances | fix |
+|---|---|---|
+| the range cannot straddle the transition | 1, 2, 3, 4 | precondition guard, in place |
+| the knob confounds the treatment with something else | 5 | **none yet** |
+| the measured relation is arithmetic | 5 | **none yet** |
+| two quantities share a name and not a space | P11, 6 | **none yet** -- a ratio needs its numerator and denominator stated with space and units before it is computed |
+
+The correction is in `converse_identification.md` section 8, and it strengthens
+the conclusion rather than reversing it.
+
 ## Self-healing, proved and re-scoped
 
 `selfheal_theorem.md`. Population algebra, 360 cells, closed form checked
@@ -244,3 +261,54 @@ we built on it.
 | Non-monotonicity in `t` (span `3 -> 2`) | **no hit found, weak evidence** | once the rank condition is stated it is close to a one-line corollary |
 | **What a violated rank assumption costs a pessimistic planner** | **not found in either literature** | this is where every measurement in this project lives, and it is the defensible framing |
 | The `projall` remedy | **not found** | |
+
+## The converse, and what the floor actually is
+
+`converse_identification.md`. Derived and committed before measurement, then
+corrected once.
+
+| claim | status | evidence |
+|---|---|---|
+| The identified set of values is an interval of half-width `HW = beta_g*sqrt(M^2 - \|\|b_hat\|\|^2)` | **holds** | closed form vs SLSQP from six starts, worst rel err `9.13e-13`; 23 of 24 non-degenerate cells, the miss a solver failure on the smallest target (`6.7e-4`) |
+| At the tight class `M = \|\|b_true\|\|` the half-width is exactly `beta*beta_g` | **holds** | so `prop:floor` is **tight**, achieved rather than bounded |
+| `V(b)` is point-identified iff `beta_g = 0` | **holds** | 6/6 policies on the complete design, 1/6 on `(4,6,2)` at cf `0.9`; half-widths ordered exactly by `beta_g` |
+| The one point-identified policy is the optimal one | **unexplained** | single instance; could be a coincidence of this configuration, and we have no account of it |
+| P-C4: the anchor schedule **overpays** the identification gap | **refuted in sign** | the ratio is below `1` at every `N`; the schedule underpays and climbs |
+| P-C4's ratio is a ratio of widths | **refuted -- sixth defect** | value units over bridge units, across two different null spaces |
+| P-C6: on the coherent comparison the t=1 region still fails to cover | **holds, 4 of 4** | `HW_t1 = \|\|U'b_true\|\| * \|\|U'g\|\|`, ratio `0.220 -> 0.695`, crossing extrapolated to `N ~ 4.1e5` |
+| P-C7: the corrected ratio is below `0.5` at `N = 128,000` | **refuted** | it is `0.695`. The direction was supported by the argument; the level was not |
+| P-C8: `HW_t1` is near-constant | **holds at its threshold and is misleading** | spread `0.110 < 0.20`, but monotone decreasing, `-23%` over the grid |
+| P-C9: the corrected ratio's slope matches the width slope | **refuted by P-C8's slack** | `+0.2852 = +0.2209 - (-0.0643)`; an `11%` denominator drift supplied a third of the slope |
+
+Consequence for the writing: "pessimism cannot contract, and that is a pathology"
+is **wrong**. Non-contraction is forced by identification, and a width that
+contracted below the gap would be invalid. The finding is that selection degrades
+while the region is still too narrow to cover.
+
+## Second novelty check: the converse is not new either
+
+`novelty_check.md`, run before anything was built on the converse.
+
+| claim | status | where |
+|---|---|---|
+| The identified set is `b_hat + Nul` | **refuted -- known** | Florens, Simoni et al. arXiv:1709.03473: "the identified set becomes a closed linear manifold, which is denoted by `I_0 = phi + N(K)`" |
+| Point-identification iff `g` is orthogonal to the null | **refuted -- known, with more attached** | same paper, `N(K)^perp = closure(R(K*))`; Severini & Tripathi (2006, 2012) also give the efficiency bound, which we do not |
+| Confidence regions failing to shrink under identification failure | **refuted -- known** | same paper, stated as an already-understood consequence |
+| The sharp half-width arithmetic and the tight-class identity | **a remark, not a contribution** | one line of convex computation once the two above are in hand |
+
+**Four for four on rediscovery. This line of work has no novel theoretical core.**
+Both neighbouring literatures do inference on a functional; neither does policy
+**selection**, and every measured finding here is on the selection side.
+
+## Decision level, dense schedule C, 20 seeds
+
+`results_stage_selective_dense_kappa15.json`.
+
+| claim | status | evidence |
+|---|---|---|
+| Pessimism with full regions is anti-monotone in `N` | **holds** | regret `0.0952 -> 0.1804`, slope `+0.0220`, the only positive slope among five arms |
+| It converges to a **wrong** policy with zero variance | **holds** | at `N = 128,000` the CI half-width is exactly `0`; all 20 seeds pick `uniform`, the optimum is `always_1` |
+| The fit is not the problem | **holds** | the plug-in on the identical estimates reaches zero regret by `N = 32,000` |
+| The failure is drift toward maximum entropy | **holds** | modal pick `greedy_lo -> soft -> uniform -> uniform`; the penalty charges gradient null-space mass and `uniform` minimises it |
+| Every remedy arm converges | **holds** | `tail`, `proj1`, `projall` all reach zero regret and `always_1` |
+| Part 4's t=1 penalties can discriminate between families | **no** | `dense` and `dense_lowrank` differ only in `P`, which does not enter the t=1 design, so the stage-1 penalties are **identical to four decimals**. Structural, not a coincidence, and it means that comparison carries no information |

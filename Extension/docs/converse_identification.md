@@ -296,3 +296,70 @@ it is load-bearing there too.
 
 ### Measurement
 
+`poc/run_sharp_halfwidth.py`, `5` seeds, schedule C. `g_t1` is the optimal
+policy's stage-1 gradient, the same one the driver penalises, so numerator and
+denominator come from one object.
+
+| `N` | `pen_t1` | `HW_t1` | ratio | nulldim | `\|\|U'b_true\|\|` | `\|\|U'g\|\|` |
+|---|---|---|---|---|---|---|
+| `2,000` | `0.1655` | `0.7510` | `0.220` | `96.6` | `1.6971` | `0.4423` |
+| `8,000` | `0.2014` | `0.6434` | `0.313` | `96.0` | `1.6449` | `0.3913` |
+| `32,000` | `0.3020` | `0.5803` | `0.521` | `96.0` | `1.6371` | `0.3544` |
+| `128,000` | `0.4014` | `0.5777` | `0.695` | `96.0` | `1.6344` | `0.3534` |
+
+The `5`-seed penalty reproduces the stored `20`-seed run to `0.1%` at
+`N = 128,000` and to `13%` at `N = 2,000`, so the ratio is not an artefact of the
+smaller seed count.
+
+#### P-C6 holds, 4 of 4. The invalidity conclusion survives the correction.
+
+`HW_t1 > pen_t1` at every sample size. The t=1 region does not cover the
+identified set, and now that follows from a comparison of two value-unit
+quantities built on the same null space rather than from a units mismatch.
+
+#### P-C7 holds in its first half and is REFUTED in its second.
+
+The corrected ratio is below the incoherent one at all `4` sample sizes, so the
+defect did flatter the region. But the predicted `< 0.5` at `N = 128,000` is
+wrong: it is `0.695`. Predicting a specific level from an argument that only
+supported a direction.
+
+The direction is what matters and it is the opposite of reassuring. The region is
+**further** from valid than `sec:7` reported, `0.695` against `0.938`.
+
+#### P-C8 holds, and its slack is what kills P-C9.
+
+Relative spread over `N >= 8,000` is `0.110`, inside the predicted `0.20`. But
+`HW_t1` is not flat, it **decreases monotonically**, `0.7510 -> 0.5777`, a `23%`
+drop with log-log slope `-0.0643`. It is converging to about `0.578` as the
+empirical null settles onto the population one, not sitting at a constant.
+
+#### P-C9 is REFUTED, and P-C8 explains it exactly.
+
+Measured ratio slope `+0.2852` against the `+0.1812` width slope. The
+decomposition is exact:
+
+    +0.2852  =  +0.2209 (numerator, 5 seeds)  -  (-0.0643) (denominator)
+
+P-C9 assumed a constant denominator on the strength of P-C8. A spread of `11%`
+passed P-C8's threshold and still contributed a third of the ratio's slope.
+**The threshold was chosen loose enough to pass and then leaned on as though it
+meant flat.** Against the stored `20`-seed numerator slope the ratio slope would
+be about `+0.245`, still well above `+0.1812`.
+
+#### What the corrected number says
+
+Extrapolating `+0.2852`, the ratio reaches `1` at `N ~ 4.1e5`, about `3.2x`
+beyond the largest grid point. So:
+
+- The `e > 0` schedule **is** climbing toward validity, as `sec:7` said.
+- It is further away than `sec:7` said, and it never gets there on any grid this
+  project has run.
+- Every decision experiment in this project therefore ran on t=1 regions that
+  fail to cover the identified set. That conclusion is unchanged; only its basis
+  is repaired.
+
+`conservative_frac = 1.0` in every cell of the stage-selective run is consistent
+with this and is not evidence against it. It says the lower bound sits below the
+**true** value. It does not say the region covers every observationally
+equivalent bridge, which is what `pen < HW` denies.

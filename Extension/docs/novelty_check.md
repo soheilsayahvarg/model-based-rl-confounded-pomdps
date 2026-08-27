@@ -275,3 +275,21 @@ something false about its own novelty.
   nonparametric regression models with endogenous regressors*, J. Econometrics
   170(2), 2012, and their 2006 paper
 - Santos, inference on linear functionals of NPIV without completeness, 2011-2012
+
+---
+
+## Note added after the P-C4 correction
+
+The row above claiming the calibrated widths are below the sharp identified
+half-width was originally supported by a ratio that compared a value-unit
+penalty to a bridge-unit floor across two different null spaces. That defect and
+its repair are in `converse_identification.md` section 8.
+
+The claim **survives** the repair and gets stronger. On the coherent comparison,
+both factors absolute and both projectors onto the empirical null the pessimism
+layer inverts, the t=1 ratio runs `0.220 -> 0.695` over the grid instead of
+`0.445 -> 0.938`. The regions are further from valid than first reported, and the
+extrapolated crossing is `N ~ 4.1e5`, past every grid this project has run.
+
+Nothing in the "what is actually unexplored" table changes. The basis of one row
+does.
