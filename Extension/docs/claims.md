@@ -312,3 +312,27 @@ Both neighbouring literatures do inference on a functional; neither does policy
 | The failure is drift toward maximum entropy | **holds** | modal pick `greedy_lo -> soft -> uniform -> uniform`; the penalty charges gradient null-space mass and `uniform` minimises it |
 | Every remedy arm converges | **holds** | `tail`, `proj1`, `projall` all reach zero regret and `always_1` |
 | Part 4's t=1 penalties can discriminate between families | **no** | `dense` and `dense_lowrank` differ only in `P`, which does not enter the t=1 design, so the stage-1 penalties are **identical to four decimals**. Structural, not a coincidence, and it means that comparison carries no information |
+
+## `projall`, attacked and still standing
+
+`stage_selective_pessimism.md` section 10. The predictions were written to kill
+our own arm.
+
+| claim | status | evidence |
+|---|---|---|
+| `projall` targets a point-identified surrogate functional | **refuted -- it does not** | `projected=True` restricts the perturbation direction and leaves the centre `b_hat` alone. Same functional, smaller region |
+| `projall`'s region excludes most of the truth | **holds** | `\|\|P_excl b_true\|\| = 1.6344` against `\|\|b_true\|\| = 2.3590`, i.e. **69%** by norm, at t=1 |
+| Its lower bound is therefore certified | **no, and never was** | `BlockEllipsoid` audit finding A-high already said so: coverage holds "by sign-alignment, not by construction" |
+| P-C14: the excluded value component `c` is positive where `projall` works | **holds in sign** | `c > 0` at `(4,6,2)` cf `0.9` at every `N` |
+| P-C14: alignment cosine above `0.3` | **refuted** | `0.111`. Nearly orthogonal, so `c` is a tenth of its Cauchy-Schwarz bound |
+| P-C15: `c` is constant in `N` | **refuted** | spread `0.237 > 0.20`, drifting `0.0738 -> 0.0588`. The quantity is population; its **subspace** is estimated |
+| **P-C16: the sign of `c` flips somewhere** | **REFUTED -- the attack failed** | `c > 0` in `30` of `32` cells, `~0` in the other `2`, no real flip |
+| P-C17: anti-conservative cells exist | **untested** | conditional on P-C16; no cell qualified. Recorded untested, not passed |
+| The two constructions of "unidentified subspace" agree | **verified, not assumed** | `\|\|P_excl - P_null\|\|_F = 4e-13`, principal-angle sines all `1.000` |
+| P-C6 needs a centre-offset term | **no** | `\|\|P_Nul b_hat\|\| = 0.0000` at every `N`, structurally: `rhs` lies in `Range(T_2) ⊥ Nul(T_2)` |
+
+`projall` survives an attack designed to break it, on `32` cells. **The mechanism
+is unexplained.** Two candidates (concentration at `1/sqrt(k_excl)`, and a shared
+positive component surviving `P_excl`) were both formed after seeing these
+numbers and neither is tested. `(3,7,5)` at cf `0.9` also shows an unexplained
+five-fold penalty jump between `N = 8,000` and `32,000`.
