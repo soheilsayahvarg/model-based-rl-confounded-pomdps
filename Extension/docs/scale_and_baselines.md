@@ -460,3 +460,38 @@ nothing to pay for.
 This is the environment on which P-L1 through P-L4 get a fair test: bigger than
 anything this project has run, leaky, and separable, so a valid region could in
 principle order the candidates and any failure is the selector's.
+
+## 10. The decisive test: does the headline failure survive adding `bc`?
+
+On Environment L at `T = 5`, once `bc` was a candidate, **every arm including
+`full` selected it and every regret was zero**, with sane penalties
+(`0.13` to `0.26`, not `2.8e8`):
+
+    N=4000  full       regret 0.0000   pen 0.2647   modal bc
+    N=4000  plugin     regret 0.0000   pen 0.0000   modal bc
+    N=4000  projall    regret 0.0000   pen 0.1315   modal bc
+    N=4000  hoeffding  regret 0.0000   pen 0.2264   modal bc
+
+So on that environment pessimism does not fail at all once a genuinely good
+candidate is available. That immediately puts this project's central result in
+question, because it was measured on a candidate set with no such policy.
+
+**The claim at risk is the main one:** on `(4,6,2)` at `T = 3`, schedule C,
+`full`'s regret rises with `N` (slope `+0.0220`) while the plug-in on identical
+fits falls (`-0.0210`), and `full` converges to a wrong pick with zero variance.
+
+### P-L13, committed before running
+
+**The failure survives.** `full`'s slope stays positive with `bc` present.
+
+Reason: `bc`'s margin over `always_1` at `(4,6,2)` `T = 3` is `0.0009` against a
+spread of `0.2966`, i.e. `0.3%`. That is far too small to change a ranking driven
+by a penalty of order `0.2`. Environment L behaved differently because there
+`bc`'s margin was `0.3775`, which is `95%` of the spread; a candidate that good
+dominates any penalty differential.
+
+If P-L13 fails, the headline result is an artifact of a candidate set too narrow
+to contain a good policy and must be withdrawn, not rescoped.
+
+### Measurement
+
