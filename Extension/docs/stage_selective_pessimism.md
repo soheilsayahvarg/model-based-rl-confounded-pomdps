@@ -543,3 +543,78 @@ Either outcome is worth more than the current claim.
 
 ### Measurement
 
+`poc/run_projall_signflip.py`. `c = <g, (I - U_sig U_sig')(b_true - b_hat)>` at the
+t=1 reward block, with the optimal policy's gradient. `converse_identification.md`
+section 8 verifies that this excluded subspace is the same one `HW_t1` uses, to
+`4e-13` in projector norm, so `|c| <= HW_t1` holds exactly.
+
+#### P-C14 is right in sign and wrong in magnitude.
+
+`(4,6,2)` at confounding `0.9`, `5` seeds:
+
+| `N` | `c` | `pen_proj` | `cos` | margin | conservative |
+|---|---|---|---|---|---|
+| `2,000` | `0.0779` | `0.1008` | `0.111` | `-0.1787` | yes |
+| `8,000` | `0.0738` | `0.0625` | `0.113` | `-0.1363` | yes |
+| `32,000` | `0.0587` | `0.0376` | `0.101` | `-0.0963` | yes |
+| `128,000` | `0.0588` | `0.0175` | `0.102` | `-0.0763` | yes |
+
+`c > 0` as predicted. The alignment cosine is `0.111`, not the predicted `> 0.3`.
+The excluded gradient and the excluded truth are nearly orthogonal, so `c` sits
+at about a tenth of its Cauchy-Schwarz bound rather than at a substantial
+fraction of it.
+
+#### P-C15 is REFUTED, narrowly, and in the same shape as P-C8.
+
+Relative spread over `N >= 8,000` is `0.237`, outside the predicted `0.20`. `c`
+drifts down, `0.0738 -> 0.0588`, for the same reason `HW_t1` did: the excluded
+subspace is estimated, and its estimate is still settling. Second time this
+session that a "population quantity, therefore constant" prediction was too
+strong. The quantity is population; **its subspace is not**.
+
+#### P-C16 is REFUTED. The attack failed.
+
+`32` of `32` cells carry a live exclusion. `c < 0` in `2`, and both are
+numerically zero: `-0.0001` at `(4,8,3)` confounding `0.0`, and `-0.0000` at
+`(2,6,2)` confounding `0.6`. Neither is a sign flip; both are cells where `c`
+itself has collapsed to noise.
+
+**The sign does not flip anywhere on this grid.** `c > 0` in `30` of `32` cells
+and `~0` in the other two.
+
+#### P-C17 is untestable on this grid.
+
+It was conditional on finding a cell with `c < 0`. There is none, so it was never
+exercised. Recording it as untested rather than as passed.
+
+#### What this means for `projall`
+
+The prediction set was written to kill our own arm and it failed to. That is a
+stronger result for `projall` than the previous claim, which was only that it
+worked on the one grid we ran. Every cell stays conservative, with margins from
+`-0.0012` to `-2.06`.
+
+But the mechanism is now the open question, exactly as section 10 said it would
+be. Two candidate explanations, neither tested:
+
+1. **Concentration.** `cos ~ 0.10` on `(4,6,2)` matches `1/sqrt(96)`, the value
+   for two unrelated directions in a `96`-dimensional space. If that is the
+   reason, `|c|` is `O(HW/sqrt(k_excl))` and the margin is safe by dimension, not
+   by structure. But `(3,7,5)` has `k_excl = 56` and cosines up to `0.380`, well
+   above `1/sqrt(56) = 0.134`, so the fit is not clean.
+2. **Sign structure.** `g` and `b_true` are both non-negative objects over the
+   same cells, so their excluded parts may retain a common positive component.
+   `P_excl` does not preserve non-negativity, so this needs testing rather than
+   asserting.
+
+**Neither is confirmed and both were formed after looking at these numbers.** They
+must be committed as predictions and tested on cells outside this grid before
+either is claimed.
+
+#### An anomaly, recorded not hidden
+
+`(3,7,5)` at confounding `0.9` has `pen_proj = 0.4198` at `N = 8,000` and
+`2.0534` at `N = 32,000`, a five-fold increase where every other cell shrinks. It
+is a complete design, so it should be the well-behaved one. No explanation. It
+does not affect the sign result, since its `c` is `0.0044`, but it is the kind of
+number that turns out to matter later.

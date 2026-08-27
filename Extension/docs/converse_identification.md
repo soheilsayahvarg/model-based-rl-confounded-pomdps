@@ -363,3 +363,51 @@ beyond the largest grid point. So:
 with this and is not evidence against it. It says the lower bound sits below the
 **true** value. It does not say the region covers every observationally
 equivalent bridge, which is what `pen < HW` denies.
+
+#### Verified, not assumed: the two constructions of "unidentified" agree
+
+Section 8 uses `null_basis(H, lam2)`, a tolerance cut on `T_2`'s spectrum.
+`projall` uses the complement of the estimator's eigengap signal basis `U_sig`,
+built per action and tensored with the identity. Those are two different
+computations and the whole point of the sixth-defect entry is that they must be
+checked rather than assumed equal.
+
+On `(4,6,2)` at confounding `0.9`, comparing the two projectors directly:
+
+| `N` | excluded dim | `T_2`-null dim | `\|\|P_excl - P_null\|\|_F` | principal-angle sines |
+|---|---|---|---|---|
+| `8,000` | `96` | `96` | `3.68e-13` | all `1.000` |
+| `32,000` | `96` | `96` | `4.03e-13` | all `1.000` |
+
+Same subspace. So `HW_t1` and `projall`'s excluded component live in one space,
+and the Cauchy-Schwarz bound `|c| <= HW_t1` in section 10 of
+`stage_selective_pessimism.md` is exact rather than approximate.
+
+#### Adversarial check on P-C6 itself: the centre offset is exactly zero
+
+P-C6 states validity as `pen_t1 >= HW_t1`. That skips a term. The region is
+centred at `<g, b_hat>`, while the identified interval is centred at the
+identified part `<g, b_perp>`. The honest condition is
+
+    pen_t1  >=  HW_t1  +  <P_Nul g, P_Nul b_hat>
+
+so a nonzero `P_Nul b_hat` would move the bar in either direction. Measured on
+`(4,6,2)` at confounding `0.9`, seed `0`:
+
+| `N` | `\|\|P_Nul b_hat\|\|` | `\|\|P_Nul b_true\|\|` | `HW_t1` | offset | corrected bar |
+|---|---|---|---|---|---|
+| `8,000` | `0.0000` | `1.6473` | `0.6168` | `-0.0000` | `0.6168` |
+| `32,000` | `0.0000` | `1.6403` | `0.6627` | `-0.0000` | `0.6627` |
+| `128,000` | `0.0000` | `1.6353` | `0.6080` | `-0.0000` | `0.6080` |
+
+Zero, and structurally so: the normal equations put the right-hand side in the
+range of a symmetric `T_2`, which is orthogonal to its null, so
+`b_hat = (T_2 + lam I)^-1 rhs` carries no null component whatever `lam` is.
+
+**P-C6 stands as stated.** Recording a check that came back clean, because this
+document over-represents the ones that did not.
+
+Note also that the half-width derivation never needed `b_hat` at all. Writing
+`b_true = b_perp + b_N`, the constraint `||b_true + n|| <= ||b_true||` confines
+`b_N + n` to the null-ball of radius `||P_Nul b_true||`, and the extreme of
+`<P_Nul g, .>` over it is `||P_Nul g|| * ||P_Nul b_true||` directly.
