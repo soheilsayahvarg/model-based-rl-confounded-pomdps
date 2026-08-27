@@ -1,0 +1,92 @@
+{
+  "rows": [
+    {
+      "N": 4000,
+      "arm": "full",
+      "regret": 0.7753178946871131,
+      "regret_ci": 0.0,
+      "penalty": 66310.41607888968,
+      "modal": "always_1",
+      "picks": [
+        "always_1"
+      ],
+      "conservative_frac": 1.0
+    },
+    {
+      "N": 4000,
+      "arm": "plugin",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.0,
+      "modal": "bc",
+      "picks": [
+        "bc"
+      ],
+      "conservative_frac": 1.0
+    },
+    {
+      "N": 4000,
+      "arm": "projall",
+      "regret": 0.7753178946871131,
+      "regret_ci": 0.0,
+      "penalty": 28451.157519689485,
+      "modal": "always_1",
+      "picks": [
+        "always_1"
+      ],
+      "conservative_frac": 1.0
+    },
+    {
+      "N": 4000,
+      "arm": "hoeffding",
+      "regret": 0.0,
+      "regret_ci": 0.0,
+      "penalty": 0.22032841100144826,
+      "modal": "bc",
+      "picks": [
+        "bc"
+      ],
+      "conservative_frac": 1.0
+    }
+  ],
+  "slopes": {
+    "full": -0.015341248128590527,
+    "plugin": -0.0,
+    "projall": -0.015341248128590527,
+    "hoeffding": -0.0
+  },
+  "v_true": {
+    "always_0": 7.478227237171577,
+    "always_1": 7.102517637952987,
+    "uniform": 7.371808987498465,
+    "greedy_lo": 7.50037235086203,
+    "greedy_hi": 7.237972758556634,
+    "soft": 7.39777391779911,
+    "bc": 7.8778355326401
+  },
+  "optimal": "bc",
+  "spread": 0.7753178946871131,
+  "beta": 1.7791418842943294,
+  "beta_g": 0.5622627047883976,
+  "floor": 1.000345128065656,
+  "v_bc": 7.8778355326401,
+  "config": [
+    8,
+    10,
+    3
+  ],
+  "T": 10,
+  "confound": 0.9,
+  "n_seeds": 1,
+  "N_grid": [
+    4000
+  ],
+  "arms": [
+    "full",
+    "plugin",
+    "projall",
+    "hoeffding"
+  ],
+  "c_mult": 1.617407046912562e-08,
+  "c_h": 0.08496967745682135
+}

@@ -228,3 +228,76 @@ This is the seventh entry in `claims.md`'s recurring-defect list, and a fifth
 mode: **the reference against which the outcome is measured was never itself
 checked against a trivial alternative.** No range guard would have caught it. Only
 running a baseline we did not write.
+
+### What adding `bc` to the candidate set did to Environment L
+
+| quantity | six candidates | seven, with `bc` |
+|---|---|---|
+| optimal candidate | `greedy_lo` at `7.5004` | **`bc` at `7.8778`** |
+| spread | `0.3979` | `0.7753` |
+| floor | `1.0003` | `1.0003` |
+| `floor / spread` | `2.514` | **`1.290`** |
+
+The clone nearly doubles the spread, because it sits `0.3775` above everything
+else. The ratio falls from `2.51` to `1.29` and **Environment L is still not
+separable.** Even with the best reference the candidate set can supply, the
+identification gap exceeds the whole range of achievable values.
+
+That also raises the bar correctly for every arm. The optimal policy is now the
+one an analyst gets by cloning the logs, so an arm that does not select it has
+lost to a method that runs no OPE at all.
+
+## 7. P-L8 is REFUTED. The sign flips, and `projall`'s safety was an accident
+
+`poc/run_projall_mechanism_L.py`. Excluded value component
+`c = <g, P_excl(b_true - b_hat)>` at the t=1 reward block, optimal candidate.
+
+| `N` | seed | `c` | `cos` | `k_excl` | `1/sqrt(k)` |
+|---|---|---|---|---|---|
+| `4,000` | `0` | **`-0.0627`** | `-0.052` | `280` | `0.060` |
+| `4,000` | `1` | **`-0.0572`** | `-0.046` | `280` | `0.060` |
+| `4,000` | `2` | **`-0.0476`** | `-0.037` | `280` | `0.060` |
+| `16,000` | `0` | **`-0.0571`** | `-0.045` | `280` | `0.060` |
+| `16,000` | `1` | **`-0.0540`** | `-0.043` | `280` | `0.060` |
+| `16,000` | `2` | **`-0.0565`** | `-0.045` | `280` | `0.060` |
+
+**`c < 0` in 6 of 6 cells**, at both sample sizes and all three seeds, between
+`-0.048` and `-0.063`. This is not the numerical zero that the two negative cells
+on the small grid were. It is a consistent sign flip.
+
+### This overturns what section 10 of `stage_selective_pessimism.md` concluded
+
+Earlier today that document reported P-C16 refuted, `c > 0` in `30` of `32`
+cells, and drew the conclusion "the attack failed, `projall` stands". **That
+conclusion was wrong, and the grid was the reason.** `32` cells of one small
+family at `T = 3` could not flip a sign that a single larger environment flips in
+every cell.
+
+`BlockEllipsoid`'s audit finding A-high said the projected lower bound holds "by
+sign-alignment, not by construction". That was right and we under-weighted it.
+The correct statement is:
+
+> `projall` is not a certified lower bound and its empirical conservatism does
+> not transfer. On `|S| = 8, T = 10` the excluded value component is negative in
+> every cell, so the arm's bound sits above where it should and it is
+> anti-conservative wherever `|c|` exceeds its own penalty.
+
+### P-L9 holds, and it explains the magnitude but never the sign
+
+All six `|cos|` values fall in `0.037` to `0.052` against `1/sqrt(280) = 0.060`;
+mean ratio `0.75`, inside the predicted factor of `2`, on cells the hypothesis
+was not fitted to and with `k_excl` spanning `40` to `360` across the `19`
+blocks.
+
+So concentration is real: `|c|` is about `1/sqrt(k_excl)` of its Cauchy-Schwarz
+bound. **But a concentration argument bounds a magnitude and says nothing about a
+sign.** We used it as though it supported both. It does not, and P-L8 is what
+that costs.
+
+### The leak spreads with `N`, which bears on P-L5
+
+At `N = 4,000`, seed `0`, the excluded gradient norm `||P_excl g||` is exactly
+zero at blocks `7` through `10`. At `N = 16,000` those same blocks carry
+`0.046` to `1.02`. More blocks leak as data accumulates, because the late-stage
+conditioning alphabet fills in and the design's null structure becomes visible
+rather than being masked by empty cells.
