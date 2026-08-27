@@ -419,3 +419,44 @@ A `3`-point `N` grid at `T = 10` would have to start at `N = 64,000` and reach
 `N = 10^6`, which is not affordable here. The decision run therefore uses
 `T = 5`, where `sigma2` is positive at every block for all three sample sizes,
 and the horizon ceiling is reported as its own result rather than folded into it.
+
+## 9. Environment M: the only large family that is both leaky and separable
+
+Environment L at `T = 5` has `floor/spread = 2.613`, so the decision run there
+tests the **non-separable** regime only. To test "does pessimism degrade where
+separation is possible" at scale, a large environment with `floor < spread` and
+`beta_g > 0` is needed.
+
+Swept `7` configurations x `3` confoundings x `3` horizons, `63` cells, with `bc`
+in the candidate set:
+
+| family | leaky (`beta_g > 0`) | separable anywhere |
+|---|---|---|
+| `(8,10,3)` | yes | **no**, ratio `1.06` to `8.81` |
+| `(8,10,4)` | yes | **no** |
+| `(8,10,6)` | yes | **no** |
+| `(6,10,4)` | yes | **no** |
+| `(8,12,5)` | yes | **no**, best `1.189` at `T = 8` |
+| `(8,10,8)` | **no**, `beta_g = 0` exactly | trivially, it is complete |
+| **`(6,8,4)`** | **yes**, `beta_g = 0.323` | **yes**, ratio `0.100` to `0.619` |
+
+**At `|S| = 8` with an incomplete negative control, no configuration in the sweep
+is separable at any reachable horizon.** That is independent support for P-L6 and
+a sharper version of it: the non-separability is not a quirk of one grid, it is
+what incompleteness does at scale.
+
+`(8,10,8)` is complete and has `beta_g = 0` exactly, which makes it the right
+**control**: a large environment where the floor is zero and pessimism has
+nothing to pay for.
+
+### Environment M
+
+`|S| = 6, |O| = 8, |O_0| = 4, T = 6`, confounding `0.9`. Eleven blocks,
+`D_R = 256`, `D_D = 1024`.
+
+    floor = 0.3231    spread = 0.6337    ratio = 0.510    SEPARABLE
+    beta_g = 0.323 > 0, so the grid can show the effect
+
+This is the environment on which P-L1 through P-L4 get a fair test: bigger than
+anything this project has run, leaky, and separable, so a valid region could in
+principle order the candidates and any failure is the selector's.
