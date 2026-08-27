@@ -1,0 +1,326 @@
+{
+  "rows": [
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "T": 3,
+      "N": 2000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 576,
+      "n_x_compact": 358
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "T": 3,
+      "N": 2000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 576,
+      "n_x_compact": 341
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "T": 3,
+      "N": 8000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 576,
+      "n_x_compact": 503
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "T": 3,
+      "N": 8000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 576,
+      "n_x_compact": 494
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.6,
+      "T": 3,
+      "N": 2000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1152,
+      "n_x_compact": 438
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.6,
+      "T": 3,
+      "N": 2000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1152,
+      "n_x_compact": 426
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.6,
+      "T": 3,
+      "N": 8000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1152,
+      "n_x_compact": 702
+    },
+    {
+      "config": [
+        2,
+        6,
+        4
+      ],
+      "confound": 0.6,
+      "T": 3,
+      "N": 8000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1152,
+      "n_x_compact": 703
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.9,
+      "T": 3,
+      "N": 2000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1536,
+      "n_x_compact": 477
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.9,
+      "T": 3,
+      "N": 2000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1536,
+      "n_x_compact": 515
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.9,
+      "T": 3,
+      "N": 8000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1536,
+      "n_x_compact": 863
+    },
+    {
+      "config": [
+        4,
+        8,
+        3
+      ],
+      "confound": 0.9,
+      "T": 3,
+      "N": 8000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1536,
+      "n_x_compact": 833
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.0,
+      "T": 3,
+      "N": 2000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1960,
+      "n_x_compact": 737
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.0,
+      "T": 3,
+      "N": 2000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1960,
+      "n_x_compact": 790
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.0,
+      "T": 3,
+      "N": 8000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1960,
+      "n_x_compact": 1364
+    },
+    {
+      "config": [
+        3,
+        7,
+        5
+      ],
+      "confound": 0.0,
+      "T": 3,
+      "N": 8000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 1960,
+      "n_x_compact": 1370
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "T": 4,
+      "N": 2000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 6912,
+      "n_x_compact": 942
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "T": 4,
+      "N": 2000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 6912,
+      "n_x_compact": 934
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "T": 4,
+      "N": 8000,
+      "seed": 0,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 6912,
+      "n_x_compact": 2183
+    },
+    {
+      "config": [
+        4,
+        6,
+        2
+      ],
+      "confound": 0.9,
+      "T": 4,
+      "N": 8000,
+      "seed": 1,
+      "dbR": 0.0,
+      "dbD": 0.0,
+      "dH": 0.0,
+      "n_x_dense": 6912,
+      "n_x_compact": 2156
+    }
+  ],
+  "worst": 0.0,
+  "exact": true
+}
