@@ -109,3 +109,72 @@ stated first, not buried.
 
 ## 5. Measurement
 
+### P-L7 is REFUTED, 0 of 4 configurations. `cor:dilution` reproduces exactly.
+
+`poc/run_scale_floor_ratio.py`. Population algebra, no fitting.
+
+| config | floor constant in `T` | spread log-log slope | ratio slope |
+|---|---|---|---|
+| `(8,10,3)` | yes, to `10` decimals | `+1.024` | `-1.024` |
+| `(4,6,2)` | yes | `+1.046` | `-1.046` |
+| `(6,10,3)` | yes | `+0.974` | `-0.974` |
+| `(8,10,4)` | yes | `+1.207` | `-1.207` |
+
+The floor is exactly constant in `T`, the spread grows linearly, and the ratio
+decays as `1/T`. That is `cor:dilution`, reproduced at four configurations and
+five horizons. Our prediction that it would reverse was wrong.
+
+### P-L6 holds, and it is worse than predicted
+
+| config | `T=3` | `T=4` | `T=6` | `T=8` | `T=10` |
+|---|---|---|---|---|---|
+| `(8,10,3)` | `8.807` | `6.261` | `4.324` | `3.185` | `2.514` |
+| **`(4,6,2)`** | **`1.445`** | `1.047` | `0.687` | `0.512` | `0.408` |
+| `(6,10,3)` | `3.421` | `2.567` | `1.732` | `1.312` | `1.057` |
+| `(8,10,4)` | `7.595` | `5.130` | `3.209` | `2.273` | `1.757` |
+
+`17` of `20` cells have `floor > spread`. Only `(4,6,2)` at `T >= 6` is separable.
+
+### The consequence for this project's own results
+
+**`(4,6,2)` at `T = 3` is the configuration every decision-level result in this
+project used, and its ratio is `1.445`.**
+
+The identification gap is `1.4x` the entire value range between the best and the
+worst candidate policy. A valid region cannot be narrower than the gap. So on
+that grid **no valid pessimistic rule could have ordered the candidates, at any
+sample size.** Not degraded. Impossible.
+
+This is not a small caveat. It is the direct explanation of the anti-monotone
+failure, and it is stronger than the explanation the paper currently gives:
+
+- a region wide enough to be valid cannot separate the policies, so it selects
+  by tie-break;
+- a region narrow enough to separate them is invalid, which is what
+  `converse_identification.md` section 8 measured (`pen_t1 / HW_t1` reaching only
+  `0.695` at `N = 128,000`);
+- there is no width in between.
+
+### But infeasibility is not the whole story, and the `T = 6` run proves it
+
+At `T = 6` the same configuration has ratio `0.687 < 1`. Separation is feasible
+there. The stored `T = 6` run (`results_regret_horizon_T6.json`, whose floor
+`0.4285` and spread `0.6234` reproduce ours exactly) gives:
+
+| horizon | `floor/spread` | separable | pessimistic regret slope | plug-in slope |
+|---|---|---|---|---|
+| `T = 3` | `1.445` | **no** | `+0.0220` | `-0.0210` |
+| `T = 6` | `0.687` | **yes** | **`+0.0387`** | `-0.0379` |
+
+**Crossing into the feasible regime made the selector worse, not better.** The
+slope nearly doubles. So the failure has two separable causes and only one of
+them is the identification gap. That is what saves the finding from being an
+artefact of an infeasible grid, and it is the sharpest statement this project
+has:
+
+> Where separation is impossible, pessimism fails necessarily. Where separation
+> becomes possible, pessimism fails anyway, and harder.
+
+`cor:nogovern` said the `1/T` dilution does not reach the decision. This is why:
+dilution fixes the **necessary** condition and the selector fails on a different
+one.
