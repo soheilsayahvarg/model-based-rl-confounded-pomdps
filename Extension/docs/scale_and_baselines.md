@@ -532,3 +532,66 @@ bound is not valid: `scale_and_baselines.md` section 7 measured `c < 0` here, so
 `projall` is anti-conservative wherever `|c| = 0.055` exceeds its own penalty.
 **At `N = 64,000` that penalty is `0.0159`, so `projall` is anti-conservative by
 roughly `0.039` on this environment.** That is the concrete cost of the sign flip.
+`poc/run_bc_candidate_retest.py`, `20` seeds, both candidate sets off the same
+code path. The six-candidate arm reproduces the stored run exactly
+(`0.0952, 0.1218, 0.1714, 0.1804`), so the comparison is like-for-like.
+
+| arm | `N=2,000` | `N=8,000` | `N=32,000` | `N=128,000` | modal picks |
+|---|---|---|---|---|---|
+| **six candidates**, optimal `always_1`, spread `0.2966` |
+| `full` | `0.0952±0.0190` | `0.1218±0.0204` | `0.1714±0.0172` | **`0.1804±0.0000`** | `greedy_lo, soft, uniform, uniform` |
+| `plugin` | `0.0894±0.0189` | `0.0226±0.0135` | `0.0000` | `0.0000` | `..., always_1` |
+| `projall` | `0.1093±0.0217` | `0.0746±0.0187` | `0.0000` | `0.0000` | `..., always_1` |
+| **seven, with `bc`**, optimal `bc`, spread `0.2975` |
+| `full` | `0.0000` | `0.0000` | `0.0000` | **`0.0363±0.0318`** | `bc, bc, bc, bc` |
+| `plugin` | `0.0000` | `0.0000±0.0001` | `0.0000` | `0.0000` | `bc, bc, bc, bc` |
+| `projall` | `0.0083±0.0158` | `0.0000` | `0.0000` | `0.0000` | `bc, bc, bc, bc` |
+
+### P-L13 holds in direction and loses most of its force
+
+**What survives.** `full` is still the only arm with nonzero regret at the
+largest `N`, and still the only one whose regret rises. The direction of the
+central claim is intact.
+
+**What does not.** Three specific claims this project has made are artifacts of
+the narrow candidate set:
+
+1. **"Converges to a wrong policy with zero variance"** is **gone**. The modal
+   pick is now `bc`, the correct one, at every sample size. The `±0.0000` that
+   made that claim dramatic is now `±0.0318`.
+2. **The magnitude falls `5x`**, `0.1804` to `0.0363`, and `0.0363 ± 0.0318`
+   is barely distinguishable from zero. The stored headline was overwhelming;
+   the corrected one is marginal.
+3. **"Pessimism helps at small `N` and hurts at large `N`"** is **gone**. With
+   `bc` present `full` is exactly right at the three smaller sample sizes and
+   only degrades at the largest.
+
+**The paper cannot keep any of those three sentences.**
+
+### The mechanism, which is better than the alarm it replaces
+
+`bc` beats `always_1` by only `0.0009`, yet adding it changed which of the
+original six `full` selects, from `uniform` to `bc`. That is not a coincidence
+and it explains everything.
+
+`bc` is the observation-marginal of the logging policy, so its value gradient is
+the one best covered by the data: small `||g||_{H^-1}`, hence a small penalty.
+Pessimism is built to prefer exactly that. When such a policy is in the candidate
+set, pessimism finds it and is right.
+
+When it is not, pessimism has no well-covered option, and its argmax falls back
+to the candidate with the least gradient mass in the design's null space. On
+`(4,6,2)` that is `uniform`, which is unrelated to value. Its regret then rises
+with `N` because the penalty grows under `e > 0` while the ranking it induces
+stays wrong.
+
+So the defensible claim is narrower, mechanistic, and checkable in advance:
+
+> Pessimistic selection ranks candidates by how well the logging distribution
+> covers them. Given a candidate close to the behaviour policy it returns it. Given
+> a candidate set with no such policy, it returns the minimum-null-mass candidate,
+> which carries no information about value, and under a schedule with `e > 0` its
+> regret grows with sample size.
+
+That is a statement about **when pessimism is safe to use**, not a claim that it
+is broken. It is smaller, it is true, and it survives a baseline.
