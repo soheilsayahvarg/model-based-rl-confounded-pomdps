@@ -341,10 +341,17 @@ our own arm.
 | P-C14: the excluded value component `c` is positive where `projall` works | **holds in sign** | `c > 0` at `(4,6,2)` cf `0.9` at every `N` |
 | P-C14: alignment cosine above `0.3` | **refuted** | `0.111`. Nearly orthogonal, so `c` is a tenth of its Cauchy-Schwarz bound |
 | P-C15: `c` is constant in `N` | **refuted** | spread `0.237 > 0.20`, drifting `0.0738 -> 0.0588`. The quantity is population; its **subspace** is estimated |
-| **P-C16: the sign of `c` flips somewhere** | **REFUTED -- the attack failed** | `c > 0` in `30` of `32` cells, `~0` in the other `2`, no real flip |
+| **P-C16: the sign of `c` flips somewhere** | **refuted on the small grid, then CONFIRMED at scale** | `c > 0` in `30` of `32` `T=3` cells, but `c < 0` in **6 of 6** Environment L cells (`-0.048` to `-0.063`). The small grid was too weak to exercise it |
 | P-C17: anti-conservative cells exist | **untested** | conditional on P-C16; no cell qualified. Recorded untested, not passed |
 | The two constructions of "unidentified subspace" agree | **verified, not assumed** | `\|\|P_excl - P_null\|\|_F = 4e-13`, principal-angle sines all `1.000` |
 | P-C6 needs a centre-offset term | **no** | `\|\|P_Nul b_hat\|\| = 0.0000` at every `N`, structurally: `rhs` lies in `Range(T_2) ⊥ Nul(T_2)` |
+
+**SUPERSEDED.** `projall` survived that attack only because the grid was one
+small family at `T = 3`. At `|S| = 8, T = 10` the sign flips in every cell, so
+the arm is not conservative by construction and its small-grid safety does not
+transfer. See `scale_and_baselines.md` section 7. The magnitude mechanism is now
+known (`|c| ~ 1/sqrt(k_excl)`, P-L9 holds at ratio `0.75`), and it says nothing
+about the sign. The original text follows.
 
 `projall` survives an attack designed to break it, on `32` cells. **The mechanism
 is unexplained.** Two candidates (concentration at `1/sqrt(k_excl)`, and a shared

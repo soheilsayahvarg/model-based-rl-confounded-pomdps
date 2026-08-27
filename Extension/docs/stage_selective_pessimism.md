@@ -618,3 +618,26 @@ either is claimed.
 is a complete design, so it should be the well-behaved one. No explanation. It
 does not affect the sign result, since its `c` is `0.0044`, but it is the kind of
 number that turns out to matter later.
+
+---
+
+### CORRECTION to section 10, added the same day
+
+**The conclusion above is wrong.** "The attack failed, `projall` stands" was
+drawn from `32` cells of one `|S| <= 4`, `T = 3` family.
+
+`scale_and_baselines.md` section 7 ran the same measurement on Environment L
+(`|S| = 8, |O| = 10, |O_0| = 3, T = 10`) and found `c < 0` in **6 of 6** cells,
+between `-0.048` and `-0.063`, consistent across two sample sizes and three
+seeds. The sign flips.
+
+What went wrong here was not the prediction. P-C16 was right; the grid was too
+small to exercise it, and we read "the attack failed" as "the arm is safe"
+instead of "the attack was too weak". `BlockEllipsoid`'s audit finding A-high had
+already said the projected bound holds by sign-alignment and not by
+construction. We should have weighted our own docstring above `32` same-family
+cells.
+
+The `1/sqrt(k_excl)` concentration explanation floated above does hold (P-L9,
+ratio `0.75`, on fresh cells). But it bounds `|c|` and says nothing about the
+sign of `c`, and we treated it as though it supported both.
