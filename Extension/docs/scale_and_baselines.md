@@ -372,3 +372,50 @@ arriving in the one place a width rule cannot survive it.
 
 ### Measurement
 
+`poc/run_horizon_ceiling.py`, `3` sample sizes x `2` seeds x `10` blocks.
+
+### P-L10 holds in one direction, not both
+
+`sigma2 = 0` in `6` of `60` block-cells. Among those, `unseen_x2_frac` runs
+`0.9975` to `1.0000`, mean `0.9992`. Among the `54` cells with `sigma2 > 0` it
+runs `0.0000` to `0.9996`.
+
+So **`sigma2 = 0` implies the stage-2 histories were essentially never seen in
+the stage-1 half**, and that direction is sharp. The converse fails: at
+`N = 64,000` block `t = 10` has `unseen_x2_frac = 0.9986` and still carries
+`sigma2 = 1.23e-05`. Saturation is necessary for collapse, not sufficient.
+
+The diagnostic that predicts it was already being recorded by the estimator and
+had never been read.
+
+### P-L11 is REFUTED, and the correction is more useful than the prediction
+
+| `N` | `t*` (first stage with `sigma2 = 0`) |
+|---|---|
+| `4,000` | `8.5` |
+| `16,000` | `10.5` |
+| `64,000` | `11.0` (defined at every stage) |
+
+`16x` more data moved `t*` by `+2.5` stages. We predicted at most `2`.
+
+The form of the prediction was right and its conclusion was wrong. `t*` does grow
+logarithmically, at **`+0.902` stages per e-fold of `N`**, which means
+
+> each additional stage of usable horizon costs about `3x` the data.
+
+That is exponential in the horizon, but with base `3`, not the base `20` the
+alphabet growth `(|O||A|)^(t-1)` would suggest. So `T = 10` is **not** out of
+reach: it is undefined at `N = 4,000`, marginal at `N = 16,000`, and fully
+defined at `N = 64,000`.
+
+**The honest statement is a cost, not a ceiling.** The construction has a usable
+horizon set by `log N` through the cross-fitting split, and buying horizon costs
+roughly `3^T` samples. Our claim that no feasible `N` reaches `T = 10` was too
+strong.
+
+### Consequence for the decision experiment
+
+A `3`-point `N` grid at `T = 10` would have to start at `N = 64,000` and reach
+`N = 10^6`, which is not affordable here. The decision run therefore uses
+`T = 5`, where `sigma2` is positive at every block for all three sample sizes,
+and the horizon ceiling is reported as its own result rather than folded into it.
