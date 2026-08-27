@@ -1,0 +1,110 @@
+{
+  "rows": [
+    {
+      "N": 2000,
+      "seed": 0,
+      "projected": false,
+      "V_low_new": 1.269421992029969,
+      "V_low_old": 1.269421992029969,
+      "diff": 0.0
+    },
+    {
+      "N": 2000,
+      "seed": 0,
+      "projected": true,
+      "V_low_new": 1.3650702917937532,
+      "V_low_old": 1.3650702917937532,
+      "diff": 0.0
+    },
+    {
+      "N": 2000,
+      "seed": 1,
+      "projected": false,
+      "V_low_new": 0.9649567907781545,
+      "V_low_old": 0.9649567907781545,
+      "diff": 0.0
+    },
+    {
+      "N": 2000,
+      "seed": 1,
+      "projected": true,
+      "V_low_new": 1.1895310407853983,
+      "V_low_old": 1.1895310407853983,
+      "diff": 0.0
+    },
+    {
+      "N": 8000,
+      "seed": 0,
+      "projected": false,
+      "V_low_new": 1.4240321046527809,
+      "V_low_old": 1.4240321046527806,
+      "diff": 2.220446049250313e-16
+    },
+    {
+      "N": 8000,
+      "seed": 0,
+      "projected": true,
+      "V_low_new": 1.7600506982140258,
+      "V_low_old": 1.7600506982140258,
+      "diff": 0.0
+    },
+    {
+      "N": 8000,
+      "seed": 1,
+      "projected": false,
+      "V_low_new": 1.618908051511091,
+      "V_low_old": 1.6189080515110907,
+      "diff": 2.220446049250313e-16
+    },
+    {
+      "N": 8000,
+      "seed": 1,
+      "projected": true,
+      "V_low_new": 1.9437640357762715,
+      "V_low_old": 1.9437640357762715,
+      "diff": 0.0
+    },
+    {
+      "N": 32000,
+      "seed": 0,
+      "projected": false,
+      "V_low_new": 1.2160004989855775,
+      "V_low_old": 1.2160004989855775,
+      "diff": 0.0
+    },
+    {
+      "N": 32000,
+      "seed": 0,
+      "projected": true,
+      "V_low_new": 2.0023026124732706,
+      "V_low_old": 2.0023026124732706,
+      "diff": 0.0
+    },
+    {
+      "N": 32000,
+      "seed": 1,
+      "projected": false,
+      "V_low_new": 1.3850947568477554,
+      "V_low_old": 1.3850947568477554,
+      "diff": 0.0
+    },
+    {
+      "N": 32000,
+      "seed": 1,
+      "projected": true,
+      "V_low_new": 2.04157270509951,
+      "V_low_old": 2.04157270509951,
+      "diff": 0.0
+    }
+  ],
+  "worst": {
+    "h_inv_norm": 5.684341886080802e-14,
+    "linear_min_pt": 1.3183898417423734e-16,
+    "linear_min_pen": 2.7755575615628914e-17,
+    "linear_min_proj_pt": 0.0,
+    "linear_min_proj_pen": 0.0,
+    "V_low": 2.220446049250313e-16,
+    "V_low_proj": 0.0
+  },
+  "overall": 5.684341886080802e-14
+}

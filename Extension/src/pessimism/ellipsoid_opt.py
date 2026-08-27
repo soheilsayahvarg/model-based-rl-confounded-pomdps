@@ -54,6 +54,7 @@ right shape; the multiplier c is swept with coverage curves (never a claimed
 """
 
 import numpy as np
+from scipy.linalg import solve_triangular
 
 
 def _inner(H, b_hat, g, xi, nu):
@@ -207,7 +208,7 @@ class BlockEllipsoid:
 
     def h_inv_norm(self, g):
         """||g||_{H^{-1}} = sqrt(g^T H^{-1} g)."""
-        y = np.linalg.solve(self.L, g)
+        y = solve_triangular(self.L, g, lower=True)
         return float(np.sqrt(y @ y))
 
     def linear_min(self, g, xi, projected=False, M=None, M_inf=None):
@@ -244,27 +245,27 @@ class BlockEllipsoid:
     def _linear_min_plain(self, g, xi, projected=False):
         if projected:
             gs = self.U.T @ g
-            y = np.linalg.solve(self.L_sub, gs)
+            y = solve_triangular(self.L_sub, gs, lower=True)
             ng = float(np.sqrt(y @ y))
             if ng < 1e-14:
                 return self.b_hat.copy(), 0.0
-            ds = np.linalg.solve(self.L_sub.T, y)
+            ds = solve_triangular(self.L_sub.T, y, lower=False)
             return self.b_hat - (np.sqrt(xi) / ng) * (self.U @ ds), \
                 float(np.sqrt(xi) * ng)
-        y = np.linalg.solve(self.L, g)
+        y = solve_triangular(self.L, g, lower=True)
         ng = float(np.sqrt(y @ y))
         if ng < 1e-14:
             return self.b_hat.copy(), 0.0
-        Hinv_g = np.linalg.solve(self.L.T, y)
+        Hinv_g = solve_triangular(self.L.T, y, lower=False)
         return self.b_hat - (np.sqrt(xi) / ng) * Hinv_g, float(np.sqrt(xi) * ng)
 
     def random_boundary_point(self, xi, rng, projected=False):
         if projected:
             u = rng.standard_normal(self.U.shape[1])
-            d = np.linalg.solve(self.L_sub.T, u)
+            d = solve_triangular(self.L_sub.T, u, lower=False)
             return self.b_hat + (self.U @ d) * (np.sqrt(xi) / np.sqrt(u @ u))
         u = rng.standard_normal(self.b_hat.size)
-        d = np.linalg.solve(self.L.T, u)
+        d = solve_triangular(self.L.T, u, lower=False)
         return self.b_hat + d * (np.sqrt(xi) / np.sqrt(u @ u))
 
     def xi_needed(self, b_vec, projected=False):
