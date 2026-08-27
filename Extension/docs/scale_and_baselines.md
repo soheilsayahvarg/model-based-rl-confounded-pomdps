@@ -301,3 +301,74 @@ zero at blocks `7` through `10`. At `N = 16,000` those same blocks carry
 `0.046` to `1.02`. More blocks leak as data accumulates, because the late-stage
 conditioning alphabet fills in and the design's null structure becomes visible
 rather than being masked by empty cells.
+
+## 8. The decision run at `T = 10` is not interpretable, and why that is the finding
+
+The first Environment L run produced
+
+    N=4000  full       regret 0.7076   pen 283,167,900.29
+    N=4000  projall    regret 0.7753   pen  87,454,007.84
+    N=4000  plugin     regret 0.0000   pen 0.0000        modal bc
+    N=4000  hoeffding  regret 0.0000   pen 0.2193        modal bc
+
+A penalty of `2.8e8` against a value scale of `7.9`. Reporting P-L1 from that run
+would be the recurring defect again: a grid that cannot show the effect.
+
+### Diagnosis, per block, at `N = 4,000`
+
+| block | `sigma2` | `xi(c=1)` | `\|\|g\|\|_{H^-1}` |
+|---|---|---|---|
+| `bR_t1` | `7.02e-03` | `1.19e-01` | `1.00e+02` |
+| `bR_t4` | `6.19e-03` | `1.35e-01` | `9.38e+01` |
+| `bR_t5` | `2.39e-04` | `3.49e+00` | `9.33e+01` |
+| `bR_t6` | `5.74e-05` | `1.45e+01` | `1.49e+02` |
+| **`bR_t9`** | **`0.00e+00`** | **`8.33e+08`** | `0.00e+00` |
+| **`bR_t10`** | **`0.00e+00`** | **`8.33e+08`** | `0.00e+00` |
+| **`bD_t9`** | **`0.00e+00`** | **`8.33e+08`** | `0.00e+00` |
+
+`sigma2` is **exactly zero** at the last stages. The anchor paper's `tau = 0`
+width rule is `xi ∝ 1/(N_2 · sigma2)`, so it is **undefined** there, not merely
+large.
+
+### Our own defect: the floor that hid it
+
+`xi_for` computes `c * N2^(tau-1) / max(sigma2, 1e-12)`. That `max` turns an
+undefined quantity into `8.33e8` and lets the run continue. The gradient happens
+to be zero at those blocks for the reference policy, so the calibration saw
+nothing wrong; but `pessimistic_value` minimizes **jointly**, and once other
+blocks move, a region of radius `sqrt(8.33e8) = 2.9e4` at a late block dominates
+everything.
+
+**Eighth recurring defect, and a sixth mode: a numerical floor silently converted
+an undefined quantity into a finite one.** A guard belongs there, not a floor.
+
+### Why `sigma2` vanishes, which is the actual result
+
+`sigma2` is the smallest kept eigenvalue of the per-action design
+`W_a = M_a M_a^T / N_2`, whose columns are `mu_hat(. | x'_n)` for the stage-2
+points. The estimator cross-fits: `mu_hat` is built on the stage-1 half and
+evaluated at stage-2 histories. At `t = 5` the observed alphabet is already
+`3,387` of `N = 4,000`, and by `t = 10` it is `3,999` of `4,000`. Nearly every
+stage-2 history was **never seen in the stage-1 half**, so `mu_hat(. | x')` is
+identically zero there, `M_a` is zero, and `W_a` is zero.
+
+This is the curse of history hitting the **cross-fitting split**, not the
+estimator's capacity. It is exactly the phenomenon Zhang and Jiang's title names,
+arriving in the one place a width rule cannot survive it.
+
+### Predictions, committed before measuring
+
+- **P-L10.** `sigma2 = 0` at a block iff its `unseen_x2_frac` is at or near `1`.
+  The estimator already records that diagnostic and nothing has ever read it.
+- **P-L11.** The breakdown stage `t*`, the first `t` with `sigma2 = 0`, grows
+  only **logarithmically** in `N`. Concretely, going from `N = 4,000` to
+  `N = 64,000`, a `16x` increase, moves `t*` by at most `2` stages. If so, no
+  feasible sample size makes the anchor width rule defined at `T = 10`, and the
+  correct statement is that the construction has a horizon ceiling set by the
+  split, independent of `N`.
+- **P-L12.** Below `t*` the decision experiment is well posed. Running Environment
+  L truncated to `T = t* - 1` gives interpretable penalties (order `1`, not
+  `1e8`) and a fair test of P-L1 through P-L4.
+
+### Measurement
+

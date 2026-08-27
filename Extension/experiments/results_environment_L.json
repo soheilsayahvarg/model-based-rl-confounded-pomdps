@@ -3,12 +3,13 @@
     {
       "N": 4000,
       "arm": "full",
-      "regret": 0.7753178946871131,
-      "regret_ci": 0.0,
-      "penalty": 66310.41607888968,
-      "modal": "always_1",
+      "regret": 0.7075903343852898,
+      "regret_ci": 0.09386560963877447,
+      "penalty": 283167900.29066944,
+      "modal": "greedy_hi",
       "picks": [
-        "always_1"
+        "always_1",
+        "greedy_hi"
       ],
       "conservative_frac": 1.0
     },
@@ -20,6 +21,7 @@
       "penalty": 0.0,
       "modal": "bc",
       "picks": [
+        "bc",
         "bc"
       ],
       "conservative_frac": 1.0
@@ -29,9 +31,10 @@
       "arm": "projall",
       "regret": 0.7753178946871131,
       "regret_ci": 0.0,
-      "penalty": 28451.157519689485,
+      "penalty": 87454007.84192139,
       "modal": "always_1",
       "picks": [
+        "always_1",
         "always_1"
       ],
       "conservative_frac": 1.0
@@ -41,16 +44,17 @@
       "arm": "hoeffding",
       "regret": 0.0,
       "regret_ci": 0.0,
-      "penalty": 0.22032841100144826,
+      "penalty": 0.21928908088671,
       "modal": "bc",
       "picks": [
+        "bc",
         "bc"
       ],
       "conservative_frac": 1.0
     }
   ],
   "slopes": {
-    "full": -0.015341248128590527,
+    "full": -0.020851694378156517,
     "plugin": -0.0,
     "projall": -0.015341248128590527,
     "hoeffding": -0.0
@@ -77,7 +81,7 @@
   ],
   "T": 10,
   "confound": 0.9,
-  "n_seeds": 1,
+  "n_seeds": 2,
   "N_grid": [
     4000
   ],
