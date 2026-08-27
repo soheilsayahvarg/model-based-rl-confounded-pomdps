@@ -482,3 +482,64 @@ it. `as:null` counts conditioning cells, `sec:switch-beta` counts latent states,
 and the two coincide only in the limit. Since every decision experiment in this
 work runs at `N <= 128,000`, the distinction is not academic for our own numbers,
 even though it is for the theorem.
+
+---
+
+## 10. Is `projall` a remedy or a coin flip that landed right?
+
+**Written and committed before measurement. Adversarial against our own arm.**
+
+### What `projall` actually does
+
+Reading `ellipsoid_opt.py` rather than the arm's name: `projected=True` restricts
+the **perturbation direction** to the signal subspace `U_sig` and leaves the
+centre `b_hat` untouched. The penalty becomes
+`sqrt(xi) * ||U_sig' g||_{(U_sig' H U_sig)^-1}`.
+
+So `projall` does **not** switch to a point-identified surrogate functional. It
+keeps `<g, b>` and shrinks the region until the region no longer contains the
+truth. `BlockEllipsoid`'s docstring already carries this as audit finding
+A-high: the projected `V_low` "is NOT a certified lower bound", and coverage held
+on the tested grid "by sign-alignment, not by construction".
+
+Section 8 of `converse_identification.md` now puts a number on how much is
+excluded. Since `b_hat` is minimum-norm, `P_Nul b_hat = 0`, so the excluded part
+of the truth is `P_Nul b_true`, and at the t=1 block
+
+    ||P_Nul b_true|| = 1.6344   against   ||b_true|| = 2.3590
+
+**`projall`'s region structurally excludes 69% of the true bridge's norm.**
+
+### The decomposition
+
+    V_low - V_true  =  -penalty  -  c ,      c = <U_null' g, U_null' b_true>
+
+`projall` is conservative iff `c >= -penalty`, which for a small penalty means
+iff `c >= 0`. And `|c| <= HW_t1 = 0.5777` by Cauchy-Schwarz, with the sign fixed
+entirely by alignment. That is the "sign-alignment" caveat, made computable.
+
+### Predictions
+
+- **P-C14.** On `(4,6,2)` at confounding `0.9`, where `projall` was reported to
+  work, `c > 0` at the t=1 block, and the alignment cosine
+  `c / (||U'g|| * ||U'b_true||)` exceeds `0.3` in magnitude.
+- **P-C15.** `c` is near-constant in `N`, relative spread below `20%` for
+  `N >= 8,000`, because it is a population quantity while the penalty is not.
+- **P-C16.** The sign of `c` **flips** somewhere on the grid
+  `{(4,6,2), (4,8,3), (2,6,2), (3,7,5)} x {0.0, 0.3, 0.6, 0.9}`. At least one
+  cell with a nonempty null has `c < 0`.
+- **P-C17.** Where `c < 0`, `projall`'s margin `-penalty - c` turns positive at
+  large `N`: the penalty shrinks on the identified subspace while `|c|` stays
+  fixed, so the arm becomes **anti-conservative**.
+
+**P-C16 is load-bearing and it is aimed at our own arm.** If the sign flips,
+`projall` is not a remedy. It is a rule whose validity depends on an alignment
+nobody checked, and it happened to land right on the one grid we ran. That would
+have to be the headline about it, not "the arm that works everywhere".
+
+If the sign does **not** flip anywhere, then the conservatism has a structural
+reason we have not identified, and finding it becomes the interesting question.
+Either outcome is worth more than the current claim.
+
+### Measurement
+
