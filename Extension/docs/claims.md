@@ -377,3 +377,26 @@ whole line of work measured an infeasible grid. With it, the statement is:
 
 > Where separation is impossible, pessimism fails necessarily. Where separation
 > becomes possible, pessimism fails anyway, and harder.
+
+
+## Tier 2 verdict: what the baseline cost the headline
+
+`scale_and_baselines.md` sections 10-11.
+
+| claim as published | status after adding `bc` to the candidate set |
+|---|---|
+| Pessimistic regret **rises** with `N` while plug-in falls | **survives**: `full` is still the only arm with a rising regret and the only one nonzero at `N_max` |
+| `full` **converges to a wrong policy with zero variance** | **WITHDRAWN**: modal pick is now `bc`, the correct one, at every `N`; the `+-0.0000` becomes `+-0.0318` |
+| Pessimism **helps at `N=2,000` and hurts at `N>=32,000`** | **WITHDRAWN**: with `bc` present `full` is exactly right at the three smaller `N` and degrades only at the largest |
+| The effect size | **cut `5x`**, `0.1804` to `0.0363`, and `0.0363 +- 0.0318` is barely distinguishable from zero |
+| P-L1..P-L4 at Environment L | **untestable there**, not refuted: `bc` beats the next candidate by `95%` of the spread so every arm agrees |
+
+**The mechanism found in the process is worth more than the claims lost.**
+Pessimism ranks candidates by how well the logging distribution covers them.
+`bc` is by construction the best-covered policy, so pessimism selects it and is
+right. With no such candidate the argmax falls back to the minimum-null-mass
+policy, which carries no information about value, and under `e > 0` its regret
+grows with `N`.
+
+The paper's claim becomes **when pessimistic selection is safe to use**, which is
+checkable before fitting, rather than **pessimism is broken**, which is not true.
