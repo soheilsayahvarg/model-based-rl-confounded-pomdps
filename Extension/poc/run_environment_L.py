@@ -49,7 +49,8 @@ from value_plugin import plugin_value, empirical_p_o1
 from ellipsoid_opt import BlockEllipsoid, pessimistic_value
 from run_completeness_beta import population_design_span, beta_pop_for
 
-N_S, N_O, N_O0, N_A, T = 8, 10, 3, 2, 10
+N_S, N_O, N_O0, N_A = 8, 10, 3, 2
+T = int(os.environ.get("HORIZON", "10"))
 CONFOUND = 0.9
 TAU, KAP = 0.0, 1.5                      # schedule C, e = +0.5
 SPLIT = 0.7
@@ -109,9 +110,25 @@ def build_blocks(est):
     return bR, bD
 
 
-def xi_for(tau, N2, sigma2, c_mult):
-    m = sigma2 if tau == 0.0 else 1.0
-    return c_mult * N2 ** (tau - 1.0) / max(m, 1e-12)
+def xi_for(tau, N2, sigma2, c_mult, label="?"):
+    """Width parameter. tau = 0 divides by the design signal eigenvalue.
+
+    The original helper used max(sigma2, 1e-12), which silently converted an
+    UNDEFINED width into 8.33e8 and let a run continue to a penalty of 2.8e8
+    against a value scale of 7.9. sigma2 = 0 is not a small number, it is the
+    statement that the block carries no signal, and the tau = 0 rule has no value
+    there. Guard, do not floor. See scale_and_baselines.md section 8.
+    """
+    if tau == 0.0:
+        if not (sigma2 > 0.0):
+            raise ValueError(
+                "sigma2 = %r at block %s: the tau=0 width rule xi = c/(N2*sigma2) "
+                "is undefined here. The block's design has collapsed, which at "
+                "long horizons is the cross-fitting split failing, not noise. "
+                "Truncate the horizon or change the width rule; do not floor."
+                % (sigma2, label))
+        return c_mult * N2 ** (tau - 1.0) / sigma2
+    return c_mult * N2 ** (tau - 1.0)
 
 
 def fit_once(p, N, sd):
@@ -189,7 +206,7 @@ def main():
     bR, bD = build_blocks(est)
     vg = make_vg(cands["greedy_lo"], empirical_p_o1(d["O"], N_O))
     _, gR0, gD0 = vg([b.b_hat for b in bR], [b.b_hat for b in bD])
-    w_unit = sum(np.sqrt(xi_for(TAU, b.N2, b.sigma2, 1.0)) * b.h_inv_norm(g)
+    w_unit = sum(np.sqrt(xi_for(TAU, b.N2, b.sigma2, 1.0, b.label)) * b.h_inv_norm(g)
                  for b, g in list(zip(bR, gR0)) + list(zip(bD, gD0)))
     c_mult = (W_TARGET / w_unit) ** 2
     h_unit = hoeffding_pen(bR, bD, gR0, gD0, bR[0].N2, 1.0)
@@ -208,8 +225,8 @@ def main():
             est, d = fit_once(p, N, sd)
             bR, bD = build_blocks(est)
             p_o1 = empirical_p_o1(d["O"], N_O)
-            xR = [xi_for(TAU, b.N2, b.sigma2, c_mult) for b in bR]
-            xD = [xi_for(TAU, b.N2, b.sigma2, c_mult) for b in bD]
+            xR = [xi_for(TAU, b.N2, b.sigma2, c_mult, b.label) for b in bR]
+            xD = [xi_for(TAU, b.N2, b.sigma2, c_mult, b.label) for b in bD]
             for arm in ARMS:
                 vals, pn = {}, {}
                 for name, pi in cands.items():
