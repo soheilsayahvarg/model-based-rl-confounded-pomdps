@@ -34,13 +34,13 @@
 \newcommand{\bhat}{\hat{b}}
 \newcommand{\Vlow}{V_{\mathrm{low}}}
 
-\icmltitlerunning{When Proximal Pessimism Cannot Contract}
+\icmltitlerunning{Pessimism Ranks Coverage, Not Value}
 
 \begin{document}
 
 \twocolumn[
-\icmltitle{When Proximal Pessimism Cannot Contract:\\
-           A Schedule-Free Floor and Two Checkable Switches}
+\icmltitle{Pessimism Ranks Coverage, Not Value:\\
+           Pre-Fit Conditions for Policy Selection in Confounded POMDPs}
 
 \begin{icmlauthorlist}
 \icmlauthor{Soheil Sayah Varg}{sharif}
@@ -58,94 +58,121 @@
 \printAffiliationsAndNotice{}
 
 \begin{abstract}
-Offline RL in confounded POMDPs identifies policy values through \emph{bridge
-functions} and then plans pessimistically over a confidence region around the
-fitted bridge. The construction is only useful if that region contracts as data
-accumulates. We show it need not. For any ridge $\lambda>0$ and \emph{any} width
-rule --- power-law, logarithmic, data-adaptive, even truth-dependent --- a region
-that covers the truth pays a penalty of at least $\beta\beta_g$ at every sample
-size, where $\beta$ is the true bridge's mass in the design's null space and
-$\beta_g$ the value gradient's. The regularizer cancels, so no schedule escapes
-it. We then characterize exactly when this floor is nonzero, and the answer is a
-conjunction of two conditions a practitioner can check \emph{before} fitting: an
-inadequate negative control ($|O_0|<|S|$, a statement about dimensions alone)
-makes the truth leak, and confounding --- the behaviour policy depending on
-latent state --- makes the gradient leak. Neither alone suffices; we verify the
-first in $50/50$ population cells and map the second across four configurations.
-The characterization concerns the \emph{first} stage: from $t=2$ on, history
-restores per-action completeness, so exactly one block leaks whatever the horizon
-and the floor does not compound. Placing the schedule of \citet{hong2024} inside
-this family shows its governing exponent is positive for \emph{every} admissible
-smoothness ($30/30$ cells), so the region it prescribes is non-contracting on the
-leaky branch. At the decision level, over $20$ seeds, pessimistic and plug-in
-selection have opposite-signed regret slopes under that schedule and their curves
-cross: pessimism helps at $N{=}2{,}000$ and hurts at $N{\ge}32{,}000$. The floor itself is
-diluted by the horizon --- it is constant in $T$ while the value spread grows, so
-their ratio decays as $1/T$ --- but we predicted and then refuted the natural
-inference that long horizons are therefore safe: at $T=6$ normalized regret is
-flat against $T=3$ and raw regret doubles, because the selector commits the same
-error and only its price scales. All of this lives outside the anchor paper's own assumptions,
-which is what makes it a robustness result about the boundary of applicability
-rather than a defect.
+Offline policy selection in confounded POMDPs identifies policy values through
+\emph{bridge functions} and then picks the candidate with the best pessimistic
+lower bound over a confidence region. We ask when that procedure is safe, and
+give conditions a practitioner can check before fitting anything.
+
+First, a \emph{separability test}. When the negative control is inadequate the
+value functional is only partially identified, and the identified interval has
+half-width $\beta\beta_g$, where $\beta$ is the true bridge's mass in the design's
+null space and $\beta_g$ the value gradient's. The identification algebra behind
+this is classical and we cite it as such; what matters operationally is that
+$\beta\beta_g$ is computable from primitives, and that no valid region can be
+narrower. Comparing it to the spread of the candidate set therefore decides, in
+advance and without data, whether \emph{any} valid pessimistic rule can order the
+candidates. It cannot in $17$ of $20$ configurations we examine, including every
+incomplete design at $|\mathcal{S}|=8$ and the $T{=}3$ grid on which our own
+decision experiments were run.
+
+Second, a \emph{mechanism}. Pessimism ranks candidates by how well the logging
+distribution covers them, not by value. Given a candidate close to the behaviour
+policy it returns that candidate and is right. Given a candidate set containing
+no such policy, its argmax falls back to the candidate with least gradient mass
+in the design null space, which carries no information about value, and under a
+width schedule with governing exponent $e>0$ its regret then \emph{grows} with
+sample size while a plug-in built on the identical fits converges. We exhibit
+both halves on the same estimates over $20$ seeds: adding a behaviour clone to
+the candidate set cuts the failure by $5\times$ and removes it entirely at three
+of four sample sizes.
+
+Third, two ways the construction runs out. The calibrated regions standard in
+this line sit \emph{below} the sharp half-width, at ratio $0.22$ to $0.69$ across
+a $64\times$ range of $N$, so they do not cover the identified set. And the width
+rule itself becomes undefined once cross-fitting saturates: the usable horizon
+grows as $0.90\log N$, so each additional stage costs about $3\times$ the data.
+
+We report what these checks cost us. A behaviour-cloning baseline, the first
+external comparison in this line of work, beat the best of our hand-built
+candidates on $6$ of $6$ configurations and withdrew two claims we had previously
+made.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-Offline reinforcement learning from logged data is biased when the logging policy
-acted on latent state the learner never sees. Proximal causal inference gives a
-principled route out: with a \emph{negative control} variable, reward and
-transition models are identified through bridge functions solving conditional
-moment restrictions \citep{miao2018,tchetgen2020}, and this has been carried into
-sequential decision making both model-free \citep{shi2022,bennett2024} and
-model-based \citep{hong2024}.
+Offline reinforcement learning from logged data is hard when the logging policy
+saw more than the analyst does. In a confounded POMDP the behaviour policy
+depends on a latent state, so the observed action is not exogenous and ordinary
+off-policy evaluation is biased. Proximal causal inference supplies a repair: a
+pre-decision negative control $O_0$ acts as an instrument, and policy values are
+recovered through \emph{bridge functions} solved from conditional moment
+restrictions \citep{miao2018,tchetgen2020,hong2024}. Planning then proceeds
+pessimistically, by maximising a lower confidence bound over a region around the
+fitted bridge.
 
-Because the identified object is estimated, these methods plan
-\emph{pessimistically}: they build a confidence region around the fitted bridge
-$\bhat$ and evaluate a policy at its worst admissible member. For a value
-functional linear in the bridge block, the region is an ellipsoid and the inner
-minimum has the closed form
-\begin{equation}
-\Vlow \;=\; \langle g, \bhat\rangle - W,
-\qquad W = \sqrt{\xi}\,\lVert g \rVert_{H^{-1}},
-\label{eq:support}
-\end{equation}
-with $H = \hat{T}_2 + \lambda I$ the ridged stage-2 design and $\xi$ the region
-radius. The whole construction rests on a premise that is rarely stated: that $W$
-shrinks as $N$ grows, so the pessimistic value approaches the true one and
-selection eventually becomes correct.
+The construction has two moving parts that are usually discussed separately: an
+identification argument, which says the bridge exists and pins the value, and a
+statistical one, which says a region of a prescribed width covers it. Our
+question is what happens at the point where they meet, namely the
+\emph{decision}: the argmax over candidate policies of a pessimistic value.
 
-\paragraph{This paper.} We show the premise can fail, characterize exactly when,
-and locate an existing method inside that characterization.
+This turns out to be the interesting place to look, because the identification
+literature does inference on a single functional and stops there. Whether a
+pessimistic argmax over policies behaves sensibly when the functional is only
+partially identified is a separate question, and the answer is not what the
+inference results suggest.
 
-\begin{enumerate}\itemsep2pt \parskip0pt \topsep0pt
-\item \textbf{A schedule-free floor} (\cref{sec:floor}). Any width rule whose
-region covers the truth satisfies $W \ge \beta\beta_g$ at every $N$, where
-$\beta$ and $\beta_g$ are the null-space masses of the true bridge and of the
-value gradient. The proof is two lines and the regularizer cancels, so this is
-not a statement about a particular schedule --- it holds for all of them.
-\item \textbf{Two checkable switches} (\cref{sec:switches}). The floor is nonzero
-exactly when \emph{both} an inadequate negative control and genuine confounding
-are present. Incompleteness makes the truth leak but leaves the gradient inside
-the identified span; confounding makes the gradient leak but, under completeness,
-leaves the truth inside. Both conditions are assessable in advance, one from
-dimensions alone.
-\item \textbf{Where an existing schedule sits} (\cref{sec:placement}). Writing
-the schedule of \citet{hong2024} in our parametrization, its governing exponent
-is positive for every admissible smoothness parameter, so on the leaky branch the
-penalty it assigns \emph{grows} with $N$.
-\item \textbf{A decision-level consequence} (\cref{sec:decision}). In a design
-where both switches are on, over $20$ seeds, pessimistic and plug-in regret
-slopes have opposite signs and the two curves cross.
+\paragraph{What we contribute.}
+Three checks, each computable before or immediately after fitting, and the
+mechanism that ties them together.
+
+\begin{enumerate}
+\itemsep2pt
+\item \textbf{A separability test} (\cref{sec:gap}). The identified interval for a
+  policy's value has half-width exactly $\beta\beta_g$, and this is achieved, so
+  no valid region is narrower. Comparing $\beta\beta_g$ to the spread of the
+  candidate set decides in advance whether any valid pessimistic rule can
+  distinguish the best candidate from the worst. In $17$ of $20$ configurations
+  it cannot, at any sample size. \Cref{fig:sep}(a).
+
+\item \textbf{What pessimism actually ranks} (\cref{sec:mechanism}). It ranks
+  coverage. With a well-covered candidate present it returns that candidate; with
+  none it returns the minimum-null-mass candidate, whose value is arbitrary, and
+  under $e>0$ its regret grows with $N$ while the plug-in on the same fits
+  converges. \Cref{fig:mech}.
+
+\item \textbf{Two exhaustion points} (\cref{sec:exhaust}). Calibrated regions in
+  this line are \emph{narrower} than the identified set, so they are invalid
+  rather than conservative (\cref{fig:sep}(b)); and the width rule becomes
+  undefined at horizon $t^{\star}\approx 0.90\log N$, when cross-fitting
+  saturates.
 \end{enumerate}
 
-\paragraph{What we are not claiming.} \Cref{sec:scope} is explicit that the
-binding hypothesis fails under the anchor paper's own assumptions: completeness
-forces $\beta = 0$, and zero population gradient leakage is equivalent to a
-finite concentrability coefficient by that paper's own Lemma~C.1. Everything here
-is therefore a statement about what happens \emph{outside} those assumptions.
-That is the right question for a robustness study, and we label it as one rather
-than presenting it as a flaw.
+\paragraph{What is not new here.}
+The identification results this rests on are classical and we want that stated
+early rather than in a scope note. The identified set of a partially identified
+linear functional is the min-norm solution plus the operator's null space, and a
+functional is point-identified exactly when its gradient is orthogonal to that
+null space; both are standard in nonparametric instrumental variables
+\citep{florens2018,severini2012,santos2011}, which also observes that confidence
+regions fail to shrink under identification failure. The conditions under which
+history restores completeness are the classical finite-state HMM identifiability
+conditions \citep{allman2009,gassiat2016}. The dimension condition
+$|O_0|\ge|\mathcal{S}|$ is \citet[eq.~6]{ying2023}, and the stage-wise rank
+condition is a standing assumption in \citet{zhang2024}. \Cref{sec:known} states
+each correspondence.
+
+Our contribution is on the decision side, which neither literature addresses.
+
+\paragraph{On negative results.}
+Every claim in this paper was written down, committed, and only then measured;
+predictions that failed are reported as failures rather than removed. Two claims
+we previously made did not survive the addition of a behaviour-cloning baseline,
+and \cref{sec:limits} says which and why. We think that record is worth more than
+a cleaner-looking set of results, because the corrections were only found by
+running comparisons we had not run before.
+
 
 \section{Setting}
 \label{sec:setting}
@@ -157,7 +184,13 @@ confidence region is an exact ellipsoid,
 \quad H = \hat T_2 + \lambda I,
 \label{eq:region}
 \end{equation}
-and \cref{eq:support} is the standard support-function minimum. Write $\Nul$ for
+and for a value functional $V(b)=\langle g,b\rangle$ linear in the block the
+minimum over that region is the standard support-function expression
+\begin{equation}
+\Vlow = \langle g,\bhat\rangle - \sqrt{\xi}\,\lVert g\rVert_{H^{-1}} .
+\label{eq:support}
+\end{equation}
+Write $\Nul$ for
 the null space of $\hat T_2$, $\Pnul$ for the orthogonal projector onto it, and
 \begin{equation}
 \beta := \lVert \Pnul \btrue \rVert,
@@ -184,7 +217,27 @@ We further assume the fitted bridge is the minimum-norm solution, so
 $\Pnul \bhat = 0$. The ridge solve satisfies this exactly, to machine precision,
 on both solver paths we implement.
 
-\section{A Schedule-Free Floor}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/separability.pdf}
+\caption{\textbf{Two questions answerable before trusting a lower bound.}
+\textbf{(a)} The separability test, pure population algebra from the primitives:
+the identification gap $\beta\beta_g$ divided by the spread of the candidate set.
+Below the dashed line a valid region can in principle order the candidates; above
+it none can, at any sample size. The four configurations lie on parallel lines of
+slope $-1$, so horizon helps, but only $(4,6,2)$ crosses, and only at $T\ge6$.
+Note that $(4,6,2)$ at $T=3$, the grid used for the decision experiments in this
+paper and its predecessors, sits \emph{above} the line at $1.44$.
+\textbf{(b)} Whether the region actually used covers the identified set: the
+calibrated penalty divided by the sharp half-width. It stays below $1$ across a
+$64\times$ range of $N$, reaching only $0.69$, so these regions are invalid rather
+than conservative, and the schedule approaches validity from underneath.}
+\label{fig:sep}
+\end{figure*}
+
+\section{The Identification Gap, and a Test You Can Run First}
+\label{sec:gap}
 \label{sec:floor}
 
 \begin{proposition}[Floor]
@@ -228,7 +281,7 @@ breaks $\Pnul\bhat=0$), using a non-ellipsoidal region (which breaks the support
 identity), or arranging $\beta\beta_g = 0$. The third is the practical one, and
 \cref{sec:switches} is about when it holds.
 
-\section{Two Checkable Switches}
+\section{When the Gap Is Nonzero}
 \label{sec:switches}
 
 The floor is a product. It vanishes if either factor does, so the useful question
@@ -512,7 +565,8 @@ design, and four schedules including this one give $0.000$ regret at every $N$
 tested. \Cref{cor:epaper} is a statement about the boundary of applicability, and
 it is one the original analysis does not make.
 
-\subsection{What is not new here}
+\section{What Is Already Known}
+\label{sec:known}
 \label{sec:not-new}
 
 \Cref{cor:dichotomy} is not a new phenomenon. It is Tikhonov source-condition
@@ -552,7 +606,26 @@ corrects a dichotomy we previously asserted: conditioning enters as
 $\sqrt{\mathrm{cond}(H)}$ on exactly equal footing with alignment, and the
 penalty is their product. Details in \cref{app:identity}.
 
-\section{A Decision-Level Consequence}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/mechanism.pdf}
+\caption{\textbf{Pessimism ranks coverage, not value.} Identical environment,
+identical fits, identical code path; the panels differ only in whether the
+candidate set contains a policy the logging distribution covers well.
+\textbf{(a)} Six hand-built candidates, none close to the behaviour policy. The
+pessimistic selector's regret \emph{rises} with $N$ while a plug-in built on the
+same estimates falls to zero: the argmax has fallen back to the minimum-null-mass
+candidate, whose value is arbitrary, and the growing penalty entrenches it.
+\textbf{(b)} The behaviour clone added as a seventh candidate. Every arm now
+finds it; the pessimistic selector is exactly right at the three smaller sample
+sizes and degrades only at the largest. Bands are $95\%$ intervals over $20$
+seeds. Neither panel alone is the result. The pair is.}
+\label{fig:mech}
+\end{figure*}
+
+\section{What Pessimism Actually Ranks}
+\label{sec:mechanism}
 \label{sec:decision}
 
 A growing width matters only if it changes which policy is selected. We test that
@@ -600,7 +673,10 @@ have \emph{opposite signs} ($+0.0220$ against $-0.0210$ for schedule C, and
 $+0.0135$ against $-0.0288$ for the anchor schedule). More data converges the
 plug-in and diverges the pessimistic selection built on the same estimates.
 
-\section{Scope: What This Does and Does Not Establish}
+\section{Where the Construction Runs Out}
+\label{sec:exhaust}
+
+\section{Scope}
 \label{sec:scope}
 
 \paragraph{Does not.} The binding hypothesis is $\beta\beta_g > 0$, and both

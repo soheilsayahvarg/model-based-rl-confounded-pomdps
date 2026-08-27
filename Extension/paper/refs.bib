@@ -1,83 +1,145 @@
+% Bibliography for the Extension paper.
+%
+% Entries are deliberately minimal: authors, title, venue, year, and an arXiv id
+% where one was verified directly. Page numbers and volume/issue are given only
+% where they were checked against the source during the novelty searches; the
+% rest are omitted rather than guessed.
+
 @inproceedings{hong2024,
-  title     = {Model-based Reinforcement Learning for Confounded {POMDP}s},
   author    = {Hong, Mao and Qi, Zhengling and Xu, Yanxun},
+  title     = {A Policy Gradient Method for Confounded {POMDP}s},
   booktitle = {International Conference on Machine Learning (ICML)},
-  year      = {2024}
-}
-
-@inproceedings{shi2022,
-  title     = {A Minimax Learning Approach to Off-Policy Evaluation in Confounded Partially Observable {M}arkov Decision Processes},
-  author    = {Shi, Chengchun and Uehara, Masatoshi and Huang, Jiawei and Jiang, Nan},
-  booktitle = {International Conference on Machine Learning (ICML)},
-  year      = {2022}
-}
-
-@article{bennett2024,
-  title   = {Proximal Reinforcement Learning: Efficient Off-Policy Evaluation in Partially Observed {M}arkov Decision Processes},
-  author  = {Bennett, Andrew and Kallus, Nathan},
-  journal = {Operations Research},
-  year    = {2024}
-}
-
-@inproceedings{guo2022,
-  title     = {Provably Efficient Offline Reinforcement Learning for Partially Observable {M}arkov Decision Processes},
-  author    = {Guo, Hongyi and Cai, Qi and Yang, Zhuoran and Wang, Zhaoran},
-  booktitle = {International Conference on Machine Learning (ICML)},
-  year      = {2022}
-}
-
-@inproceedings{oberst2019,
-  title     = {Counterfactual Off-Policy Evaluation with {G}umbel-Max Structural Causal Models},
-  author    = {Oberst, Michael and Sontag, David},
-  booktitle = {International Conference on Machine Learning (ICML)},
-  year      = {2019}
-}
-
-@inproceedings{mastouri2021,
-  title     = {Proximal Causal Learning with Kernels: Two-Stage Estimation and Moment Restriction},
-  author    = {Mastouri, Afsaneh and Zhu, Yuchen and Gultchin, Limor and Korba, Anna and Silva, Ricardo and Kusner, Matt and Gretton, Arthur and Muandet, Krikamol},
-  booktitle = {International Conference on Machine Learning (ICML)},
-  year      = {2021}
+  year      = {2024},
+  note      = {Anchor paper for this work: model-based reinforcement learning
+               for confounded POMDPs via bridge functions and pessimism}
 }
 
 @article{miao2018,
-  title   = {Identifying Causal Effects with Proxy Variables of an Unmeasured Confounder},
   author  = {Miao, Wang and Geng, Zhi and Tchetgen Tchetgen, Eric J.},
+  title   = {Identifying causal effects with proxy variables of an unmeasured
+             confounder},
   journal = {Biometrika},
   volume  = {105},
   number  = {4},
-  pages   = {987--993},
   year    = {2018}
 }
 
 @article{tchetgen2020,
+  author  = {Tchetgen Tchetgen, Eric J. and Ying, Andrew and Cui, Yifan and
+             Shi, Xu and Miao, Wang},
   title   = {An Introduction to Proximal Causal Learning},
-  author  = {Tchetgen Tchetgen, Eric J. and Ying, Andrew and Cui, Yifan and Shi, Xu and Miao, Wang},
   journal = {arXiv preprint arXiv:2009.10982},
   year    = {2020}
 }
 
-@article{venkatesh2026,
-  title   = {Cross-fitted Proximal Learning for Model-Based Reinforcement Learning},
-  author  = {Venkatesh, Viswanath and Malikopoulos, Andreas},
-  journal = {arXiv preprint arXiv:2604.05185},
-  year    = {2026}
+@article{ying2023,
+  author  = {Ying, Andrew and Miao, Wang and Shi, Xu and
+             Tchetgen Tchetgen, Eric J.},
+  title   = {Proximal Causal Inference for Complex Longitudinal Studies},
+  journal = {Journal of the Royal Statistical Society, Series B},
+  volume  = {85},
+  number  = {3},
+  year    = {2023},
+  note    = {arXiv:2109.07030. Equation (6) states the dimension condition
+             $\min(d_z,d_w)\ge d_u$ for completeness}
+}
+
+@article{zhang2024,
+  author  = {Zhang, Yuheng and Jiang, Nan},
+  title   = {On the Curses of Future and History in Future-dependent Value
+             Functions for Off-policy Evaluation},
+  journal = {arXiv preprint arXiv:2402.14703},
+  year    = {2024},
+  note    = {Assumption 2 (Invertibility) is the stage-wise rank condition}
+}
+
+@article{uehara2022,
+  author  = {Uehara, Masatoshi and Kiyohara, Haruka and Bennett, Andrew and
+             Chernozhukov, Victor and Jiang, Nan and Kallus, Nathan and
+             Shi, Chengchun and Sun, Wen},
+  title   = {Future-Dependent Value-Based Off-Policy Evaluation in {POMDP}s},
+  journal = {arXiv preprint arXiv:2207.13081},
+  year    = {2022}
+}
+
+@article{allman2009,
+  author  = {Allman, Elizabeth S. and Matias, Catherine and Rhodes, John A.},
+  title   = {Identifiability of parameters in latent structure models with many
+             observed variables},
+  journal = {The Annals of Statistics},
+  volume  = {37},
+  number  = {6A},
+  year    = {2009}
+}
+
+@article{gassiat2016,
+  author  = {Gassiat, Elisabeth and Cleynen, Alice and Robin, St\'ephane},
+  title   = {Inference in finite state space non parametric hidden {M}arkov
+             models and applications},
+  journal = {Statistics and Computing},
+  volume  = {26},
+  year    = {2016}
+}
+
+@article{florens2018,
+  author  = {Florens, Jean-Pierre and Simoni, Anna},
+  title   = {Is Completeness Necessary? Estimation in Nonidentified Linear
+             Models},
+  journal = {arXiv preprint arXiv:1709.03473},
+  year    = {2018},
+  note    = {The identified set is the closed linear manifold
+             $I_0 = \varphi + N(K)$}
+}
+
+@article{severini2012,
+  author  = {Severini, Thomas A. and Tripathi, Gautam},
+  title   = {Efficiency bounds for estimating linear functionals of
+             nonparametric regression models with endogenous regressors},
+  journal = {Journal of Econometrics},
+  volume  = {170},
+  number  = {2},
+  year    = {2012}
+}
+
+@article{santos2011,
+  author  = {Santos, Andres},
+  title   = {Instrumental variable methods for recovering continuous linear
+             functionals},
+  journal = {Journal of Econometrics},
+  volume  = {161},
+  number  = {2},
+  year    = {2011}
+}
+
+@inproceedings{jin2021,
+  author    = {Jin, Ying and Yang, Zhuoran and Wang, Zhaoran},
+  title     = {Is Pessimism Provably Efficient for Offline {RL}?},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2021}
+}
+
+@inproceedings{rashidinejad2021,
+  author    = {Rashidinejad, Paria and Zhu, Banghua and Ma, Cong and
+               Jiao, Jiantao and Russell, Stuart},
+  title     = {Bridging Offline Reinforcement Learning and Imitation Learning:
+               A Tale of Pessimism},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2021}
+}
+
+@article{engl1996,
+  author    = {Engl, Heinz W. and Hanke, Martin and Neubauer, Andreas},
+  title     = {Regularization of Inverse Problems},
+  journal   = {Kluwer Academic Publishers},
+  year      = {1996},
+  note      = {Tikhonov source conditions and the resulting rate dichotomy}
 }
 
 @article{caponnetto2007,
-  title   = {Optimal Rates for the Regularized Least-Squares Algorithm},
   author  = {Caponnetto, Andrea and De Vito, Ernesto},
+  title   = {Optimal Rates for the Regularized Least-Squares Algorithm},
   journal = {Foundations of Computational Mathematics},
   volume  = {7},
   number  = {3},
-  pages   = {331--368},
   year    = {2007}
-}
-
-@article{james1961,
-  title   = {Estimation with Quadratic Loss},
-  author  = {James, W. and Stein, Charles},
-  journal = {Proceedings of the Fourth Berkeley Symposium on Mathematical Statistics and Probability},
-  pages   = {361--379},
-  year    = {1961}
 }
