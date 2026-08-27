@@ -227,3 +227,72 @@ finding about our own experiments that had to surface eventually.
 Section 6 stands: **the novelty of identifying the pessimism floor with a
 partial-identification half-width has not been checked.** Three for three on
 rediscovery so far. Nothing should be built on this before that search.
+
+---
+
+## 8. CORRECTION to P-C4: the ratio compared two different objects
+
+**Written before re-measuring. Section 7 is left exactly as it was.**
+
+P-C4 divided `pen_bR_t1` by `floor = beta * beta_g` and read the result as an
+overpayment ratio. Checking the two definitions against each other, they are not
+commensurable.
+
+| quantity | space | units | null space used |
+|---|---|---|---|
+| `pen_bR_t1 = sqrt(xi) * \|\|g\|\|_{H^-1}` | empirical coefficient space, `R^144` | **value** | empirical `T_2` null, dim `96` |
+| `beta = \|\|P_Nul b_true_a\|\|_F` | per-action bridge tensor, `R^{6x2x6}` | **bridge** | population per-action null in `R^6` |
+| `beta_g = \|\|P_Nul nu1\|\| / \|\|nu1\|\|` | `R^6` | **dimensionless** | same population null |
+
+So `floor` is an absolute bridge norm times a dimensionless fraction, carrying
+bridge units, and it is built on the population null in `R^6`. The penalty
+carries value units and is built on the empirical null in `R^144`. Their ratio
+is not a ratio of widths, and **"the regions are narrower than the sharp
+identified set, therefore invalid" does not follow from it.**
+
+This is the same two-null-spaces confusion that P11 exposed, resurfacing one
+layer up. Sixth instance of the recurring failure mode: comparing two objects
+that live in different spaces because they share a name.
+
+### The coherent comparison
+
+Section 2 gives `HW = beta_g * sqrt(M^2 - ||b_hat||^2)`, and at the tight
+class `M = ||b_true||` the square root is `||P_Nul b_true||`. Specialised
+to one block, with **both** factors absolute and **both** projectors onto the
+null the pessimism layer actually inverts:
+
+    HW_t1 = || U^T b_true_t1 ||  *  || U^T g_t1 ||
+
+`U` from `null_basis(H, lam2)` on the t=1 reward block, `b_true_t1` the true
+reward bridge in the estimator's flat coefficient layout, `g_t1` the plug-in
+value gradient for that block. The product is in value units. Validity of that
+block's region requires
+
+    pen_bR_t1  >=  HW_t1
+
+Note what `conservative_frac = 1.0` does and does not say. It says the lower
+bound sits below the **true** value in every cell. It does not say the region
+covers every observationally equivalent bridge. `pen < HW` is consistent with
+both.
+
+### Predictions
+
+- **P-C6.** `HW_t1 > pen_bR_t1` at every `N` on the grid, so P-C4's conclusion
+  survives the correction in sign: the t=1 region does not cover the identified
+  set.
+- **P-C7.** The corrected ratio is **smaller** than the incoherent one at every
+  `N` (the defect flattered the region), and at `N = 128,000` it is below `0.5`
+  rather than `0.938`.
+- **P-C8.** `HW_t1` is near-constant in `N`, relative spread below `20%` once the
+  empirical null dimension has settled at `96` (`N >= 8,000`), because the gap is
+  a population quantity and only its null-space estimate is finite-sample.
+- **P-C9.** `pen_bR_t1 / HW_t1` still climbs, at a log-log slope close to the
+  `+0.1812` width slope, since P-C8 makes the denominator constant.
+
+**P-C6 is load-bearing.** If `HW_t1 < pen_bR_t1` the t=1 regions are valid after
+all, and the invalidity claim must be **withdrawn**, not merely re-derived. It is
+currently a row in `novelty_check.md`'s "what is actually unexplored" table, so
+it is load-bearing there too.
+
+### Measurement
+
