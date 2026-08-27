@@ -351,3 +351,22 @@ is unexplained.** Two candidates (concentration at `1/sqrt(k_excl)`, and a share
 positive component surviving `P_excl`) were both formed after seeing these
 numbers and neither is tested. `(3,7,5)` at cf `0.9` also shows an unexplained
 five-fold penalty jump between `N = 8,000` and `32,000`.
+
+## Tier 2: scale, and the first baseline this project has ever run
+
+`scale_and_baselines.md`.
+
+| claim | status | evidence |
+|---|---|---|
+| The `T = 3` cap was a property of the method | **refuted -- an indexing choice** | the stage-1 tables were allocated over the full cartesian alphabet `|A|(|O||A|)^(t-1)|O_0|`; `x` takes at most `N` distinct values. Compacting lifts it |
+| The compacted estimator is the same estimator | **verified exact** | `0.000e+00` worst absolute difference on `b_R`, `b_D`, every `H`, `b_hat_vec` and `lam2`, over `20` comparisons including `T = 4` |
+| P-L7: `floor/spread` grows with `T` | **refuted, 0 of 4** | `cor:dilution` reproduces exactly: floor constant in `T` to `10` decimals, ratio log-log slope `-0.97` to `-1.21` |
+| **P-L6: the identification gap exceeds the entire value spread** | **holds, 17 of 20 cells** | including `(4,6,2)` at `T = 3` at ratio `1.445`, the configuration every decision result in this project used. **No valid pessimistic rule could have ordered those candidates at any `N`** |
+| The failure is only infeasibility | **no** | at `T = 6` the same config has ratio `0.687`, separation is feasible, and the pessimistic slope nearly doubles to `+0.0387` while plug-in goes to `-0.0379`. Feasibility does not rescue the selector |
+| Behaviour cloning is worse than our best candidate | **refuted, 0 of 6** | BC wins on every configuration tested, by `0.0009` at `(4,6,2)` `T=3` and by `0.3775` at Environment L, which is `95%` of the spread |
+
+The `T = 6` row is what keeps the project alive. Without it, P-L6 would say the
+whole line of work measured an infeasible grid. With it, the statement is:
+
+> Where separation is impossible, pessimism fails necessarily. Where separation
+> becomes possible, pessimism fails anyway, and harder.
