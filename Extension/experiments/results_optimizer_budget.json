@@ -1,0 +1,1125 @@
+{
+  "source_records": "results_learned_bc.json",
+  "source_sha256": "8d22f771fd02d92ce2ea143939ecc7bf8940ffb05ee823686888e356e058d301",
+  "environment_seed": 0,
+  "N": 128000,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "candidates": [
+    "greedy_lo",
+    "greedy_hi",
+    "always_0",
+    "always_1",
+    "uniform",
+    "soft",
+    "learned_bc"
+  ],
+  "c_multiplier": 4.151795352832782e-06,
+  "baseline_budget": {
+    "max_sweeps": 30,
+    "n_restarts": 3,
+    "tol": 1e-11,
+    "rng_seed": 0
+  },
+  "enhanced_budget": {
+    "max_sweeps": 150,
+    "n_restarts": 30,
+    "tol": 1e-11,
+    "rng_seed": "trajectory seed + 1000"
+  },
+  "versions": {
+    "python": "3.12.14",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1"
+  },
+  "interpretation": "Optimization sensitivity diagnostic; no certificate of global optimality.",
+  "summary": {
+    "fits": 20,
+    "candidate_evaluations": 140,
+    "changed_six": 0,
+    "changed_learned": 0,
+    "max_abs_score_change": 1.1358223250823585e-09
+  },
+  "records": [
+    {
+      "N": 128000,
+      "seed": 0,
+      "scores": {
+        "greedy_lo": 0.2698189054341387,
+        "greedy_hi": 0.25296918006688995,
+        "always_0": -0.44317703723803886,
+        "always_1": 0.07001655103696358,
+        "uniform": 0.4801518871236447,
+        "soft": 0.42930303398455505,
+        "learned_bc": 0.5300810430291258
+      },
+      "original_scores": {
+        "greedy_lo": 0.2698189054341318,
+        "greedy_hi": 0.25296918006687485,
+        "always_0": -0.443177037237934,
+        "always_1": 0.07001655103729143,
+        "uniform": 0.48015188712391854,
+        "soft": 0.4293030339845907,
+        "learned_bc": 0.5300810430291335
+      },
+      "score_changes": {
+        "greedy_lo": 6.938893903907228e-15,
+        "greedy_hi": 1.509903313490213e-14,
+        "always_0": -1.0486056467584604e-13,
+        "always_1": -3.2784885917180873e-13,
+        "uniform": -2.7383650902379486e-13,
+        "soft": -3.5638159090467525e-14,
+        "learned_bc": -7.66053886991358e-15
+      },
+      "restart_gaps": {
+        "greedy_lo": 1.308619879125672e-12,
+        "greedy_hi": 1.0972334152370422e-12,
+        "always_0": 1.0740297540223764e-12,
+        "always_1": 2.94186897065174e-12,
+        "uniform": 1.2365664048274994e-12,
+        "soft": 1.1567413693569506e-12,
+        "learned_bc": 9.319212068703564e-13
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 3.2784885917180873e-13
+    },
+    {
+      "N": 128000,
+      "seed": 1,
+      "scores": {
+        "greedy_lo": 0.42322431082240347,
+        "greedy_hi": 0.38117982617258206,
+        "always_0": -0.08268260463014526,
+        "always_1": 0.185735254138216,
+        "uniform": 0.6099524072064367,
+        "soft": 0.5690700262522722,
+        "learned_bc": 0.6785666766736442
+      },
+      "original_scores": {
+        "greedy_lo": 0.4232243108226119,
+        "greedy_hi": 0.38117982617263435,
+        "always_0": -0.08268260463004545,
+        "always_1": 0.1857352541382576,
+        "uniform": 0.60995240720659,
+        "soft": 0.5690700262524792,
+        "learned_bc": 0.6785666766740268
+      },
+      "score_changes": {
+        "greedy_lo": -2.0844437287337314e-13,
+        "greedy_hi": -5.229150445984487e-14,
+        "always_0": -9.980904991380157e-14,
+        "always_1": -4.157785227221211e-14,
+        "uniform": -1.5332179970073412e-13,
+        "soft": -2.0694557179012918e-13,
+        "learned_bc": -3.8258285428582894e-13
+      },
+      "restart_gaps": {
+        "greedy_lo": 2.821354261328679e-12,
+        "greedy_hi": 3.08530978543331e-13,
+        "always_0": 6.419309528382655e-13,
+        "always_1": 1.1068368444000498e-12,
+        "uniform": 8.625322678312841e-13,
+        "soft": 1.546096584092993e-12,
+        "learned_bc": 3.042455176682779e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 3.8258285428582894e-13
+    },
+    {
+      "N": 128000,
+      "seed": 2,
+      "scores": {
+        "greedy_lo": 0.42643748648173546,
+        "greedy_hi": 0.36679975118046193,
+        "always_0": -0.1602141995552459,
+        "always_1": 0.2750621523362167,
+        "uniform": 0.5977088149702913,
+        "soft": 0.5621175419341432,
+        "learned_bc": 0.6723399358043349
+      },
+      "original_scores": {
+        "greedy_lo": 0.4264374864820768,
+        "greedy_hi": 0.36679975118067126,
+        "always_0": -0.1602141995551144,
+        "always_1": 0.2750621523363256,
+        "uniform": 0.5977088149704203,
+        "soft": 0.5621175419343224,
+        "learned_bc": 0.6723399358044936
+      },
+      "score_changes": {
+        "greedy_lo": -3.413380689210044e-13,
+        "greedy_hi": -2.0933255129307327e-13,
+        "always_0": -1.315059172668498e-13,
+        "always_1": -1.088573675644966e-13,
+        "uniform": -1.290079154614432e-13,
+        "soft": -1.7918999617450027e-13,
+        "learned_bc": -1.5865087021893487e-13
+      },
+      "restart_gaps": {
+        "greedy_lo": 1.6724399642953358e-12,
+        "greedy_hi": 1.133149130083666e-12,
+        "always_0": 2.167710455580618e-12,
+        "always_1": 6.454281553658348e-13,
+        "uniform": 1.3509193763638905e-12,
+        "soft": 1.3981038549104596e-12,
+        "learned_bc": 1.3278267374516872e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 3.413380689210044e-13
+    },
+    {
+      "N": 128000,
+      "seed": 3,
+      "scores": {
+        "greedy_lo": 0.17232624964915721,
+        "greedy_hi": 0.21091083540263011,
+        "always_0": -0.6163910468586886,
+        "always_1": 0.07575608511210413,
+        "uniform": 0.41254712784004954,
+        "soft": 0.3478919145387546,
+        "learned_bc": 0.4426320283069235
+      },
+      "original_scores": {
+        "greedy_lo": 0.17232624964917048,
+        "greedy_hi": 0.21091083540263342,
+        "always_0": -0.6163910468586612,
+        "always_1": 0.07575608511211451,
+        "uniform": 0.4125471278401629,
+        "soft": 0.34789191453875534,
+        "learned_bc": 0.44263202830692683
+      },
+      "score_changes": {
+        "greedy_lo": -1.326716514427062e-14,
+        "greedy_hi": -3.3029134982598407e-15,
+        "always_0": -2.7422508708241367e-14,
+        "always_1": -1.0380585280245214e-14,
+        "uniform": -1.1335377081422848e-13,
+        "soft": -7.216449660063518e-16,
+        "learned_bc": -3.3306690738754696e-15
+      },
+      "restart_gaps": {
+        "greedy_lo": 2.326749903858172e-13,
+        "greedy_hi": 2.476907567938724e-13,
+        "always_0": 3.254063685176334e-13,
+        "always_1": 1.6553425297161084e-13,
+        "uniform": 2.113864638886298e-13,
+        "soft": 2.586264535864302e-13,
+        "learned_bc": 3.0636604364531195e-13
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 1.1335377081422848e-13
+    },
+    {
+      "N": 128000,
+      "seed": 4,
+      "scores": {
+        "greedy_lo": 0.07080579569743416,
+        "greedy_hi": 0.06071149240818882,
+        "always_0": -0.8804446960064198,
+        "always_1": -0.04670056258252364,
+        "uniform": 0.3411640658577822,
+        "soft": 0.27536636632080536,
+        "learned_bc": 0.3207369435943647
+      },
+      "original_scores": {
+        "greedy_lo": 0.07080579569793741,
+        "greedy_hi": 0.060711492408492815,
+        "always_0": -0.8804446960064081,
+        "always_1": -0.04670056258223243,
+        "uniform": 0.3411640658579622,
+        "soft": 0.2753663663215831,
+        "learned_bc": 0.3207369435948468
+      },
+      "score_changes": {
+        "greedy_lo": -5.032502192747756e-13,
+        "greedy_hi": -3.039929419301757e-13,
+        "always_0": -1.176836406102666e-14,
+        "always_1": -2.9121149935917856e-13,
+        "uniform": -1.8002266344296913e-13,
+        "soft": -7.777667399011534e-13,
+        "learned_bc": -4.82058837292243e-13
+      },
+      "restart_gaps": {
+        "greedy_lo": 2.0920071230889903e-12,
+        "greedy_hi": 2.2343793482093588e-12,
+        "always_0": 2.2246648967438887e-12,
+        "always_1": 1.9430013153964865e-12,
+        "uniform": 1.9245161020364776e-12,
+        "soft": 2.0142776335774215e-12,
+        "learned_bc": 2.41184849869569e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "uniform"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "uniform"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 7.777667399011534e-13
+    },
+    {
+      "N": 128000,
+      "seed": 5,
+      "scores": {
+        "greedy_lo": 0.22521096978156596,
+        "greedy_hi": 0.25420403313555917,
+        "always_0": -0.40405239240769747,
+        "always_1": 0.07824463459319325,
+        "uniform": 0.45800774601252414,
+        "soft": 0.3961163017437248,
+        "learned_bc": 0.4921102921919413
+      },
+      "original_scores": {
+        "greedy_lo": 0.22521096978156294,
+        "greedy_hi": 0.2542040331355608,
+        "always_0": -0.4040523924076803,
+        "always_1": 0.07824463459320458,
+        "uniform": 0.4580077460125283,
+        "soft": 0.3961163017437244,
+        "learned_bc": 0.49211029219195734
+      },
+      "score_changes": {
+        "greedy_lo": 3.0253577421035516e-15,
+        "greedy_hi": -1.609823385706477e-15,
+        "always_0": -1.715294573045867e-14,
+        "always_1": -1.1324274851176597e-14,
+        "uniform": -4.163336342344337e-15,
+        "soft": 3.885780586188048e-16,
+        "learned_bc": -1.6042722705833512e-14
+      },
+      "restart_gaps": {
+        "greedy_lo": 1.4066525722000733e-13,
+        "greedy_hi": 1.6464607455191071e-13,
+        "always_0": 6.670775043460253e-13,
+        "always_1": 1.3627987627273797e-13,
+        "uniform": 1.3811174426336947e-13,
+        "soft": 1.7352785874891197e-13,
+        "learned_bc": 2.338684801372892e-13
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 1.715294573045867e-14
+    },
+    {
+      "N": 128000,
+      "seed": 6,
+      "scores": {
+        "greedy_lo": 0.3090446338020567,
+        "greedy_hi": 0.30448711435183695,
+        "always_0": -0.4032632149133368,
+        "always_1": 0.2583762157662083,
+        "uniform": 0.5152703070065845,
+        "soft": 0.46546303624049157,
+        "learned_bc": 0.5534307515538116
+      },
+      "original_scores": {
+        "greedy_lo": 0.3090446338021071,
+        "greedy_hi": 0.3044871143518394,
+        "always_0": -0.4032632149133305,
+        "always_1": 0.2583762157669151,
+        "uniform": 0.5152703070066686,
+        "soft": 0.4654630362405407,
+        "learned_bc": 0.5534307515538234
+      },
+      "score_changes": {
+        "greedy_lo": -5.040412531798211e-14,
+        "greedy_hi": -2.4424906541753444e-15,
+        "always_0": -6.2727600891321345e-15,
+        "always_1": -7.068234886276059e-13,
+        "uniform": -8.415490526658687e-14,
+        "soft": -4.912736883966318e-14,
+        "learned_bc": -1.176836406102666e-14
+      },
+      "restart_gaps": {
+        "greedy_lo": 6.369349492274523e-13,
+        "greedy_hi": 1.1027290192089367e-12,
+        "always_0": 7.289169268176465e-13,
+        "always_1": 4.402755937604752e-12,
+        "uniform": 6.77347067323808e-13,
+        "soft": 5.087041898832467e-13,
+        "learned_bc": 5.176969963827105e-13
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 7.068234886276059e-13
+    },
+    {
+      "N": 128000,
+      "seed": 7,
+      "scores": {
+        "greedy_lo": 0.07162963839784493,
+        "greedy_hi": 0.06063751944627559,
+        "always_0": -0.7113246546877895,
+        "always_1": -0.2914611161873163,
+        "uniform": 0.3468901660404617,
+        "soft": 0.27918189861965187,
+        "learned_bc": 0.3057573722685575
+      },
+      "original_scores": {
+        "greedy_lo": 0.07162963839788865,
+        "greedy_hi": 0.06063751944645221,
+        "always_0": -0.7113246546862926,
+        "always_1": -0.2914611161873155,
+        "uniform": 0.3468901660405375,
+        "soft": 0.2791818986198991,
+        "learned_bc": 0.30575737226835825
+      },
+      "score_changes": {
+        "greedy_lo": -4.371503159461554e-14,
+        "greedy_hi": -1.766226054300546e-13,
+        "always_0": -1.4969137041020986e-12,
+        "always_1": -7.771561172376096e-16,
+        "uniform": -7.582823258189819e-14,
+        "soft": -2.4724666758402236e-13,
+        "learned_bc": 1.9922952176898434e-13
+      },
+      "restart_gaps": {
+        "greedy_lo": 2.088357264895535e-12,
+        "greedy_hi": 1.8397228185307313e-12,
+        "always_0": 4.6991299740284376e-12,
+        "always_1": 9.242606680004428e-13,
+        "uniform": 1.8069989948799048e-12,
+        "soft": 1.7561507803520726e-12,
+        "learned_bc": 2.1053159215966843e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "uniform"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "uniform"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 1.4969137041020986e-12
+    },
+    {
+      "N": 128000,
+      "seed": 8,
+      "scores": {
+        "greedy_lo": 0.5453519579930033,
+        "greedy_hi": 0.502620490427478,
+        "always_0": -0.16398770137262253,
+        "always_1": 0.5919822113804448,
+        "uniform": 0.7110153848786329,
+        "soft": 0.6746069482971356,
+        "learned_bc": 0.7872803327514482
+      },
+      "original_scores": {
+        "greedy_lo": 0.5453519579919837,
+        "greedy_hi": 0.5026204904274925,
+        "always_0": -0.16398770137268792,
+        "always_1": 0.5919822113804598,
+        "uniform": 0.7110153848790124,
+        "soft": 0.6746069482977775,
+        "learned_bc": 0.7872803327515646
+      },
+      "score_changes": {
+        "greedy_lo": 1.0196288258157438e-12,
+        "greedy_hi": -1.4432899320127035e-14,
+        "always_0": 6.539213615042172e-14,
+        "always_1": -1.4988010832439613e-14,
+        "uniform": -3.794742298168785e-13,
+        "soft": -6.41819930535803e-13,
+        "learned_bc": -1.1646239528317892e-13
+      },
+      "restart_gaps": {
+        "greedy_lo": 4.132916231469608e-12,
+        "greedy_hi": 1.95110594347625e-12,
+        "always_0": 3.2658320492373605e-12,
+        "always_1": 1.4648282586904315e-12,
+        "uniform": 3.1536995237502197e-12,
+        "soft": 3.713584995068686e-12,
+        "learned_bc": 3.580247209811205e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 1.0196288258157438e-12
+    },
+    {
+      "N": 128000,
+      "seed": 9,
+      "scores": {
+        "greedy_lo": 0.3777528079668521,
+        "greedy_hi": 0.3404728719779,
+        "always_0": -0.24864741013119324,
+        "always_1": 0.15519566111135963,
+        "uniform": 0.5743470322965523,
+        "soft": 0.5284419616650734,
+        "learned_bc": 0.6044700681864821
+      },
+      "original_scores": {
+        "greedy_lo": 0.37775280796696065,
+        "greedy_hi": 0.3404728719778999,
+        "always_0": -0.2486474101310564,
+        "always_1": 0.15519566111140914,
+        "uniform": 0.5743470322967215,
+        "soft": 0.5284419616650726,
+        "learned_bc": 0.6044700681865556
+      },
+      "score_changes": {
+        "greedy_lo": -1.0852430065710905e-13,
+        "greedy_hi": 1.1102230246251565e-16,
+        "always_0": -1.3683498778505054e-13,
+        "always_1": -4.951594689828198e-14,
+        "uniform": -1.6919798895287386e-13,
+        "soft": 7.771561172376096e-16,
+        "learned_bc": -7.349676423018536e-14
+      },
+      "restart_gaps": {
+        "greedy_lo": 1.7630896742559798e-12,
+        "greedy_hi": 5.425104809830827e-13,
+        "always_0": 1.2069512056456233e-12,
+        "always_1": 1.3913870056114774e-12,
+        "uniform": 7.679412661332208e-13,
+        "soft": 1.0903500324843662e-12,
+        "learned_bc": 1.0097478408965799e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 1.6919798895287386e-13
+    },
+    {
+      "N": 128000,
+      "seed": 10,
+      "scores": {
+        "greedy_lo": 0.3937158968967803,
+        "greedy_hi": 0.3444481848950288,
+        "always_0": -0.2213815692627672,
+        "always_1": 0.2550938626716056,
+        "uniform": 0.5647514699305275,
+        "soft": 0.5266658584872246,
+        "learned_bc": 0.6678932687447844
+      },
+      "original_scores": {
+        "greedy_lo": 0.3937158968967023,
+        "greedy_hi": 0.3444481848953495,
+        "always_0": -0.221381569260665,
+        "always_1": 0.2550938626720932,
+        "uniform": 0.5647514699310703,
+        "soft": 0.52666585848771,
+        "learned_bc": 0.6678932695227107
+      },
+      "score_changes": {
+        "greedy_lo": 7.80486786311485e-14,
+        "greedy_hi": -3.2068792066297647e-13,
+        "always_0": -2.102207297127734e-12,
+        "always_1": -4.876099524153688e-13,
+        "uniform": -5.42788036739239e-13,
+        "soft": -4.853895063661184e-13,
+        "learned_bc": -7.77926278949792e-10
+      },
+      "restart_gaps": {
+        "greedy_lo": 3.063993503360507e-12,
+        "greedy_hi": 2.351563388458544e-12,
+        "always_0": 5.532518887463311e-12,
+        "always_1": 0.00038713129250722567,
+        "uniform": 2.6976199052342054e-12,
+        "soft": 2.9820590441431705e-12,
+        "learned_bc": 0.0005520078483965962
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 7.77926278949792e-10
+    },
+    {
+      "N": 128000,
+      "seed": 11,
+      "scores": {
+        "greedy_lo": 0.32294712257378555,
+        "greedy_hi": 0.31848351342694703,
+        "always_0": -0.3775269711297011,
+        "always_1": 0.27962324577996867,
+        "uniform": 0.5273300985585856,
+        "soft": 0.4771406366132326,
+        "learned_bc": 0.5785508415347824
+      },
+      "original_scores": {
+        "greedy_lo": 0.3229471225740457,
+        "greedy_hi": 0.3184835134269491,
+        "always_0": -0.377526971129681,
+        "always_1": 0.279623245779971,
+        "uniform": 0.5273300985586464,
+        "soft": 0.4771406366132871,
+        "learned_bc": 0.5785508415352866
+      },
+      "score_changes": {
+        "greedy_lo": -2.601252546696742e-13,
+        "greedy_hi": -2.0539125955565396e-15,
+        "always_0": -2.015054789694659e-14,
+        "always_1": -2.3314683517128287e-15,
+        "uniform": -6.084022174945858e-14,
+        "soft": -5.4511950509095186e-14,
+        "learned_bc": -5.041522754822836e-13
+      },
+      "restart_gaps": {
+        "greedy_lo": 6.321609902215641e-13,
+        "greedy_hi": 6.41819930535803e-13,
+        "always_0": 2.7166047189552955e-12,
+        "always_1": 3.2790437032304e-13,
+        "uniform": 3.7414515929867775e-13,
+        "soft": 4.785061236134425e-13,
+        "learned_bc": 6.666889262874065e-13
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 5.041522754822836e-13
+    },
+    {
+      "N": 128000,
+      "seed": 12,
+      "scores": {
+        "greedy_lo": -0.02188339098496198,
+        "greedy_hi": -0.019422760381226742,
+        "always_0": -0.8251093509872277,
+        "always_1": -0.3453376496867604,
+        "uniform": 0.2604528906077951,
+        "soft": 0.18766603987005046,
+        "learned_bc": 0.24935848735372967
+      },
+      "original_scores": {
+        "greedy_lo": -0.021883390899661345,
+        "greedy_hi": -0.019422760381335714,
+        "always_0": -0.8251093498514054,
+        "always_1": -0.34533764968623004,
+        "uniform": 0.26045289060789534,
+        "soft": 0.18766603987090238,
+        "learned_bc": 0.24935848737882915
+      },
+      "score_changes": {
+        "greedy_lo": -8.530063461131832e-11,
+        "greedy_hi": 1.0897185931391107e-13,
+        "always_0": -1.1358223250823585e-09,
+        "always_1": -5.303535388634373e-13,
+        "uniform": -1.0025313912365164e-13,
+        "soft": -8.519296379461139e-13,
+        "learned_bc": -2.509947805151569e-11
+      },
+      "restart_gaps": {
+        "greedy_lo": 5.647576156730949e-12,
+        "greedy_hi": 4.12883616185411e-12,
+        "always_0": 5.043965245477011e-12,
+        "always_1": 3.363698208858068e-12,
+        "uniform": 4.110378704069717e-12,
+        "soft": 5.117933854492662e-12,
+        "learned_bc": 4.235306549915663e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "uniform"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "uniform"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 1.1358223250823585e-09
+    },
+    {
+      "N": 128000,
+      "seed": 13,
+      "scores": {
+        "greedy_lo": 0.13160182235424336,
+        "greedy_hi": 0.1434021921320103,
+        "always_0": -0.7260111190670068,
+        "always_1": 0.17328297299138118,
+        "uniform": 0.3739567133935905,
+        "soft": 0.31160295339045807,
+        "learned_bc": 0.35020654312764476
+      },
+      "original_scores": {
+        "greedy_lo": 0.13160182235424478,
+        "greedy_hi": 0.1434021921320283,
+        "always_0": -0.7260111190669691,
+        "always_1": 0.1732829729917179,
+        "uniform": 0.3739567133935841,
+        "soft": 0.31160295339047206,
+        "learned_bc": 0.35020654312765526
+      },
+      "score_changes": {
+        "greedy_lo": -1.4155343563970746e-15,
+        "greedy_hi": -1.7985612998927536e-14,
+        "always_0": -3.7636560534792807e-14,
+        "always_1": -3.3673064336881e-13,
+        "uniform": 6.38378239159465e-15,
+        "soft": -1.3988810110276972e-14,
+        "learned_bc": -1.049160758270773e-14
+      },
+      "restart_gaps": {
+        "greedy_lo": 4.3712256037053976e-13,
+        "greedy_hi": 4.897748873133878e-13,
+        "always_0": 7.812639424287227e-13,
+        "always_1": 2.570943458124475e-12,
+        "uniform": 3.4927616354707425e-13,
+        "soft": 3.405054016525355e-13,
+        "learned_bc": 3.534394998894186e-13
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "uniform"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "uniform"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 3.3673064336881e-13
+    },
+    {
+      "N": 128000,
+      "seed": 14,
+      "scores": {
+        "greedy_lo": 0.28724066894104555,
+        "greedy_hi": 0.3299256703061307,
+        "always_0": -0.408529502088327,
+        "always_1": 0.3103802011848822,
+        "uniform": 0.516334357415555,
+        "soft": 0.45515252201411516,
+        "learned_bc": 0.5855225202776565
+      },
+      "original_scores": {
+        "greedy_lo": 0.2872406689413579,
+        "greedy_hi": 0.32992567030628417,
+        "always_0": -0.4085295020879053,
+        "always_1": 0.31038020118493664,
+        "uniform": 0.5163343574155874,
+        "soft": 0.45515252201448886,
+        "learned_bc": 0.5855225202777041
+      },
+      "score_changes": {
+        "greedy_lo": -3.123612479782878e-13,
+        "greedy_hi": -1.534883331544279e-13,
+        "always_0": -4.217182159038657e-13,
+        "always_1": -5.445643935786393e-14,
+        "uniform": -3.241851231905457e-14,
+        "soft": -3.737010700888277e-13,
+        "learned_bc": -4.7628567756419216e-14
+      },
+      "restart_gaps": {
+        "greedy_lo": 8.820166819134556e-13,
+        "greedy_hi": 1.9208523660552146e-12,
+        "always_0": 1.8575696536515807e-12,
+        "always_1": 8.536504836342829e-13,
+        "uniform": 9.575673587391975e-13,
+        "soft": 9.333089856511378e-13,
+        "learned_bc": 1.2913003999415196e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 4.217182159038657e-13
+    },
+    {
+      "N": 128000,
+      "seed": 15,
+      "scores": {
+        "greedy_lo": 0.023067808371964045,
+        "greedy_hi": 0.1021394896697303,
+        "always_0": -0.5663120092608986,
+        "always_1": -0.15822986173180176,
+        "uniform": 0.3151162307831155,
+        "soft": 0.23496085504311218,
+        "learned_bc": 0.3273252274281997
+      },
+      "original_scores": {
+        "greedy_lo": 0.023067808371961804,
+        "greedy_hi": 0.1021394896698057,
+        "always_0": -0.5663120092609023,
+        "always_1": -0.15822986173179243,
+        "uniform": 0.31511623078311835,
+        "soft": 0.2349608550431376,
+        "learned_bc": 0.3273252274281777
+      },
+      "score_changes": {
+        "greedy_lo": 2.2412627309620348e-15,
+        "greedy_hi": -7.539802115985594e-14,
+        "always_0": 3.6637359812630166e-15,
+        "always_1": -9.325873406851315e-15,
+        "uniform": -2.831068712794149e-15,
+        "soft": -2.5424107263916085e-14,
+        "learned_bc": 2.19824158875781e-14
+      },
+      "restart_gaps": {
+        "greedy_lo": 2.790684350273409e-13,
+        "greedy_hi": 2.821076705572523e-13,
+        "always_0": 7.355227538141662e-13,
+        "always_1": 1.596500709410975e-13,
+        "uniform": 4.132805209167145e-13,
+        "soft": 9.731104810839497e-14,
+        "learned_bc": 4.292677324713168e-13
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 7.539802115985594e-14
+    },
+    {
+      "N": 128000,
+      "seed": 16,
+      "scores": {
+        "greedy_lo": 0.2620676795323248,
+        "greedy_hi": 0.24439119345969024,
+        "always_0": -0.37986613675567393,
+        "always_1": 0.1710652755123362,
+        "uniform": 0.46488536245028617,
+        "soft": 0.416239456503391,
+        "learned_bc": 0.5155205655408165
+      },
+      "original_scores": {
+        "greedy_lo": 0.2620676795323247,
+        "greedy_hi": 0.2443911934597333,
+        "always_0": -0.3798661367558773,
+        "always_1": 0.17106527551233386,
+        "uniform": 0.46488536245028905,
+        "soft": 0.4162394565034064,
+        "learned_bc": 0.5155205655408164
+      },
+      "score_changes": {
+        "greedy_lo": 1.1102230246251565e-16,
+        "greedy_hi": -4.3076653355456074e-14,
+        "always_0": 2.0339285811132868e-13,
+        "always_1": 2.3314683517128287e-15,
+        "uniform": -2.886579864025407e-15,
+        "soft": -1.5376588891058418e-14,
+        "learned_bc": 1.1102230246251565e-16
+      },
+      "restart_gaps": {
+        "greedy_lo": 3.0464519795714295e-13,
+        "greedy_hi": 2.3292479056635784e-13,
+        "always_0": 9.938716516444401e-13,
+        "always_1": 1.433297924791077e-13,
+        "uniform": 2.0872192862952943e-13,
+        "soft": 1.9539925233402755e-13,
+        "learned_bc": 2.62234678416462e-13
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 2.0339285811132868e-13
+    },
+    {
+      "N": 128000,
+      "seed": 17,
+      "scores": {
+        "greedy_lo": 0.22492649834222214,
+        "greedy_hi": 0.25899255215125994,
+        "always_0": -0.2546168316284597,
+        "always_1": -0.004428766273681994,
+        "uniform": 0.4531964317813044,
+        "soft": 0.39143798911707645,
+        "learned_bc": 0.527386979762045
+      },
+      "original_scores": {
+        "greedy_lo": 0.2249264983423344,
+        "greedy_hi": 0.25899255215144756,
+        "always_0": -0.25461683162825194,
+        "always_1": -0.004428766273671725,
+        "uniform": 0.45319643178133284,
+        "soft": 0.3914379891171482,
+        "learned_bc": 0.5273869797620885
+      },
+      "score_changes": {
+        "greedy_lo": -1.1227130336521896e-13,
+        "greedy_hi": -1.8762769116165146e-13,
+        "always_0": -2.0777823905859805e-13,
+        "always_1": -1.0269562977782698e-14,
+        "uniform": -2.842170943040401e-14,
+        "soft": -7.177591854201637e-14,
+        "learned_bc": -4.3520742565306136e-14
+      },
+      "restart_gaps": {
+        "greedy_lo": 9.700296121906149e-13,
+        "greedy_hi": 6.405986852087153e-13,
+        "always_0": 3.83998388642226e-12,
+        "always_1": 2.642885910120185e-13,
+        "uniform": 6.691314169415818e-13,
+        "soft": 7.676081992258332e-13,
+        "learned_bc": 1.1162182289581324e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 2.0777823905859805e-13
+    },
+    {
+      "N": 128000,
+      "seed": 18,
+      "scores": {
+        "greedy_lo": 0.39621358988407446,
+        "greedy_hi": 0.36192982746509783,
+        "always_0": -0.19720009964394758,
+        "always_1": 0.2676771286732744,
+        "uniform": 0.5826111380281714,
+        "soft": 0.5388604362987303,
+        "learned_bc": 0.6593682913846418
+      },
+      "original_scores": {
+        "greedy_lo": 0.39621358988416383,
+        "greedy_hi": 0.3619298274651024,
+        "always_0": -0.1972000996437807,
+        "always_1": 0.2676771286733031,
+        "uniform": 0.5826111380281961,
+        "soft": 0.5388604362986983,
+        "learned_bc": 0.6593682913846659
+      },
+      "score_changes": {
+        "greedy_lo": -8.93729534823251e-14,
+        "greedy_hi": -4.551914400963142e-15,
+        "always_0": -1.6686652060116103e-13,
+        "always_1": -2.8699265186560297e-14,
+        "uniform": -2.4646951146678475e-14,
+        "soft": 3.197442310920451e-14,
+        "learned_bc": -2.4091839634365897e-14
+      },
+      "restart_gaps": {
+        "greedy_lo": 1.5890622151459866e-12,
+        "greedy_hi": 6.604161661982744e-13,
+        "always_0": 3.252398350639396e-12,
+        "always_1": 1.9934054407144686e-13,
+        "uniform": 6.293854326600012e-13,
+        "soft": 1.0066392164276294e-12,
+        "learned_bc": 1.0307310560619953e-12
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 1.6686652060116103e-13
+    },
+    {
+      "N": 128000,
+      "seed": 19,
+      "scores": {
+        "greedy_lo": 0.027415985082946737,
+        "greedy_hi": 0.051872485388149175,
+        "always_0": -0.558792550184654,
+        "always_1": -0.2596809452435196,
+        "uniform": 0.28710939285414105,
+        "soft": 0.21773396995373476,
+        "learned_bc": 0.3105513362000071
+      },
+      "original_scores": {
+        "greedy_lo": 0.02741598508297193,
+        "greedy_hi": 0.051872485388173566,
+        "always_0": -0.558792550184654,
+        "always_1": -0.2596809452435098,
+        "uniform": 0.28710939285414017,
+        "soft": 0.21773396995373495,
+        "learned_bc": 0.31055133620002273
+      },
+      "score_changes": {
+        "greedy_lo": -2.5191654318135193e-14,
+        "greedy_hi": -2.4390212072233908e-14,
+        "always_0": 0.0,
+        "always_1": -9.769962616701378e-15,
+        "uniform": 8.881784197001252e-16,
+        "soft": -1.942890293094024e-16,
+        "learned_bc": -1.5654144647214707e-14
+      },
+      "restart_gaps": {
+        "greedy_lo": 4.630809624650567e-13,
+        "greedy_hi": 3.4294789230671086e-13,
+        "always_0": 9.252598687226055e-13,
+        "always_1": 3.027578188152802e-13,
+        "uniform": 2.814415367424772e-13,
+        "soft": 2.5177082640936987e-13,
+        "learned_bc": 4.3404169147720495e-13
+      },
+      "picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "original_picks": {
+        "six": "uniform",
+        "learned": "learned_bc"
+      },
+      "changed": {
+        "six": false,
+        "learned": false
+      },
+      "max_abs_score_change": 2.5191654318135193e-14
+    }
+  ]
+}

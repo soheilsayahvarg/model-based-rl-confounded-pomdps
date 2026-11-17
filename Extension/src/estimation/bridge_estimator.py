@@ -33,11 +33,11 @@ condition numbers cond(T_hat_2 + lambda2 I) and (when the dual is formed)
 cond(G + N2 lambda2 I), plus the fraction of stage-2 points whose x was unseen in
 stage 1 (coverage/ill-posedness monitor).
 
-Consistency target: as N -> inf (lambda -> 0) the estimator converges to the
-MINIMUM-FROBENIUS-NORM solution of the moment equations, which decouples per
-(a, y)-slice into minimum-l2 solutions — exactly the pinv bridges produced by
-oracle_module.toy_true_bridges. Hence L2(b_hat, b_oracle) -> 0 is the correct
-recovery metric.
+Under suitable sampling, regularization and identifiability conditions, the
+population target is the minimum-norm solution of the observable moment
+equations. It need not equal a latent-sufficient pinv oracle bridge when
+completeness fails. L2 error against that oracle is a diagnostic, not a general
+consistency certificate. The current preprint states the implementation limits.
 
 NO pessimism code here (Phase 2 later step).
 """

@@ -28,9 +28,10 @@ state), the reward structure, and the horizon are unchanged as the dimensions
 move, so a difference in the spectrum is attributable to dimension alone.
 
 CONSTRUCTION. Emission and negative-control matrices are drawn from a Dirichlet
-with a diagonal boost, then verified to have full row rank -- if the proxy
-channels were rank-deficient the identification would fail for an uninteresting
-reason and confound the test. `default_params` asserts this rather than hoping.
+with a diagonal boost, then verified to have maximal possible rank, namely
+min(number of states, channel alphabet size). An undersized negative-control
+alphabet cannot have full row rank and deliberately violates completeness in
+the current case study. `default_params` checks the attainable rank.
 
 Log format matches toy_pomdp: (O0, O, A, R) visible, S private.
 """
@@ -187,11 +188,22 @@ def population_cross_moment(params, a=None):
     from finite-sample noise: at N -> infinity the empirical matrix must approach
     THIS, so any rank above rank(this) is sampling artifact.
 
+    If a is supplied, return p(o_1, o_0 | A_1=a), replacing p1 by the normalized
+    weights p1 * pi_b[:, a]. Conditioning can change the rank.
+
     The marginal over s used here is the stationary-free t=1 marginal p1, which
     is the correct one for the first stage; later stages mix but the rank bound
     is unchanged because every stage factors through s in the same way.
     """
     E, K0, p1 = params["E"], params["K0"], params["p1"]
+    if a is not None:
+        if not isinstance(a, (int, np.integer)) or not 0 <= a < params["pi_b"].shape[1]:
+            raise ValueError("a must be a valid action index")
+        weights = p1 * params["pi_b"][:, a]
+        mass = weights.sum()
+        if mass <= 0:
+            raise ValueError("Cannot condition on an action with zero population probability")
+        return E.T @ np.diag(weights / mass) @ K0  # p(o, o0 | A1=a)
     return E.T @ np.diag(p1) @ K0        # (n_o, n_o0)
 
 

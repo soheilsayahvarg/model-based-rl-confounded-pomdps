@@ -1,0 +1,22 @@
+{
+  "dataset": "International Stroke Trial database (version 2)",
+  "doi": "10.7488/ds/104",
+  "licence": "ODC-By 1.0",
+  "files": {
+    "IST_corrected.csv": {
+      "url": "https://datashare.ed.ac.uk/server/api/core/bitstreams/eca52b56-6d1b-47b3-814a-0b7089f8c870/content",
+      "bytes": 4798288,
+      "sha256": "a350aed2329bbcde23c05caaa96b9275b44b017adecc2fd02231d590454695d5"
+    },
+    "IST_variables.csv": {
+      "url": "https://datashare.ed.ac.uk/server/api/core/bitstreams/069dc665-f3c8-4c95-8ec0-bf6736e0c8ac/content",
+      "bytes": 6129,
+      "sha256": "bab564a5e44328d4c8c1cce534d029366d2847c79548d8a5de5f00f2d1bbcf8c"
+    },
+    "LICENSE_ODC_BY.txt": {
+      "url": "https://datashare.ed.ac.uk/server/api/core/bitstreams/4ea1fbdb-9b64-4172-aa85-aa0f89dab6c4/content",
+      "bytes": 20765,
+      "sha256": "48d327284f2e0eb65312be37199ca20695eae409777e9aca99156ec309959626"
+    }
+  }
+}

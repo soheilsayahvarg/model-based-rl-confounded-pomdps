@@ -84,30 +84,63 @@ def _inner(H, b_hat, g, xi, nu):
     return b_hat + delta(mu)
 
 
-def _linear_min_box(H, b_hat, g, xi, M_inf):
+def _linear_min_box(H, b_hat, g, xi, M_inf, M=None):
     """min <g,b> s.t. (b-b_hat)'H(b-b_hat) <= xi and |b_i| <= M_inf for all i.
 
-    Assumption 4.1(f) of the anchor paper bounds the bridge class in SUP-norm, so
-    the literal class is a BOX, not an L2 ball. A box is not rotationally
+    This enforces the sup-norm envelope and, when M is supplied, the Euclidean
+    coefficient-norm bound. Neither this box nor the ball alone is the anchor's
+    full class. A box is not rotationally
     symmetric, so there is no single scalar multiplier and the ball solver's root
     find does not apply. Solved directly (linear objective, one quadratic
     constraint, simple bounds), from two starts to reduce the chance of a local
     stall.
     """
-    from scipy.optimize import minimize
+    from scipy.optimize import minimize, nnls
     n = H.shape[0]
+    ellipsoid_scale = max(xi, 1e-12)
     cons = [{"type": "ineq",
-             "fun": lambda b: xi - float((b - b_hat) @ H @ (b - b_hat)),
-             "jac": lambda b: -2.0 * H @ (b - b_hat)}]
+             "fun": lambda b: (xi - float((b - b_hat) @ H @ (b - b_hat))) / ellipsoid_scale,
+             "jac": lambda b: -2.0 * H @ (b - b_hat) / ellipsoid_scale}]
+    if M is not None:
+        ball_scale = max(M * M, 1e-12)
+        cons.append({"type": "ineq", "fun": lambda b: (M * M - float(b @ b)) / ball_scale,
+                     "jac": lambda b: -2.0 * b / ball_scale})
     bounds = [(-M_inf, M_inf)] * n
     best, best_val = None, np.inf
+    failures = []
     for start in (np.clip(b_hat, -M_inf, M_inf), np.zeros(n)):
         r = minimize(lambda b: float(g @ b), start, jac=lambda b: g,
                      constraints=cons, bounds=bounds, method="SLSQP",
-                     options=dict(maxiter=400, ftol=1e-12))
-        if r.success and r.fun < best_val:
+                     options=dict(maxiter=800, ftol=1e-10))
+        feasible = (float((r.x - b_hat) @ H @ (r.x - b_hat)) <= xi + 1e-8
+                    and np.max(np.abs(r.x)) <= M_inf + 1e-8
+                    and (M is None or np.linalg.norm(r.x) <= M + 1e-8))
+        # SLSQP can report line-search failure at a feasible optimum. Do not
+        # accept a failed status blindly: certify approximate KKT stationarity
+        # using nonnegative multipliers of the active convex constraints.
+        normals = []
+        quad = float((r.x - b_hat) @ H @ (r.x - b_hat))
+        if abs(quad - xi) <= 1e-7 * max(xi, 1e-12):
+            normals.append(2.0 * H @ (r.x - b_hat))
+        if M is not None and abs(float(r.x @ r.x) - M * M) <= 1e-7 * max(M * M, 1e-12):
+            normals.append(2.0 * r.x)
+        for i in range(n):
+            if abs(abs(r.x[i]) - M_inf) <= 1e-8:
+                normal = np.zeros(n)
+                normal[i] = 1.0 if r.x[i] >= 0 else -1.0
+                normals.append(normal)
+        if normals:
+            _, residual = nnls(np.column_stack(normals), -g)
+        else:
+            residual = np.linalg.norm(g)
+        stationary = residual <= 1e-7 * max(1.0, np.linalg.norm(g))
+        if feasible and stationary and r.fun < best_val:
             best, best_val = r.x, r.fun
-    return best if best is not None else np.clip(b_hat, -M_inf, M_inf)
+        else:
+            failures.append(f"status={r.status}, message={r.message}, feasible={feasible}, KKT_residual={residual:.3g}")
+    if best is None:
+        raise RuntimeError("Box/ellipsoid solve failed or intersection is empty: " + "; ".join(failures))
+    return best
 
 
 def _exact_linear_min_ball(H, b_hat, g, xi, M):
@@ -121,6 +154,15 @@ def _exact_linear_min_ball(H, b_hat, g, xi, M):
     inside _inner for each nu.
     """
     from scipy.optimize import brentq
+    if M == 0:
+        if float(b_hat @ H @ b_hat) <= xi:
+            return np.zeros_like(b_hat), "zero-radius ball"
+        return None, "EMPTY intersection"
+    if not np.any(g):
+        if np.linalg.norm(b_hat) <= M:
+            return b_hat.copy(), "zero objective"
+        candidate = _inner(H, b_hat, g, xi, 1.0)
+        return (candidate, "zero objective") if np.linalg.norm(candidate) <= M + 1e-9 else (None, "EMPTY intersection")
     b0 = _inner(H, b_hat, g, xi, 0.0)
     if np.linalg.norm(b0) <= M + 1e-12:
         return b0, "ball inactive"
@@ -227,8 +269,23 @@ class BlockEllipsoid:
         alone IS closed-form, and ||b(nu)|| decreases monotonically in nu, so a
         scalar bisection lands on the active-ball solution.
         """
+        if not np.isfinite(xi) or xi < 0:
+            raise ValueError("xi must be finite and nonnegative")
+        if projected and (M is not None or M_inf is not None):
+            raise NotImplementedError("Projected class-constrained minimization is not implemented")
+        if projected and self.U is None:
+            raise ValueError("Projected minimization requires a signal basis")
+        for bound in (M, M_inf):
+            if bound is not None and (not np.isfinite(bound) or bound < 0):
+                raise ValueError("Class bounds must be finite and nonnegative")
+        if xi == 0:
+            if M is not None and np.linalg.norm(self.b_hat) > M + 1e-12:
+                raise ValueError("Zero-width region and class ball are disjoint")
+            if M_inf is not None and np.max(np.abs(self.b_hat)) > M_inf + 1e-12:
+                raise ValueError("Zero-width region and class box are disjoint")
+            return self.b_hat.copy(), 0.0
         if M_inf is not None and not projected:
-            b = _linear_min_box(self.H, self.b_hat, g, xi, M_inf)
+            b = _linear_min_box(self.H, self.b_hat, g, xi, M_inf, M=M)
             return b, float(g @ self.b_hat - g @ b)
 
         if M is not None and not projected:
@@ -281,7 +338,11 @@ class BlockEllipsoid:
 
     def width_rule(self, c):
         """Restricted-spectrum width: xi = c / (N2 * sigma2_signal)."""
-        return c / (self.N2 * max(self.sigma2, 1e-12))
+        if not np.isfinite(c) or c < 0:
+            raise ValueError("Width multiplier must be finite and nonnegative")
+        if self.N2 <= 0 or not np.isfinite(self.sigma2) or self.sigma2 <= 0:
+            raise ValueError(f"{self.label}: positive N2 and signal eigenvalue are required; width is undefined")
+        return c / (self.N2 * self.sigma2)
 
 
 def _block_M(M, i):
@@ -315,8 +376,9 @@ def pessimistic_value(blocks_R, blocks_D, xis_R, xis_D, value_and_grads,
     value_and_grads(bR_flat_list, bD_flat_list) -> (V, gR_flat_list, gD_flat_list)
     projected=True restricts every region to its identified signal subspace.
     projected_R / projected_D override it per block, which is what a
-    STAGE-SELECTIVE variant needs: cor:selfheal says only the t=1 blocks leak, so
-    restricting every block is heavier than the diagnosis calls for.
+    STAGE-SELECTIVE variant needs. Historical claims that only t=1 can leak
+    require additional transition/channel rank assumptions; they are not a
+    general guarantee. Projection may exclude valid bridges and is diagnostic.
 
     A block with xi = 0 contributes its centre and zero penalty, which is exactly
     the plug-in for that block -- so the per-block on/off switch needs no code
